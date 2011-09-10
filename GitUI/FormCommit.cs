@@ -907,7 +907,7 @@ namespace GitUI
                     message = GitCommandHelpers.GetMergeMessage();
 
                     if (string.IsNullOrEmpty(message) && File.Exists(GitCommands.Commit.GetCommitMessagePath()))
-                        message = File.ReadAllText(GitCommands.Commit.GetCommitMessagePath(), Settings.Encoding);
+                        message = File.ReadAllText(GitCommands.Commit.GetCommitMessagePath(), Settings.CommitEncoding);
                     break;
             }
 
@@ -938,27 +938,7 @@ namespace GitUI
             //  given to it does not look like a valid UTF-8 string, unless you 
             //  explicitly say your project uses a legacy encoding. The way to say 
             //  this is to have i18n.commitencoding in .git/config file, like this:...
-            Encoding encoding;
-            string encodingString = GitCommandHelpers.GetLocalConfig().GetValue("i18n.commitencoding");
-            if (string.IsNullOrEmpty(encodingString))
-                encodingString = GitCommandHelpers.GetGlobalConfig().GetValue("i18n.commitencoding");
-
-            if (!string.IsNullOrEmpty(encodingString))
-            {
-                try
-                {
-                    encoding = Encoding.GetEncoding(encodingString);
-                }
-                catch (ArgumentException ex)
-                {
-                    MessageBox.Show(ex.Message + Environment.NewLine + "Unsupported encoding set in git config file: " + encodingString + Environment.NewLine + "Please check the setting i18n.commitencoding in your local and/or global config files. Commit aborted.");
-                    return;
-                }
-            }
-            else
-            {
-                encoding = new UTF8Encoding(false);
-            }
+            Encoding encoding = Settings.CommitEncoding;
 
             using (var textWriter = new StreamWriter(path, false, encoding))
             {

@@ -414,7 +414,7 @@ namespace GitUI.Editor
             else
                 path = GitCommands.Settings.WorkingDir + fileName;
 
-            return !File.Exists(path) ? null : FileReader.ReadFileContent(path, GitCommands.Settings.Encoding);
+            return !File.Exists(path) ? null : FileReader.ReadFileContent(path, GitCommands.Settings.FilesEncoding);
         }
 
         private void ResetForImage()

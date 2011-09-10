@@ -43,7 +43,7 @@ namespace GitUI
                             // Enter a newline to work around a wierd bug 
                             // that causes the first line to include 3 extra bytes. (encoding marker??)
                             GitAttributesFile = Environment.NewLine + _NO_TRANSLATE_GitAttributesText.GetText().Trim();
-                            using (TextWriter tw = new StreamWriter(x, false, Settings.Encoding))
+                            using (TextWriter tw = new StreamWriter(x, false, Settings.LogOutputEncoding))
                                 tw.Write(GitAttributesFile);
                             Close();
                         });

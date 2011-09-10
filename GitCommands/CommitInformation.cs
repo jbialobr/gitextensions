@@ -151,12 +151,8 @@ namespace GitCommands
 
             var body = "\n\n" + message.ToString().TrimStart().TrimEnd() + "\n\n";
 
-            //We need to recode the commit message because of a bug in Git.
-            //We cannot let git recode the message to Settings.Encoding which is
-            //needed to allow the "git log" to print the filename in Settings.Encoding
-            Encoding logoutputEncoding = GitCommandHelpers.GetLogoutputEncoding();
-            if (logoutputEncoding != Settings.Encoding)
-                body = logoutputEncoding.GetString(Settings.Encoding.GetBytes(body));
+
+            //TODO jb check encoding of the body
 
             var header = FillToLenght(Strings.GetAuthorText() + ":", COMMITHEADER_STRING_LENGTH) + author + "\n" +
                          FillToLenght(Strings.GetAuthorDateText() + ":", COMMITHEADER_STRING_LENGTH) + GitCommandHelpers.GetRelativeDateString(DateTime.UtcNow, authorDate.UtcDateTime) + " (" + authorDate.LocalDateTime.ToString("ddd MMM dd HH':'mm':'ss yyyy") + ")\n" +

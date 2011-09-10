@@ -28,7 +28,7 @@ namespace GitUI
                                            gitIgnoreFile.Append(Environment.NewLine);
                                            gitIgnoreFile.Append(FilePattern.Text);
 
-                                           using (TextWriter tw = new StreamWriter(x, true, Settings.Encoding))
+                                           using (TextWriter tw = new StreamWriter(x, true, Settings.LogOutputEncoding))
                                            {
                                                tw.Write(gitIgnoreFile);
                                            }

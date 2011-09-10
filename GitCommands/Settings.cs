@@ -6,6 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using GitCommands.Logging;
 using GitCommands.Repository;
+using GitCommands.Config;
 using Microsoft.Win32;
 using System.Collections.Generic;
 
@@ -36,7 +37,7 @@ namespace GitCommands
             GitLog = new CommandLogger();
 
             //Make applicationdatapath version dependent
-            ApplicationDataPath = Application.UserAppDataPath.Replace(Application.ProductVersion, string.Empty);
+            ApplicationDataPath = Application.UserAppDataPath.Replace(Application.ProductVersion, string.Empty);           
         }
 
         private static int? _UserMenuLocationX;
@@ -248,57 +249,110 @@ namespace GitCommands
             set { SafeSet("revisiongraphdrawnonrelativestextgray", value, ref _revisionGraphDrawNonRelativesTextGray); }
         }
 
-        private static Encoding _encoding;
-        public static Encoding Encoding
+        public static Dictionary<string, Encoding> availableEncodings = new Dictionary<string,Encoding>();
+
+
+        private static Encoding GetEncoding(bool local, string settingName)
+        {
+            string lname = local ? "local_" : "global_";
+            lname = lname + settingName;
+
+            Func<object, Encoding> str2enc = (object o) => 
+            {
+                string encodingName = o as string;
+                Encoding encoding;
+                if (!availableEncodings.TryGetValue(encodingName, out encoding))
+                {
+                    try
+                    {
+                        if (encodingName.IsNullOrEmpty())
+                            encoding = null;
+                        else
+                            encoding = Encoding.GetEncoding(encodingName);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new Exception(ex.Message + Environment.NewLine + "Unsupported encoding set in git config file: " + encodingName + Environment.NewLine + "Please check the setting i18n.commitencoding in your local and/or global config files. Command aborted.", ex);
+                    }
+                }
+                return encoding;            
+            };
+            return GetByName<Encoding>(lname, null, str2enc);
+
+        }
+       
+        private static void SetEncoding(bool local, string settingName, Encoding encoding)
+        {
+            string lname = local ? "local_" : "global_";
+            lname = lname + settingName;
+            SetByName<Encoding>(lname, encoding, (Encoding e) => e.HeaderName);
+        }
+
+        public static Encoding GetFilesEncoding(bool local) 
+        {
+            return GetEncoding(local, "i18n.filesEncoding");                 
+        }
+        public static void SetFilesEncoding(bool local, Encoding encoding)
+        {
+            SetEncoding(local, "i18n.filesEncoding", encoding);
+        }
+        public static Encoding FilesEncoding
         {
             get
             {
-                if (_encoding == null)
-                {
-                    string encoding = GetValue("encoding", "");
-
-                    if (string.IsNullOrEmpty(encoding))
-                        _encoding = new UTF8Encoding(false);
-                    else if (encoding.Equals("Default", StringComparison.CurrentCultureIgnoreCase))
-                        _encoding = Encoding.Default;
-                    else if (encoding.Equals("Unicode", StringComparison.CurrentCultureIgnoreCase))
-                        _encoding = new UnicodeEncoding();
-                    else if (encoding.Equals("ASCII", StringComparison.CurrentCultureIgnoreCase))
-                        _encoding = new ASCIIEncoding();
-                    else if (encoding.Equals("UTF7", StringComparison.CurrentCultureIgnoreCase))
-                        _encoding = new UTF7Encoding();
-                    else if (encoding.Equals("UTF32", StringComparison.CurrentCultureIgnoreCase))
-                        _encoding = new UTF32Encoding(true, false);
-                    else
-                        _encoding = new UTF8Encoding(false);
-                }
-                return _encoding;
-            }
-            set
-            {
-                _encoding = value;
-
-                if (Application.UserAppDataRegistry == null)
-                    return;
-
-                string encoding = "";
-                if (_encoding.EncodingName == Encoding.ASCII.EncodingName)
-                    encoding = "ASCII";
-                else if (_encoding.EncodingName == Encoding.Unicode.EncodingName)
-                    encoding = "Unicode";
-                else if (_encoding.EncodingName == Encoding.UTF7.EncodingName)
-                    encoding = "UTF7";
-                else if (_encoding.EncodingName == Encoding.UTF8.EncodingName)
-                    encoding = "UTF8";
-                else if (_encoding.EncodingName == Encoding.UTF32.EncodingName)
-                    encoding = "UTF32";
-                else if (_encoding.EncodingName == Encoding.Default.EncodingName)
-                    encoding = "Default";
-
-                SetValue("encoding", encoding);
+                Encoding result = GetFilesEncoding(true);
+                if (result == null)
+                    result = GetFilesEncoding(false);
+                if (result == null)
+                    result = new UTF8Encoding(false);
+                return result;
             }
         }
 
+        public static Encoding GetCommitEncoding(bool local)
+        {
+            return GetEncoding(local, "i18n.commitEncoding");
+        }
+        public static void SetCommitEncoding(bool local, Encoding encoding)
+        {
+            SetEncoding(local, "i18n.commitEncoding", encoding);
+        }
+        public static Encoding CommitEncoding
+        {
+            get
+            {
+                Encoding result = GetCommitEncoding(true);
+                if (result == null)
+                    result = GetCommitEncoding(false);
+                if (result == null)
+                    result = new UTF8Encoding(false);
+                return result;
+            }
+        }
+
+        public static Encoding GetLogOutputEncoding(bool local)
+        {
+            return GetEncoding(local, "i18n.logoutputencoding");
+        }
+        public static void SetLogOutputEncoding(bool local, Encoding encoding)
+        {
+            SetEncoding(local, "i18n.logoutputencoding", encoding);
+        }
+        public static Encoding LogOutputEncoding
+        {
+            get
+            {
+                Encoding result = GetLogOutputEncoding(true);
+                if (result == null)
+                    result = GetLogOutputEncoding(false);
+                if (result == null)
+                    result = CommitEncoding;
+                if (result == null)
+                    result = new UTF8Encoding(false);
+                return result;
+            }
+        }
+        
         private static string _pullMerge;
         public static string PullMerge
         {
@@ -741,10 +795,47 @@ namespace GitCommands
             { }
         }
 
+        private static void TransferEncodings()
+        {
+            string encoding = GetValue("encoding", "");
+            if (!encoding.IsNullOrEmpty())
+            {
+                Encoding _encoding;
+
+                if (encoding.Equals("Default", StringComparison.CurrentCultureIgnoreCase))
+                    _encoding = Encoding.Default;
+                else if (encoding.Equals("Unicode", StringComparison.CurrentCultureIgnoreCase))
+                    _encoding = new UnicodeEncoding();
+                else if (encoding.Equals("ASCII", StringComparison.CurrentCultureIgnoreCase))
+                    _encoding = new ASCIIEncoding();
+                else if (encoding.Equals("UTF7", StringComparison.CurrentCultureIgnoreCase))
+                    _encoding = new UTF7Encoding();
+                else if (encoding.Equals("UTF32", StringComparison.CurrentCultureIgnoreCase))
+                    _encoding = new UTF32Encoding(true, false);
+                else
+                    _encoding = new UTF8Encoding(false);
+                SetFilesEncoding(false, _encoding);
+                SetCommitEncoding(false, _encoding);
+                SetLogOutputEncoding(false, _encoding);
+                SetValue("encoding", null as string);
+            }
+        }
+
         public static void LoadSettings()
         {
+            Action<Encoding> addEncoding = delegate(Encoding e) { availableEncodings[e.HeaderName] = e; };
+            addEncoding(Encoding.Default);
+            addEncoding(new ASCIIEncoding());
+            addEncoding(new UnicodeEncoding());
+            addEncoding(new UTF7Encoding());
+            addEncoding(new UTF8Encoding());
+            addEncoding(CommitEncoding);
+            addEncoding(LogOutputEncoding);
+            addEncoding(FilesEncoding);
+
             try
             {
+                TransferEncodings();
                 TransferVerDependentReg();
             }
             catch
@@ -913,7 +1004,7 @@ namespace GitCommands
                 VersionIndependentRegKey.SetValue(name, value);
         }
 
-        public static T GetByName<T>(string name, T defaultValue, Func<object, T> convert)
+        public static T GetByName<T>(string name, T defaultValue, Func<object, T> decode)
         {
             object o;
             if (byNameMap.TryGetValue(name, out o))
@@ -930,21 +1021,24 @@ namespace GitCommands
                 if (o == null)
                     result = defaultValue;
                 else
-                    result = convert(o);
+                    result = decode(o);
 
                 byNameMap[name] = result;
                 return result;
             }
         }
 
-        public static void SetByName<T>(string name, T value)
+        public static void SetByName<T>(string name, T value, Func<T, object> encode)
         {
             object o;
             if (byNameMap.TryGetValue(name, out o))
                 if (Object.Equals(o, value))
                     return;
-
-            SetValue<T>(name, value);
+            if (value == null)
+                o = null;
+            else
+                o = encode(value);
+            SetValue<object>(name, o);
             byNameMap[name] = value;
         }
 
@@ -955,7 +1049,7 @@ namespace GitCommands
 
         public static void SetBool(string name, bool? value)
         {
-            SetByName<bool?>(name, value);
+            SetByName<bool?>(name, value, (bool? b) => b.Value ? bool.TrueString : bool.FalseString);
         }
 
         public static string PrefixedName(string prefix, string name) 

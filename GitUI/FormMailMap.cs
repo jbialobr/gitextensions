@@ -39,7 +39,7 @@ namespace GitUI
                             // Enter a newline to work around a wierd bug 
                             // that causes the first line to include 3 extra bytes. (encoding marker??)
                             MailMapFile = Environment.NewLine + _NO_TRANSLATE_MailMapText.GetText().Trim();
-                            using (TextWriter tw = new StreamWriter(x, false, Settings.Encoding))
+                            using (TextWriter tw = new StreamWriter(x, false, Settings.LogOutputEncoding))
                                 tw.Write(MailMapFile);
                             Close();
                         });

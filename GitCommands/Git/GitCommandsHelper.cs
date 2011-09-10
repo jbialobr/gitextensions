@@ -273,8 +273,8 @@ namespace GitCommands
                            RedirectStandardOutput = true,
                            RedirectStandardInput = true,
                            RedirectStandardError = true,
-                           StandardOutputEncoding = Settings.Encoding,
-                           StandardErrorEncoding = Settings.Encoding
+                           StandardOutputEncoding = Settings.LogOutputEncoding,
+                           StandardErrorEncoding = Settings.LogOutputEncoding
                        };
         }
 
@@ -548,10 +548,10 @@ namespace GitCommands
                         !FileHelper.IsBinaryFileAccordingToContent(buf))
                     {
                         buf = null;
-                        StreamReader reader = new StreamReader(ms, Settings.Encoding);
+                        StreamReader reader = new StreamReader(ms, Settings.FilesEncoding);
                         String sfileout = reader.ReadToEnd();
                         sfileout = sfileout.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
-                        buf = Settings.Encoding.GetBytes(sfileout);
+                        buf = Settings.FilesEncoding.GetBytes(sfileout);
                     }
                 }
 
@@ -774,7 +774,7 @@ namespace GitCommands
 
         public static string ShowSha1(string sha1)
         {
-            return RunCachableCmd(Settings.GitCommand, "show --encoding=" + Settings.Encoding.HeaderName + " " + sha1);
+            return RunCachableCmd(Settings.GitCommand, "show " + sha1);
         }
 
         public static string UserCommitCount()
@@ -2420,7 +2420,7 @@ namespace GitCommands
             return
                 RunCachableCmd(
                     Settings.GitCommand,
-                    string.Format("show --encoding=" + Settings.Encoding.HeaderName + " {0}:\"{1}\"", revision, file.Replace('\\', '/')));
+                    string.Format("show {0}:\"{1}\"", revision, file.Replace('\\', '/')));
         }
 
         public static string GetFileText(string id)
@@ -2482,19 +2482,9 @@ namespace GitCommands
             return null;
         }
 
-        public static string RecodeString(string s) {
-
-            Encoding logoutputEncoding = GitCommandHelpers.GetLogoutputEncoding();
-            if (logoutputEncoding != Settings.Encoding)
-                s = logoutputEncoding.GetString(Settings.Encoding.GetBytes(s));
-
-            return s;
-        }
-
         public static string GetPreviousCommitMessage(int numberBack)
         {
-            //+"--encoding=" + Settings.Encoding.HeaderName doesn't work
-            return RecodeString(RunCmd(Settings.GitCommand, "log -n 1 HEAD~" + numberBack + " --pretty=format:%s%n%n%b "));
+            return RunCmd(Settings.GitCommand, "log -n 1 HEAD~" + numberBack + " --pretty=format:%s%n%n%b ");
         }
 
         public static string MergeBranch(string branch)

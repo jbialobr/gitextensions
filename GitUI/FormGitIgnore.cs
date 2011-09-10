@@ -51,7 +51,7 @@ namespace GitUI
                             // Enter a newline to work around a wierd bug 
                             // that causes the first line to include 3 extra bytes. (encoding marker??)
                             GitIgnoreFile = Environment.NewLine + _NO_TRANSLATE_GitIgnoreEdit.GetText().Trim();
-                            using (var tw = new StreamWriter(x, false, Settings.Encoding))
+                            using (var tw = new StreamWriter(x, false, Settings.LogOutputEncoding))
                             {
                                 tw.Write(GitIgnoreFile);
                             }
