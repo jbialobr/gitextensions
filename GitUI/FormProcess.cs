@@ -30,8 +30,8 @@ namespace GitUI
         protected FormProcess()
             : base()
         {
-            ProcessCallback = new ProcessStart(processStart);
         }
+
 
 
         //Input does not work for password inputs. I don't know why, but it turned out not to be really necessary.
