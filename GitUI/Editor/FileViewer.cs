@@ -299,6 +299,7 @@ namespace GitUI.Editor
             RestoreCurrentScrollPos();
         }
 
+
         public void ViewGitItemRevision(string fileName, string guid)
         {
             ViewItem(fileName, () => GetImage(fileName, guid), () => GitCommandHelpers.GetFileRevisionText(fileName, guid));

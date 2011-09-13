@@ -325,7 +325,7 @@ namespace GitUI
 
             if (!string.IsNullOrEmpty(patch))
             {
-                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch);
+                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch, null);//todo jb
                 if (!string.IsNullOrEmpty(output))
                 {
                     MessageBox.Show(output);
@@ -349,7 +349,7 @@ namespace GitUI
 
             if (!string.IsNullOrEmpty(patch))
             {
-                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch);
+                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch, null);//todo jb
                 if (!string.IsNullOrEmpty(output))
                 {
                     MessageBox.Show(output);
@@ -375,7 +375,14 @@ namespace GitUI
 
             if (_gitGetUnstagedCommand == null)
             {
-                _gitGetUnstagedCommand = new GitCommandsInstance();
+                _gitGetUnstagedCommand = new GitCommandsInstance()
+                {
+                    SetupStartInfoCallback = (ProcessStartInfo startInfo) =>
+                    { 
+                        startInfo.StandardOutputEncoding = Encoding.Default;
+                        startInfo.StandardErrorEncoding = Encoding.Default;
+                    }
+                };
                 _gitGetUnstagedCommand.Exited += GitCommandsExited;
             }
 

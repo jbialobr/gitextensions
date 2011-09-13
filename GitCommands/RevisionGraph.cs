@@ -20,6 +20,7 @@ namespace GitCommands
         public event EventHandler Updated;
         public event EventHandler BeginUpdate;
         public int RevisionCount { get; set; }
+        private Encoding ISO_8859_1Encoding = Encoding.GetEncoding("ISO-8859-1");
 
         public class RevisionGraphUpdatedEventArgs : EventArgs
         {
@@ -44,8 +45,6 @@ namespace GitCommands
 
         private GitCommandsInstance gitGetGraphCommand;
 
-        private Encoding logoutputEncoding = null;
-
         private Thread backgroundThread = null;
 
         private enum ReadStep
@@ -60,6 +59,7 @@ namespace GitCommands
             CommitterName,
             CommitterDate,
             CommitMessage,
+            CommitMessageEncoding,
             FileName,
             Done,
         }
@@ -135,7 +135,8 @@ namespace GitCommands
                         /* Author Date    */ "%ai%n" +
                         /* Committer Name */ "%cN%n" +
                         /* Committer Date */ "%ci%n" +
-                        /* Commit Message */ "%s";
+                        /* Commit Message */ "%s%n" +
+                        /* Commit message encoding */ "%e"; //there is a bug: git does not recode commit message when format i given
                 }
 
                 // NOTE:
@@ -159,7 +160,14 @@ namespace GitCommands
 
                 gitGetGraphCommand = new GitCommandsInstance();
                 gitGetGraphCommand.StreamOutput = true;
-                gitGetGraphCommand.CollectOutput = false;
+                gitGetGraphCommand.CollectOutput = false;                
+                Encoding LogOutputEncoding = Settings.LogOutputEncoding;
+                gitGetGraphCommand.SetupStartInfoCallback = (ProcessStartInfo startInfo) =>
+                {
+                    startInfo.StandardOutputEncoding = ISO_8859_1Encoding;
+                    startInfo.StandardErrorEncoding = ISO_8859_1Encoding;
+                }; 
+
                 Process p = gitGetGraphCommand.CmdStartProcess(Settings.GitCommand, arguments);
 
                 if (BeginUpdate != null)
@@ -169,6 +177,9 @@ namespace GitCommands
                 do
                 {
                     line = p.StandardOutput.ReadLine();
+                    //commit message is not encoded by git
+                    if (nextStep != ReadStep.CommitMessage)
+                        line = GitCommandHelpers.ReEncodeString(line, ISO_8859_1Encoding, LogOutputEncoding);
 
                     if (line != null)
                     {
@@ -316,6 +327,27 @@ namespace GitCommands
 
                 case ReadStep.CommitMessage:
                     revision.Message = line;
+                    break;
+
+                case ReadStep.CommitMessageEncoding:
+                    Encoding encoding;
+                    try
+                    {
+                        if (line.IsNullOrEmpty())
+                            encoding = Encoding.UTF8;
+                        else if (line.Equals(ISO_8859_1Encoding.HeaderName, StringComparison.CurrentCultureIgnoreCase))
+                            encoding = null; //no recoding is needed
+                        else
+                            encoding = Encoding.GetEncoding(line);
+
+                    }
+                    catch (Exception e)
+                    {
+                        revision.Message = "! Unsupported commit message encoding: "+line+" !\n\n" + revision.Message;
+                        encoding = null;
+                    }
+                    if (encoding != null)
+                        revision.Message = GitCommandHelpers.ReEncodeString(revision.Message, ISO_8859_1Encoding, encoding);
                     break;
 
                 case ReadStep.FileName:

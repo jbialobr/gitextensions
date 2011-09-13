@@ -16,6 +16,16 @@ namespace GitCommands
     public static class GitCommandHelpers
     {
         private static GitVersion _versionInUse;
+        public static readonly SetupStartInfo SetFilesEncodingDelegate = (ProcessStartInfo startInfo) =>
+                   {
+                       startInfo.StandardOutputEncoding = Settings.FilesEncoding;
+                       startInfo.StandardErrorEncoding = Settings.FilesEncoding;
+                   };
+        public static readonly SetupStartInfo SetFilePathsEncodingDelegate = (ProcessStartInfo startInfo) =>
+        {
+            startInfo.StandardOutputEncoding = Settings.FilePathsEncoding;
+            startInfo.StandardErrorEncoding = Settings.FilePathsEncoding;
+        };
 
         /// <summary>
         /// This is a faster function to get the names of all submodules then the 
@@ -298,13 +308,13 @@ namespace GitCommands
         }
 
         [PermissionSetAttribute(SecurityAction.Demand, Name = "FullTrust")]
-        public static string RunCachableCmd(string cmd, string arguments)
+        public static string RunCachableCmd(string cmd, string arguments, SetupStartInfo setupStartInfo)
         {
             string output;
             if (GitCommandCache.TryGet(arguments, out output))
                 return output;
 
-            output = RunCmd(cmd, arguments);
+            output = RunCmd(cmd, arguments, setupStartInfo);
 
             GitCommandCache.Add(arguments, output);
 
@@ -318,20 +328,28 @@ namespace GitCommands
         }
 
         [PermissionSetAttribute(SecurityAction.Demand, Name = "FullTrust")]
-        public static string RunCmd(string cmd, string arguments, string stdInput)
+        public static string RunCmd(string cmd, string arguments, SetupStartInfo setupStartInfo)
         {
             int exitCode;
-            return RunCmd(cmd, arguments, out exitCode, stdInput);
+            return RunCmd(cmd, arguments, out exitCode, null, setupStartInfo);
+        }
+
+
+        [PermissionSetAttribute(SecurityAction.Demand, Name = "FullTrust")]
+        public static string RunCmd(string cmd, string arguments, string stdInput, SetupStartInfo setupStartInfo)
+        {
+            int exitCode;
+            return RunCmd(cmd, arguments, out exitCode, stdInput, setupStartInfo);
         }
 
         [PermissionSetAttribute(SecurityAction.Demand, Name = "FullTrust")]
         public static string RunCmd(string cmd, string arguments, out int exitCode)
         {
-            return RunCmd(cmd, arguments, out exitCode, null);
+            return RunCmd(cmd, arguments, out exitCode, null, null);
         }
 
         [PermissionSetAttribute(SecurityAction.Demand, Name = "FullTrust")]
-        public static string RunCmd(string cmd, string arguments, out int exitCode, string stdInput)
+        public static string RunCmd(string cmd, string arguments, out int exitCode, string stdInput, SetupStartInfo setupStartInfo)
         {
             try
             {
@@ -340,7 +358,7 @@ namespace GitCommands
                 arguments = arguments.Replace("$QUOTE$", "\\\"");
 
                 string output, error;
-                exitCode = CreateAndStartProcess(arguments, cmd, out output, out error, stdInput);
+                exitCode = CreateAndStartProcess(arguments, cmd, out output, out error, stdInput, setupStartInfo);
 
                 if (!string.IsNullOrEmpty(error))
                 {
@@ -355,7 +373,7 @@ namespace GitCommands
             }
         }
 
-        private static int CreateAndStartProcess(string arguments, string cmd, out string stdOutput, out string stdError, string stdInput)
+        private static int CreateAndStartProcess(string arguments, string cmd, out string stdOutput, out string stdError, string stdInput, SetupStartInfo setupStartInfo)
         {
             if (string.IsNullOrEmpty(cmd))
             {
@@ -372,6 +390,8 @@ namespace GitCommands
             startInfo.Arguments = arguments;
             startInfo.WorkingDirectory = Settings.WorkingDir;
             startInfo.LoadUserProfile = true;
+            if (setupStartInfo != null)
+                setupStartInfo(startInfo);
 
             using (var process = Process.Start(startInfo))
             {
@@ -774,7 +794,8 @@ namespace GitCommands
 
         public static string ShowSha1(string sha1)
         {
-            return RunCachableCmd(Settings.GitCommand, "show " + sha1);
+            //todo jb sprawdz kodowanie
+            return RunCachableCmd(Settings.GitCommand, "show " + sha1, null);
         }
 
         public static string UserCommitCount()
@@ -1642,7 +1663,7 @@ namespace GitCommands
         public static List<Patch> GetStashedItems(string stashName)
         {
             var patchManager = new PatchManager();
-            patchManager.LoadPatch(RunCmd(Settings.GitCommand, "stash show -p " + stashName), false);
+            patchManager.LoadPatch(RunCmd(Settings.GitCommand, "stash show -p " + stashName, SetFilesEncodingDelegate), false);
 
             return patchManager.Patches;
         }
@@ -1688,7 +1709,7 @@ namespace GitCommands
 
             var patchManager = new PatchManager();
             var arguments = string.Format("diff{0} -M -C \"{1}\" \"{2}\" -- {3} {4}", extraDiffArguments, to, from, fileName, oldFileName);
-            patchManager.LoadPatch(RunCachableCmd(Settings.GitCommand, arguments), false);
+            patchManager.LoadPatch(RunCachableCmd(Settings.GitCommand, arguments, SetFilesEncodingDelegate), false);
 
             return patchManager.Patches.Count > 0 ? patchManager.Patches[0] : null;
         }
@@ -1706,7 +1727,7 @@ namespace GitCommands
 
             var patchManager = new PatchManager();
             var arguments = string.Format("diff{0} \"{1}\" \"{2}\"", extraDiffArguments, from, to);
-            patchManager.LoadPatch(RunCachableCmd(Settings.GitCommand, arguments), false);
+            patchManager.LoadPatch(RunCachableCmd(Settings.GitCommand, arguments, SetFilesEncodingDelegate), false);
 
             return patchManager.Patches;
         }
@@ -1722,11 +1743,11 @@ namespace GitCommands
             string cmd = "diff -M -C -z --name-status \"" + to + "\" \"" + from + "\"";
             if (noCache)
             {
-                result = RunCmd(Settings.GitCommand, cmd);
+                result = RunCmd(Settings.GitCommand, cmd, SetFilePathsEncodingDelegate);
             }
             else
             {
-                result = RunCachableCmd(Settings.GitCommand, cmd);
+                result = RunCachableCmd(Settings.GitCommand, cmd, SetFilePathsEncodingDelegate);
 
             }
             return GetAllChangedFilesFromString(result, true);
@@ -1974,12 +1995,12 @@ namespace GitCommands
 
         public static List<GitItemStatus> GetStagedFiles()
         {
-            string status = RunCmd(Settings.GitCommand, "diff -M -C -z --cached --name-status");
-
+            string status = RunCmd(Settings.GitCommand, "diff -M -C -z --cached --name-status", SetFilePathsEncodingDelegate);           
+            
             if (true && status.Length < 50 && status.Contains("fatal: No HEAD commit to compare"))
             {
                 //This command is a little more expensive because it will return both staged and unstaged files
-                status = RunCmd(Settings.GitCommand, "status --porcelain --untracked-files=no -z");
+                status = RunCmd(Settings.GitCommand, "status --porcelain --untracked-files=no -z", SetFilePathsEncodingDelegate);
                 List<GitItemStatus> stagedFiles = GetAllChangedFilesFromString(status, false);
                 return stagedFiles.Where(f => f.IsStaged).ToList<GitItemStatus>();
             }
@@ -2014,7 +2035,8 @@ namespace GitCommands
             if (staged)
                 args = string.Concat("diff -M -C --cached", extraDiffArguments, " -- ", fileName, " ", oldFileName);
 
-            return RunCmd(Settings.GitCommand, args);
+            string result = RunCmd(Settings.GitCommand, args, SetFilesEncodingDelegate);
+            return ReEncodeFileName(result, 4);
         }
 
         public static string StageFiles(IList<GitItemStatus> files)
@@ -2305,12 +2327,14 @@ namespace GitCommands
 
         static public string[] GetFullTree(string id)
         {
-            string tree = RunCachableCmd(Settings.GitCommand, string.Format("ls-tree -z -r --name-only {0}", id));
+            //todo jb
+            string tree = RunCachableCmd(Settings.GitCommand, string.Format("ls-tree -z -r --name-only {0}", id), SetFilePathsEncodingDelegate);
             return tree.Split(new char[] { '\0', '\n' });
         }
         public static List<IGitItem> GetTree(string id)
         {
-            var tree = RunCachableCmd(Settings.GitCommand, "ls-tree -z \"" + id + "\"");
+            //todo jb
+            var tree = RunCachableCmd(Settings.GitCommand, "ls-tree -z \"" + id + "\"", SetFilePathsEncodingDelegate);
 
             var itemsStrings = tree.Split(new char[] { '\0', '\n' });
 
@@ -2420,12 +2444,12 @@ namespace GitCommands
             return
                 RunCachableCmd(
                     Settings.GitCommand,
-                    string.Format("show {0}:\"{1}\"", revision, file.Replace('\\', '/')));
+                    string.Format("show {0}:\"{1}\"", revision, file.Replace('\\', '/')), SetFilesEncodingDelegate);
         }
 
         public static string GetFileText(string id)
         {
-            return RunCachableCmd(Settings.GitCommand, "cat-file blob \"" + id + "\"");
+            return RunCachableCmd(Settings.GitCommand, "cat-file blob \"" + id + "\"", SetFilesEncodingDelegate);
         }
 
         public static void StreamCopy(Stream input, Stream output)
@@ -2523,7 +2547,7 @@ namespace GitCommands
                 RunCmd(
                     Settings.GitCommand,
                     revparseCommand,
-                    out exitCode, ""
+                    out exitCode, "", null //todo jb
                     )
                     .Split('\n');
             if (exitCode == 0)
@@ -2643,6 +2667,69 @@ namespace GitCommands
             else
                 return left + sep + right;
 
+        }
+
+        public static string ReEncodeFileName(string diffStr, int headerLines)
+        {
+            StringReader r = new StringReader(diffStr);
+            StringWriter w = new StringWriter();
+            string line;
+            while ((line = r.ReadLine()) != null && headerLines > 0)
+            {
+                headerLines--;
+                line = ReEncodeFileName(line);
+                w.WriteLine(line);
+            }
+            w.Write(r.ReadToEnd());
+
+            return w.ToString();
+        }
+
+        public static string ReEncodeFileName(string header)
+        {
+            char[] chars = header.ToCharArray();
+            int i = 0;
+            StringBuilder sb = new StringBuilder();
+            while (i < chars.Length)
+            {
+                char c = chars[i];
+                if (c == '\\')
+                {
+                    //there should be 3 digits
+                    if (chars.Length >= i + 3)
+                    {
+                        string octNumber = "" + chars[i + 1] + chars[i + 2] + chars[i + 3];
+
+                        try
+                        {
+                            int code = System.Convert.ToInt32(octNumber, 8);
+                            sb.Append(Settings.FilePathsEncoding.GetString(new byte[] { (byte)code }));
+                            i += 4;
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+                else
+                {
+                    sb.Append(c);
+                    i++;
+                }
+            }
+            return sb.ToString();
+        }
+
+        public static string ReEncodeString(string s, Encoding fromEncoding, Encoding toEncoding)
+        {
+            if (s == null || fromEncoding.HeaderName.Equals(toEncoding.HeaderName))
+                return s;
+            else
+            {
+                byte[] bytes = fromEncoding.GetBytes(s);
+                s = toEncoding.GetString(bytes);
+                return s;
+            }
         }
 
     }

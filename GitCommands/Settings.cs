@@ -352,7 +352,10 @@ namespace GitCommands
                 return result;
             }
         }
-        
+
+        //is it worth to make it setting?
+        public static readonly Encoding FilePathsEncoding = Encoding.Default;
+
         private static string _pullMerge;
         public static string PullMerge
         {
@@ -814,6 +817,7 @@ namespace GitCommands
                     _encoding = new UTF32Encoding(true, false);
                 else
                     _encoding = new UTF8Encoding(false);
+
                 SetFilesEncoding(false, _encoding);
                 SetCommitEncoding(false, _encoding);
                 SetLogOutputEncoding(false, _encoding);

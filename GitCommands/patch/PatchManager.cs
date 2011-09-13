@@ -302,6 +302,7 @@ namespace PatchApply
 
         private void LoadPatchStream(TextReader reader, bool applyPatch)
         {
+
             _patches = patchProcessor.CreatePatchesFromReader(reader);
 
             if (!applyPatch)
@@ -313,5 +314,6 @@ namespace PatchApply
                     patchApply.ApplyPatch();
             }
         }
+
     }
 }
