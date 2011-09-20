@@ -254,38 +254,49 @@ namespace GitCommands
 
         private static Encoding GetEncoding(bool local, string settingName)
         {
+            Encoding result;
+            // todo jb wczytaæ z config
             string lname = local ? "local_" : "global_";
-            lname = lname + settingName;
-
-            Func<object, Encoding> str2enc = (object o) => 
+            lname = lname + settingName + '_' + WorkingDir;
+            object o;
+            if (byNameMap.TryGetValue(lname, out o))
+                result = o as Encoding;
+            else
             {
-                string encodingName = o as string;
-                Encoding encoding;
-                if (!availableEncodings.TryGetValue(encodingName, out encoding))
+                ConfigFile cfg;
+                if (local)
+                    cfg = GitCommandHelpers.GetLocalConfig();
+                else
+                    cfg = GitCommandHelpers.GetGlobalConfig();
+
+                string encodingName = cfg.GetValue(settingName);
+
+                if (!availableEncodings.TryGetValue(encodingName, out result))
                 {
                     try
                     {
                         if (encodingName.IsNullOrEmpty())
-                            encoding = null;
+                            result = null;
                         else
-                            encoding = Encoding.GetEncoding(encodingName);
+                            result = Encoding.GetEncoding(encodingName);
                     }
                     catch (ArgumentException ex)
                     {
                         throw new Exception(ex.Message + Environment.NewLine + "Unsupported encoding set in git config file: " + encodingName + Environment.NewLine + "Please check the setting i18n.commitencoding in your local and/or global config files. Command aborted.", ex);
                     }
                 }
-                return encoding;            
-            };
-            return GetByName<Encoding>(lname, null, str2enc);
+                byNameMap[lname] = result;                
+            }
+
+            return result;
 
         }
        
         private static void SetEncoding(bool local, string settingName, Encoding encoding)
         {
             string lname = local ? "local_" : "global_";
-            lname = lname + settingName;
-            SetByName<Encoding>(lname, encoding, (Encoding e) => e.HeaderName);
+            lname = lname + settingName + '_' + WorkingDir;
+            byNameMap[lname] = encoding;
         }
 
         public static Encoding GetFilesEncoding(bool local) 
@@ -833,9 +844,6 @@ namespace GitCommands
             addEncoding(new UnicodeEncoding());
             addEncoding(new UTF7Encoding());
             addEncoding(new UTF8Encoding());
-            addEncoding(CommitEncoding);
-            addEncoding(LogOutputEncoding);
-            addEncoding(FilesEncoding);
 
             try
             {
