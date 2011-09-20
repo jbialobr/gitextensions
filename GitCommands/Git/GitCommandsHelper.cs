@@ -15,6 +15,8 @@ namespace GitCommands
 {
     public static class GitCommandHelpers
     {
+
+        
         private static GitVersion _versionInUse;
         public static readonly SetupStartInfo SetFilesEncodingDelegate = (ProcessStartInfo startInfo) =>
                    {
@@ -25,6 +27,13 @@ namespace GitCommands
         {
             startInfo.StandardOutputEncoding = Settings.FilePathsEncoding;
             startInfo.StandardErrorEncoding = Settings.FilePathsEncoding;
+        };
+
+        public static readonly Encoding LosslessEncoding = Encoding.GetEncoding("ISO-8859-1");//is any better?
+        public static readonly SetupStartInfo SetLosslessEncodingDelegate = (ProcessStartInfo startInfo) =>
+        {
+            startInfo.StandardOutputEncoding = LosslessEncoding;
+            startInfo.StandardErrorEncoding = LosslessEncoding;
         };
 
         /// <summary>
@@ -792,10 +801,57 @@ namespace GitCommands
             return RunCmd(Settings.GitCommand, CherryPickCmd(cherry, commit, arguments));
         }
 
+        /// <summary>
+        /// header part of show result is encoded in logoutputencoding (including reencoded commit message)
+        /// diff part is raw data in file's original encoding
+        /// s should be encoded in LosslessEncoding
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string ReEncodeShowString(string s)
+        {
+            if (s.IsNullOrEmpty())
+                return s;
+
+            int p = s.IndexOf("diff --git");
+            string header;
+            string diffHeader;
+            string diffContent;
+            string diff;
+            if (p > 0)
+            {
+                header = s.Substring(0, p);
+                diff = s.Substring(p);
+            }
+            else 
+            {
+                header = string.Empty;
+                diff = s;
+            }
+            
+            p = diff.IndexOf("@@");
+            if (p > 0)
+            {
+                diffHeader = diff.Substring(0, p);
+                diffContent = diff.Substring(p);
+            }
+            else
+            {
+                diffHeader = string.Empty;
+                diffContent = diff;
+            }
+            
+            header = ReEncodeString(header, LosslessEncoding, Settings.LogOutputEncoding);
+            diffHeader = ReEncodeString(diffHeader, LosslessEncoding, Settings.LogOutputEncoding);
+            diffHeader = ReEncodeFileName(diffHeader);
+            diffContent = ReEncodeString(diffContent, LosslessEncoding, Settings.FilesEncoding);
+            return header + diffHeader + diffContent;
+        }
+
+
         public static string ShowSha1(string sha1)
         {
-            //todo jb sprawdz kodowanie
-            return RunCachableCmd(Settings.GitCommand, "show " + sha1, null);
+            return ReEncodeShowString(RunCachableCmd(Settings.GitCommand, "show " + sha1, SetLosslessEncodingDelegate));
         }
 
         public static string UserCommitCount()
@@ -2674,7 +2730,7 @@ namespace GitCommands
             StringReader r = new StringReader(diffStr);
             StringWriter w = new StringWriter();
             string line;
-            while ((line = r.ReadLine()) != null && headerLines > 0)
+            while (headerLines > 0 && (line = r.ReadLine()) != null)
             {
                 headerLines--;
                 line = ReEncodeFileName(line);

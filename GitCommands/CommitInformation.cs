@@ -151,9 +151,6 @@ namespace GitCommands
 
             var body = "\n\n" + message.ToString().TrimStart().TrimEnd() + "\n\n";
 
-
-            //TODO jb check encoding of the body
-
             var header = FillToLenght(Strings.GetAuthorText() + ":", COMMITHEADER_STRING_LENGTH) + author + "\n" +
                          FillToLenght(Strings.GetAuthorDateText() + ":", COMMITHEADER_STRING_LENGTH) + GitCommandHelpers.GetRelativeDateString(DateTime.UtcNow, authorDate.UtcDateTime) + " (" + authorDate.LocalDateTime.ToString("ddd MMM dd HH':'mm':'ss yyyy") + ")\n" +
                          FillToLenght(Strings.GetCommitterText() + ":", COMMITHEADER_STRING_LENGTH) + committer + "\n" +

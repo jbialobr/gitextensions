@@ -20,7 +20,6 @@ namespace GitCommands
         public event EventHandler Updated;
         public event EventHandler BeginUpdate;
         public int RevisionCount { get; set; }
-        private Encoding ISO_8859_1Encoding = Encoding.GetEncoding("ISO-8859-1");
 
         public class RevisionGraphUpdatedEventArgs : EventArgs
         {
@@ -164,8 +163,8 @@ namespace GitCommands
                 Encoding LogOutputEncoding = Settings.LogOutputEncoding;
                 gitGetGraphCommand.SetupStartInfoCallback = (ProcessStartInfo startInfo) =>
                 {
-                    startInfo.StandardOutputEncoding = ISO_8859_1Encoding;
-                    startInfo.StandardErrorEncoding = ISO_8859_1Encoding;
+                    startInfo.StandardOutputEncoding = GitCommandHelpers.LosslessEncoding;
+                    startInfo.StandardErrorEncoding = GitCommandHelpers.LosslessEncoding;
                 }; 
 
                 Process p = gitGetGraphCommand.CmdStartProcess(Settings.GitCommand, arguments);
@@ -179,7 +178,7 @@ namespace GitCommands
                     line = p.StandardOutput.ReadLine();
                     //commit message is not encoded by git
                     if (nextStep != ReadStep.CommitMessage)
-                        line = GitCommandHelpers.ReEncodeString(line, ISO_8859_1Encoding, LogOutputEncoding);
+                        line = GitCommandHelpers.ReEncodeString(line, GitCommandHelpers.LosslessEncoding, LogOutputEncoding);
 
                     if (line != null)
                     {
@@ -335,7 +334,7 @@ namespace GitCommands
                     {
                         if (line.IsNullOrEmpty())
                             encoding = Encoding.UTF8;
-                        else if (line.Equals(ISO_8859_1Encoding.HeaderName, StringComparison.CurrentCultureIgnoreCase))
+                        else if (line.Equals(GitCommandHelpers.LosslessEncoding.HeaderName, StringComparison.CurrentCultureIgnoreCase))
                             encoding = null; //no recoding is needed
                         else
                             encoding = Encoding.GetEncoding(line);
@@ -347,7 +346,7 @@ namespace GitCommands
                         encoding = null;
                     }
                     if (encoding != null)
-                        revision.Message = GitCommandHelpers.ReEncodeString(revision.Message, ISO_8859_1Encoding, encoding);
+                        revision.Message = GitCommandHelpers.ReEncodeString(revision.Message, GitCommandHelpers.LosslessEncoding, encoding);
                     break;
 
                 case ReadStep.FileName:

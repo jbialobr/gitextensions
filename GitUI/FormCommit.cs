@@ -325,7 +325,7 @@ namespace GitUI
 
             if (!string.IsNullOrEmpty(patch))
             {
-                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch, null);//todo jb
+                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch, null);
                 if (!string.IsNullOrEmpty(output))
                 {
                     MessageBox.Show(output);
@@ -349,7 +349,7 @@ namespace GitUI
 
             if (!string.IsNullOrEmpty(patch))
             {
-                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch, null);//todo jb
+                string output = GitCommandHelpers.RunCmd(Settings.GitCommand, args, patch, null);
                 if (!string.IsNullOrEmpty(output))
                 {
                     MessageBox.Show(output);
