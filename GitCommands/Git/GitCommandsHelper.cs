@@ -2788,5 +2788,39 @@ namespace GitCommands
             }
         }
 
+        /// <summary>
+        /// reencodes string from GitCommandHelpers.LosslessEncoding to Settings.LogOutputEncoding
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string ReEncodeStringFromLossless(string s)
+        {
+            return ReEncodeString(s, LosslessEncoding, Settings.LogOutputEncoding);
+        }
+
+        public static string ReEncodeStringFromLossless(string s, string toEncodingName)
+        {
+            Encoding encoding;
+            try
+            {
+                if (toEncodingName.IsNullOrEmpty())
+                    encoding = Encoding.UTF8;
+                else if (toEncodingName.Equals(GitCommandHelpers.LosslessEncoding.HeaderName, StringComparison.InvariantCultureIgnoreCase))
+                    encoding = null; //no recoding is needed
+                else
+                    encoding = Encoding.GetEncoding(toEncodingName);
+
+            }
+            catch (Exception e)
+            {
+                return "! Unsupported commit message encoding: " + toEncodingName + " !\n\n" + s;
+            }
+            if (encoding == null)
+                return s;
+            else
+                return ReEncodeString(s, LosslessEncoding, encoding);
+
+        }
+
     }
 }

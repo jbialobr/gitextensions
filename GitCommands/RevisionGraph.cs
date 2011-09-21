@@ -329,24 +329,7 @@ namespace GitCommands
                     break;
 
                 case ReadStep.CommitMessageEncoding:
-                    Encoding encoding;
-                    try
-                    {
-                        if (line.IsNullOrEmpty())
-                            encoding = Encoding.UTF8;
-                        else if (line.Equals(GitCommandHelpers.LosslessEncoding.HeaderName, StringComparison.CurrentCultureIgnoreCase))
-                            encoding = null; //no recoding is needed
-                        else
-                            encoding = Encoding.GetEncoding(line);
-
-                    }
-                    catch (Exception e)
-                    {
-                        revision.Message = "! Unsupported commit message encoding: "+line+" !\n\n" + revision.Message;
-                        encoding = null;
-                    }
-                    if (encoding != null)
-                        revision.Message = GitCommandHelpers.ReEncodeString(revision.Message, GitCommandHelpers.LosslessEncoding, encoding);
+                    revision.Message = GitCommandHelpers.ReEncodeStringFromLossless(revision.Message, line);
                     break;
 
                 case ReadStep.FileName:
