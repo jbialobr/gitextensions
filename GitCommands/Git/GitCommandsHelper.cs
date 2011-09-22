@@ -23,10 +23,10 @@ namespace GitCommands
                        startInfo.StandardOutputEncoding = Settings.FilesEncoding;
                        startInfo.StandardErrorEncoding = Settings.FilesEncoding;
                    };
-        public static readonly SetupStartInfo SetFilePathsEncodingDelegate = (ProcessStartInfo startInfo) =>
+        public static readonly SetupStartInfo SetSystemEncodingDelegate = (ProcessStartInfo startInfo) =>
         {
-            startInfo.StandardOutputEncoding = Settings.FilePathsEncoding;
-            startInfo.StandardErrorEncoding = Settings.FilePathsEncoding;
+            startInfo.StandardOutputEncoding = Settings.SystemEncoding;
+            startInfo.StandardErrorEncoding = Settings.SystemEncoding;
         };
 
         public static readonly Encoding LosslessEncoding = Encoding.GetEncoding("ISO-8859-1");//is any better?
@@ -1799,11 +1799,11 @@ namespace GitCommands
             string cmd = "diff -M -C -z --name-status \"" + to + "\" \"" + from + "\"";
             if (noCache)
             {
-                result = RunCmd(Settings.GitCommand, cmd, SetFilePathsEncodingDelegate);
+                result = RunCmd(Settings.GitCommand, cmd, SetSystemEncodingDelegate);
             }
             else
             {
-                result = RunCachableCmd(Settings.GitCommand, cmd, SetFilePathsEncodingDelegate);
+                result = RunCachableCmd(Settings.GitCommand, cmd, SetSystemEncodingDelegate);
 
             }
             return GetAllChangedFilesFromString(result, true);
@@ -2051,12 +2051,12 @@ namespace GitCommands
 
         public static List<GitItemStatus> GetStagedFiles()
         {
-            string status = RunCmd(Settings.GitCommand, "diff -M -C -z --cached --name-status", SetFilePathsEncodingDelegate);           
+            string status = RunCmd(Settings.GitCommand, "diff -M -C -z --cached --name-status", SetSystemEncodingDelegate);           
             
             if (true && status.Length < 50 && status.Contains("fatal: No HEAD commit to compare"))
             {
                 //This command is a little more expensive because it will return both staged and unstaged files
-                status = RunCmd(Settings.GitCommand, "status --porcelain --untracked-files=no -z", SetFilePathsEncodingDelegate);
+                status = RunCmd(Settings.GitCommand, "status --porcelain --untracked-files=no -z", SetSystemEncodingDelegate);
                 List<GitItemStatus> stagedFiles = GetAllChangedFilesFromString(status, false);
                 return stagedFiles.Where(f => f.IsStaged).ToList<GitItemStatus>();
             }
@@ -2221,7 +2221,7 @@ namespace GitCommands
             string headFileName = Path.Combine(GetGitDirectory(repositoryPath), "HEAD");
             if (File.Exists(headFileName))
             {
-                head = File.ReadAllText(headFileName);
+                head = File.ReadAllText(headFileName, Settings.SystemEncoding);
                 if (!head.Contains("ref:"))
                     head = "(no branch)";
             }
@@ -2284,13 +2284,13 @@ namespace GitCommands
         private static string GetTree(bool tags, bool branches)
         {
             if (tags && branches)
-                return RunCmd(Settings.GitCommand, "show-ref --dereference");
+                return RunCmd(Settings.GitCommand, "show-ref --dereference", SetSystemEncodingDelegate);
 
             if (tags)
-                return RunCmd(Settings.GitCommand, "show-ref --tags");
+                return RunCmd(Settings.GitCommand, "show-ref --tags", SetSystemEncodingDelegate);
 
             if (branches)
-                return RunCmd(Settings.GitCommand, "show-ref --dereference --heads");
+                return RunCmd(Settings.GitCommand, "show-ref --dereference --heads", SetSystemEncodingDelegate);
             return "";
         }
 
@@ -2383,14 +2383,12 @@ namespace GitCommands
 
         static public string[] GetFullTree(string id)
         {
-            //todo jb
-            string tree = RunCachableCmd(Settings.GitCommand, string.Format("ls-tree -z -r --name-only {0}", id), SetFilePathsEncodingDelegate);
+            string tree = RunCachableCmd(Settings.GitCommand, string.Format("ls-tree -z -r --name-only {0}", id), SetSystemEncodingDelegate);
             return tree.Split(new char[] { '\0', '\n' });
         }
         public static List<IGitItem> GetTree(string id)
         {
-            //todo jb
-            var tree = RunCachableCmd(Settings.GitCommand, "ls-tree -z \"" + id + "\"", SetFilePathsEncodingDelegate);
+            var tree = RunCachableCmd(Settings.GitCommand, "ls-tree -z \"" + id + "\"", SetSystemEncodingDelegate);
 
             var itemsStrings = tree.Split(new char[] { '\0', '\n' });
 
@@ -2603,7 +2601,7 @@ namespace GitCommands
                 RunCmd(
                     Settings.GitCommand,
                     revparseCommand,
-                    out exitCode, "", null //todo jb
+                    out exitCode, "", null 
                     )
                     .Split('\n');
             if (exitCode == 0)
@@ -2759,7 +2757,7 @@ namespace GitCommands
                         try
                         {
                             int code = System.Convert.ToInt32(octNumber, 8);
-                            sb.Append(Settings.FilePathsEncoding.GetString(new byte[] { (byte)code }));
+                            sb.Append(Settings.SystemEncoding.GetString(new byte[] { (byte)code }));
                             i += 4;
                         }
                         catch (Exception)

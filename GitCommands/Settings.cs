@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -255,7 +255,6 @@ namespace GitCommands
         private static Encoding GetEncoding(bool local, string settingName)
         {
             Encoding result;
-            // todo jb wczytaæ z config
             string lname = local ? "local_" : "global_";
             lname = lname + settingName + '_' + WorkingDir;
             object o;
@@ -364,8 +363,8 @@ namespace GitCommands
             }
         }
 
-        //is it worth to make it setting?
-        public static readonly Encoding FilePathsEncoding = Encoding.Default;
+        //encoding for files paths, git files
+        public static readonly Encoding SystemEncoding = Encoding.Default;
 
         private static string _pullMerge;
         public static string PullMerge

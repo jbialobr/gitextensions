@@ -57,7 +57,7 @@ namespace GitCommands.Config
             if (string.IsNullOrEmpty(Path.GetFileName(_fileName)) || !File.Exists(_fileName))
                 return;
 
-            FindSections(File.ReadAllLines(_fileName, Settings.FilePathsEncoding));
+            FindSections(File.ReadAllLines(_fileName, Settings.SystemEncoding));
         }
 
         private void FindSections(IEnumerable<string> fileLines)
@@ -119,7 +119,7 @@ namespace GitCommands.Config
                 FileInfoExtensions
                     .MakeFileTemporaryWritable(_fileName,
                                        x =>
-                                       File.WriteAllText(_fileName, configFileContent.ToString(), Settings.FilePathsEncoding));
+                                       File.WriteAllText(_fileName, configFileContent.ToString(), Settings.SystemEncoding));
             }
             catch (Exception ex)
             {
