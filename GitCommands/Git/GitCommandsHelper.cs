@@ -2809,7 +2809,7 @@ namespace GitCommands
                     encoding = Encoding.GetEncoding(toEncodingName);
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return "! Unsupported commit message encoding: " + toEncodingName + " !\n\n" + s;
             }
