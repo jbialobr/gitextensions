@@ -29,11 +29,9 @@ namespace GitUI
             Translate();
 
             FillEncodings(Global_FilesEncoding);
-            FillEncodings(Global_CommitEncoding);
-            FillEncodings(Global_LogEncoding);
+            FillEncodings(Global_AppEncoding);
             FillEncodings(Local_FilesEncoding);
-            FillEncodings(Local_CommitEncoding);
-            FillEncodings(Local_LogEncoding);
+            FillEncodings(Local_AppEncoding);
             
             GlobalEditor.Items.AddRange(new Object[] { "\"" + GetGitExtensionsFullPath() + "\" fileeditor", "vi", "notepad" });
 
@@ -140,11 +138,9 @@ namespace GitUI
             {
                 scriptEvent.DataSource = Enum.GetValues(typeof(ScriptEvent));
                 EncodingToCombo(Settings.GetFilesEncoding(false), Global_FilesEncoding);
-                EncodingToCombo(Settings.GetCommitEncoding(false), Global_CommitEncoding);
-                EncodingToCombo(Settings.GetLogOutputEncoding(false), Global_LogEncoding);
+                EncodingToCombo(Settings.GetAppEncoding(false), Global_AppEncoding);
                 EncodingToCombo(Settings.GetFilesEncoding(true), Local_FilesEncoding);
-                EncodingToCombo(Settings.GetCommitEncoding(true), Local_CommitEncoding);
-                EncodingToCombo(Settings.GetLogOutputEncoding(true), Local_LogEncoding);
+                EncodingToCombo(Settings.GetAppEncoding(true), Local_AppEncoding);
 
                 usePatienceDiffAlgorithm.Checked = Settings.UsePatienceDiffAlgorithm;
 
@@ -437,11 +433,9 @@ namespace GitUI
             Settings.AutoStartPageant = AutostartPageant.Checked;
 
             Settings.SetFilesEncoding(false, ComboToEncoding(Global_FilesEncoding));
-            Settings.SetCommitEncoding(false, ComboToEncoding(Global_CommitEncoding));
-            Settings.SetLogOutputEncoding(false, ComboToEncoding(Global_LogEncoding));
+            Settings.SetAppEncoding(false, ComboToEncoding(Global_AppEncoding));
             Settings.SetFilesEncoding(true, ComboToEncoding(Local_FilesEncoding));
-            Settings.SetCommitEncoding(true, ComboToEncoding(Local_CommitEncoding));
-            Settings.SetLogOutputEncoding(true, ComboToEncoding(Local_LogEncoding));
+            Settings.SetAppEncoding(true, ComboToEncoding(Local_AppEncoding));
 
             Settings.RevisionGridQuickSearchTimeout = (int)RevisionGridQuickSearchTimeout.Value;
 

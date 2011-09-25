@@ -249,35 +249,39 @@ namespace GitCommands
             set { SafeSet("revisiongraphdrawnonrelativestextgray", value, ref _revisionGraphDrawNonRelativesTextGray); }
         }
 
-        public static Dictionary<string, Encoding> availableEncodings = new Dictionary<string,Encoding>();
-
-
-        private static Encoding GetEncoding(bool local, string settingName)
+        public static Dictionary<string, Encoding> availableEncodings = new Dictionary<string, Encoding>();
+           
+        private static Encoding GetEncoding(bool local, string settingName, bool fromSettings)
         {
             Encoding result;
-            string lname = local ? "local_" : "global_";
-            lname = lname + settingName + '_' + WorkingDir;
+            string lname = local ? "_local" + '_' + WorkingDir : "_global";
+            lname = settingName + lname;
             object o;
             if (byNameMap.TryGetValue(lname, out o))
                 result = o as Encoding;
             else
             {
-                ConfigFile cfg;
-                if (local)
-                    cfg = GitCommandHelpers.GetLocalConfig();
+                string encodingName;
+                if (fromSettings)
+                    encodingName = GetString("n_" + lname, null);
                 else
-                    cfg = GitCommandHelpers.GetGlobalConfig();
+                {
+                    ConfigFile cfg;
+                    if (local)
+                        cfg = GitCommandHelpers.GetLocalConfig();
+                    else
+                        cfg = GitCommandHelpers.GetGlobalConfig();
 
-                string encodingName = cfg.GetValue(settingName);
+                    encodingName = cfg.GetValue(settingName);
+                }
 
-                if (!availableEncodings.TryGetValue(encodingName, out result))
+                if (encodingName.IsNullOrEmpty())
+                    result = null;
+                else if (!availableEncodings.TryGetValue(encodingName, out result))
                 {
                     try
                     {
-                        if (encodingName.IsNullOrEmpty())
-                            result = null;
-                        else
-                            result = Encoding.GetEncoding(encodingName);
+                        result = Encoding.GetEncoding(encodingName);
                     }
                     catch (ArgumentException ex)
                     {
@@ -290,21 +294,63 @@ namespace GitCommands
             return result;
 
         }
-       
-        private static void SetEncoding(bool local, string settingName, Encoding encoding)
+
+        private static void SetEncoding(bool local, string settingName, Encoding encoding, bool toSettings)
         {
-            string lname = local ? "local_" : "global_";
-            lname = lname + settingName + '_' + WorkingDir;
+            string lname = local ? "_local" + '_' + WorkingDir : "_global";
+            lname = settingName + lname;
             byNameMap[lname] = encoding;
+            //storing to config file is handled by FormSettings
+            if (toSettings)
+                SetString("n_" + lname, encoding == null ? null : encoding.HeaderName);
+        }
+
+        //encoding for files paths
+        public static readonly Encoding SystemEncoding = Encoding.Default;
+        //follow by git i18n CommitEncoding and LogOutputEncoding is a hell
+        //command output may consist of:
+        //1) commit message encoded in CommitEncoding, recoded to LogOutputEncoding or not dependent of 
+        //   pretty parameter (pretty=raw - recoded, pretty=format - not recoded)
+        //2) author name encoded dependently on config file encoding, not recoded to LogOutputEncoding
+        //3) file content encoded in its original encoding, not recoded to LogOutputEncoding
+        //4) file path (file name is encoded in system default encoding), not recoded to LogOutputEncoding,
+        //   every not ASCII character is escaped with \ followed by its code as a three digit octal number
+        //5) branch or tag name encoded in system default encoding, not recoded to LogOutputEncoding
+        //saying that "At the core level, git is character encoding agnostic." is not enough
+        //In my opinion every data not encoded in utf8 should contain information
+        //about its encoding, also git should emit structuralized data
+        //i18n CommitEncoding and LogOutputEncoding properties are stored in config file, because of 2)
+        //it is better to encode this file in utf8 for international projects. To read config file properly
+        //we must know its encoding, let user decide by setting AppEncoding property which encoding has to be used
+        //to read/write config file
+        public static Encoding GetAppEncoding(bool local)
+        {
+            return GetEncoding(local, "AppEncoding", true);
+        }
+        public static void SetAppEncoding(bool local, Encoding encoding)
+        {
+            SetEncoding(local, "AppEncoding", encoding, true);
+        }
+        public static Encoding AppEncoding
+        {
+            get
+            {
+                Encoding result = GetAppEncoding(true);
+                if (result == null)
+                    result = GetAppEncoding(false);
+                if (result == null)
+                    result = new UTF8Encoding(false);
+                return result;
+            }
         }
 
         public static Encoding GetFilesEncoding(bool local) 
         {
-            return GetEncoding(local, "i18n.filesEncoding");                 
+            return GetEncoding(local, "i18n.filesEncoding", false);                 
         }
         public static void SetFilesEncoding(bool local, Encoding encoding)
         {
-            SetEncoding(local, "i18n.filesEncoding", encoding);
+            SetEncoding(local, "i18n.filesEncoding", encoding, false);
         }
         public static Encoding FilesEncoding
         {
@@ -321,11 +367,11 @@ namespace GitCommands
 
         public static Encoding GetCommitEncoding(bool local)
         {
-            return GetEncoding(local, "i18n.commitEncoding");
+            return GetEncoding(local, "i18n.commitEncoding", false);
         }
         public static void SetCommitEncoding(bool local, Encoding encoding)
         {
-            SetEncoding(local, "i18n.commitEncoding", encoding);
+            SetEncoding(local, "i18n.commitEncoding", encoding, false);
         }
         public static Encoding CommitEncoding
         {
@@ -342,11 +388,11 @@ namespace GitCommands
 
         public static Encoding GetLogOutputEncoding(bool local)
         {
-            return GetEncoding(local, "i18n.logoutputencoding");
+            return GetEncoding(local, "i18n.logoutputencoding", false);
         }
         public static void SetLogOutputEncoding(bool local, Encoding encoding)
         {
-            SetEncoding(local, "i18n.logoutputencoding", encoding);
+            SetEncoding(local, "i18n.logoutputencoding", encoding, false);
         }
         public static Encoding LogOutputEncoding
         {
@@ -362,9 +408,6 @@ namespace GitCommands
                 return result;
             }
         }
-
-        //encoding for files paths, git files
-        public static readonly Encoding SystemEncoding = Encoding.Default;
 
         private static string _pullMerge;
         public static string PullMerge
@@ -829,8 +872,7 @@ namespace GitCommands
                     _encoding = new UTF8Encoding(false);
 
                 SetFilesEncoding(false, _encoding);
-                SetCommitEncoding(false, _encoding);
-                SetLogOutputEncoding(false, _encoding);
+                SetAppEncoding(false, _encoding);
                 SetValue("encoding", null as string);
             }
         }
@@ -1058,10 +1100,21 @@ namespace GitCommands
             return GetByName<bool?>(name, defaultValue, x => x.ToString().Equals(bool.TrueString));
         }
 
+        public static void SetString(string name, string value)
+        {
+            SetByName<string>(name, value, (string s) => s);
+        }
+
+        public static string GetString(string name, string defaultValue)
+        {
+            return GetByName<string>(name, defaultValue, x => x.ToString());
+        }
+
         public static void SetBool(string name, bool? value)
         {
             SetByName<bool?>(name, value, (bool? b) => b.Value ? bool.TrueString : bool.FalseString);
         }
+
 
         public static string PrefixedName(string prefix, string name) 
         {
