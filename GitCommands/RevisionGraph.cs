@@ -57,8 +57,8 @@ namespace GitCommands
             AuthorDate,
             CommitterName,
             CommitterDate,
-            CommitMessage,
             CommitMessageEncoding,
+            CommitMessage,
             FileName,
             Done,
         }
@@ -128,14 +128,14 @@ namespace GitCommands
                 if (!ShaOnly)
                 {
                     formatString +=
-                        /* Tree           */ "%T%n" +
-                        /* Author Name    */ "%aN%n" +
-                        /* Author Email    */ "%aE%n" +
-                        /* Author Date    */ "%ai%n" +
-                        /* Committer Name */ "%cN%n" +
-                        /* Committer Date */ "%ci%n" +
-                        /* Commit Message */ "%s%n" +
-                        /* Commit message encoding */ "%e"; //there is a bug: git does not recode commit message when format i given
+                        /* Tree                    */ "%T%n" +
+                        /* Author Name             */ "%aN%n" +
+                        /* Author Email            */ "%aE%n" +
+                        /* Author Date             */ "%ai%n" +
+                        /* Committer Name          */ "%cN%n" +
+                        /* Committer Date          */ "%ci%n" +
+                        /* Commit message encoding */ "%e%n" + //there is a bug: git does not recode commit message when format is given
+                        /* Commit Message          */ "%s";
                 }
 
                 // NOTE:
@@ -324,12 +324,12 @@ namespace GitCommands
                     }
                     break;
 
-                case ReadStep.CommitMessage:
-                    revision.Message = line;
-                    break;
-
                 case ReadStep.CommitMessageEncoding:
-                    revision.Message = GitCommandHelpers.ReEncodeStringFromLossless(revision.Message, line);
+                    revision.MessageEncoding = line;
+                    break;
+                
+                case ReadStep.CommitMessage:
+                    revision.Message = GitCommandHelpers.ReEncodeStringFromLossless(line, revision.MessageEncoding);
                     break;
 
                 case ReadStep.FileName:

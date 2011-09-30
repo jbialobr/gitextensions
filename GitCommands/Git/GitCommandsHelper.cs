@@ -2420,7 +2420,8 @@ namespace GitCommands
             var itemsStrings =
                 RunCmd(
                     Settings.GitCommand,
-                    blameCommand
+                    blameCommand,
+                    SetLosslessEncodingDelegate
                     )
                     .Split('\n');
 
@@ -2437,10 +2438,10 @@ namespace GitCommands
 
                     //The contents of the actual line is output after the above header, prefixed by a TAB. This is to allow adding more header elements later.
                     if (line.StartsWith("\t"))
-                        blameLine.LineText = line.Substring(1).Trim(new char[] { '\r' });//trim first tab
+                        blameLine.LineText = ReEncodeStringFromLossless(line.Substring(1).Trim(new char[] { '\r' }), Settings.FilesEncoding);//trim first tab
                     else
                         if (line.StartsWith("author-mail"))
-                            blameHeader.AuthorMail = line.Substring("author-mail".Length).Trim();
+                            blameHeader.AuthorMail = ReEncodeStringFromLossless(line.Substring("author-mail".Length).Trim());
                         else
                             if (line.StartsWith("author-time"))
                                 blameHeader.AuthorTime = (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds(int.Parse(line.Substring("author-time".Length).Trim()));
@@ -2452,12 +2453,12 @@ namespace GitCommands
                                     {
                                         blameHeader = new GitBlameHeader();
                                         blameHeader.CommitGuid = blameLine.CommitGuid;
-                                        blameHeader.Author = line.Substring("author".Length).Trim();
+                                        blameHeader.Author = ReEncodeStringFromLossless(line.Substring("author".Length).Trim(), Settings.AppEncoding);
                                         blame.Headers.Add(blameHeader);
                                     }
                                     else
                                         if (line.StartsWith("committer-mail"))
-                                            blameHeader.CommitterMail = line.Substring("committer-mail".Length).Trim();
+                                            blameHeader.CommitterMail = ReEncodeStringFromLossless(line.Substring("committer-mail".Length).Trim());
                                         else
                                             if (line.StartsWith("committer-time"))
                                                 blameHeader.CommitterTime = (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds(int.Parse(line.Substring("committer-time".Length).Trim()));
@@ -2466,13 +2467,14 @@ namespace GitCommands
                                                     blameHeader.CommitterTimeZone = line.Substring("committer-tz".Length).Trim();
                                                 else
                                                     if (line.StartsWith("committer"))
-                                                        blameHeader.Committer = line.Substring("committer".Length).Trim();
+                                                        //there is no information about commiter encoding
+                                                        blameHeader.Committer = ReEncodeStringFromLossless(line.Substring("committer".Length).Trim(), Settings.AppEncoding);
                                                     else
                                                         if (line.StartsWith("summary"))
-                                                            blameHeader.Summary = line.Substring("summary".Length).Trim();
+                                                            blameHeader.Summary = ReEncodeStringFromLossless(line.Substring("summary".Length).Trim());
                                                         else
                                                             if (line.StartsWith("filename"))
-                                                                blameHeader.FileName = line.Substring("filename".Length).Trim();
+                                                                blameHeader.FileName = ReEncodeFileName(line.Substring("filename".Length).Trim());
                                                             else
                                                                 if (line.IndexOf(' ') == 40) //SHA1, create new line!
                                                                 {
@@ -2813,10 +2815,15 @@ namespace GitCommands
             {
                 return "! Unsupported commit message encoding: " + toEncodingName + " !\n\n" + s;
             }
-            if (encoding == null)
+            return ReEncodeStringFromLossless(s, encoding);
+        }
+
+        public static string ReEncodeStringFromLossless(string s, Encoding toEncoding)
+        {
+            if (toEncoding == null)
                 return s;
             else
-                return ReEncodeString(s, LosslessEncoding, encoding);
+                return ReEncodeString(s, LosslessEncoding, toEncoding);
 
         }
 

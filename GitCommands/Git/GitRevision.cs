@@ -29,6 +29,8 @@ namespace GitCommands
         public DateTime CommitDate { get; set; }
 
         public string Message { get; set; }
+        //UTF-8 when is null or empty
+        public string MessageEncoding { get; set; }
 
         #region IGitItem Members
 
