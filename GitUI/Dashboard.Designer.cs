@@ -53,6 +53,7 @@
             // 
             resources.ApplyResources(this.splitContainer5, "splitContainer5");
             this.splitContainer5.BackColor = System.Drawing.SystemColors.Control;
+            this.splitContainer5.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::GitUI.Properties.Settings.Default, "Dashboard_MainSplitContainer_SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.splitContainer5.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             this.splitContainer5.Name = "splitContainer5";
             // 
@@ -65,7 +66,7 @@
             // 
             resources.ApplyResources(this.splitContainer5.Panel2, "splitContainer5.Panel2");
             this.splitContainer5.Panel2.Controls.Add(this.groupLayoutPanel);
-            this.splitContainer5.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(this.splitContainer5_SplitterMoved);
+            this.splitContainer5.SplitterDistance = global::GitUI.Properties.Settings.Default.Dashboard_MainSplitContainer_SplitterDistance;
             // 
             // splitContainer6
             // 
@@ -126,7 +127,10 @@
             // groupLayoutPanel
             // 
             resources.ApplyResources(this.groupLayoutPanel, "groupLayoutPanel");
+            this.groupLayoutPanel.AllowDrop = true;
             this.groupLayoutPanel.Name = "groupLayoutPanel";
+            this.groupLayoutPanel.DragDrop += new System.Windows.Forms.DragEventHandler(this.groupLayoutPanel_DragDrop);
+            this.groupLayoutPanel.DragEnter += new System.Windows.Forms.DragEventHandler(this.groupLayoutPanel_DragEnter);
             // 
             // pictureBox1
             // 

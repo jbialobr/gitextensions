@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Windows.Forms;
-using System.Reflection;
-using ResourceManager.Translation;
-using ResourceManager;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
+using System.Windows.Forms;
+using ResourceManager;
+using ResourceManager.Translation;
 
 namespace GitUI
 {
@@ -18,6 +19,10 @@ namespace GitUI
         readonly TranslationString saveCurrentChangesText = new TranslationString("Do you want to save the current changes?");
         readonly TranslationString saveCurrentChangesCaption = new TranslationString("Save changes");
         readonly TranslationString saveAsText = new TranslationString("Save as");
+        readonly TranslationString selectLanguageCode = new TranslationString("Select a language code first.");
+        readonly TranslationString noLanguageCodeSelected = new TranslationString("There is no languagecode selected." + 
+            Environment.NewLine + "Do you want to select a language code first?");
+        readonly TranslationString noLanguageCodeSelectedCaption = new TranslationString("Language code");
 
         public class TranslateItem : INotifyPropertyChanged
         {
@@ -133,6 +138,119 @@ namespace GitUI
             UpdateProgress();
         }
 
+        private bool IsAssemblyTranslatable(Assembly assembly)
+        {
+            if ((assembly.FullName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("Presentation", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("WindowsBase", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("ICSharpCode", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("access", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("SMDiag", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("System", StringComparison.OrdinalIgnoreCase)) ||
+                (assembly.FullName.StartsWith("vshost", StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private bool IsTranslatableType(Type type)
+        {
+            if ((typeof(GitExtensionsControl).IsAssignableFrom(type)) ||
+                (typeof(GitExtensionsForm).IsAssignableFrom(type)) ||
+                (typeof(ITranslate).IsAssignableFrom(type)))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private List<Type> GetTranslatableTypes()
+        {
+            List<Type> translatableTypes = new List<Type>();
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (IsAssemblyTranslatable(assembly))
+                {
+                    foreach (Type type in assembly.GetTypes())
+                    {
+                        if (IsTranslatableType(type))
+                        {
+                            translatableTypes.Add(type);
+                        }
+                    }
+                }
+            }
+            return translatableTypes;
+        }
+
+        private object CreateInstanceOfClass(Type type)
+        {
+            object obj = null;
+            if (type == GetType())
+                obj = this;
+            else
+            {
+                // try to find parameter less constructor first
+                foreach (ConstructorInfo constructor in type.GetConstructors())
+                {
+                    if (constructor.GetParameters().Length == 0)
+                        obj = Activator.CreateInstance(type);
+                }
+            }
+            if (obj == null && type.GetConstructors().Length > 0)
+            {
+                ConstructorInfo parameterConstructor = type.GetConstructors()[0];
+                var parameters = new List<object>(parameterConstructor.GetParameters().Length);
+                for (int i = 0; i < parameterConstructor.GetParameters().Length; i++)
+                    parameters.Add(null);
+                obj = parameterConstructor.Invoke(parameters.ToArray());
+            }
+
+            return obj;
+        }
+
+        private void GetTranslatableFromComponent(string className, object obj, FieldInfo fieldInfo)
+        {
+            if (!(fieldInfo.GetValue(obj) is Component))
+            {
+                return;
+            }
+            Component component = fieldInfo.GetValue(obj) as Component;
+            foreach (PropertyInfo propertyInfo in fieldInfo.FieldType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic))
+            {
+                if (IsTranslatableItemInComponent(propertyInfo))
+                {
+                    var value = (string)propertyInfo.GetValue(component, null);
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        AddTranslationItem(className, fieldInfo.Name, propertyInfo.Name, value);
+                    }
+                }
+            }
+        }
+
+        private void GetTranslatableFromDataGridViewElement(string className, object obj, FieldInfo fieldInfo)
+        {
+            if (!(fieldInfo.GetValue(obj) is DataGridViewElement))
+            {
+                return;
+            }
+            DataGridViewColumn dataGridViewColumn = fieldInfo.GetValue(obj) as DataGridViewColumn;
+            foreach (PropertyInfo propertyInfo in fieldInfo.FieldType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic))
+            {
+                if (IsTranslatableItemInDataGridViewElement(propertyInfo, fieldInfo, obj))
+                {
+                    var value = (string)propertyInfo.GetValue(dataGridViewColumn, null);
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        AddTranslationItem(className, fieldInfo.Name, propertyInfo.Name, value);
+                    }
+                }
+            }
+        }
+
         public void GetPropertiesToTranslate()
         {
             translateCategories.Items.Clear();
@@ -145,106 +263,39 @@ namespace GitUI
                 //Set language to neutral to get neutral translations
                 GitCommands.Settings.Translation = "";
 
-                foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                List<Type> translatableTypes = GetTranslatableTypes();
+
+                foreach (Type type in translatableTypes)
                 {
-                    if ((assembly.FullName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase)) ||
-                        (assembly.FullName.StartsWith("Microsoft", StringComparison.OrdinalIgnoreCase)) ||
-                        (assembly.FullName.StartsWith("ICSharpCode", StringComparison.OrdinalIgnoreCase)) ||
-                        (assembly.FullName.StartsWith("System.", StringComparison.OrdinalIgnoreCase)) ||
-                        (assembly.FullName.StartsWith("vshost", StringComparison.OrdinalIgnoreCase)))
+                    string className = type.Name;
+                    if (!translateCategories.Items.Contains(className))
+                        translateCategories.Items.Add(className);
+
+                    object obj = CreateInstanceOfClass(type);
+                    if (obj == null)
                     {
                         continue;
                     }
-                    try
+
+                    if (obj is Form)
                     {
-                        foreach (Type type in assembly.GetTypes())
+                        if (!string.IsNullOrEmpty(((Form)obj).Text))
                         {
-                            if (typeof(GitExtensionsControl).IsAssignableFrom(type) ||
-                                typeof(GitExtensionsForm).IsAssignableFrom(type) ||
-                                typeof(ITranslate).IsAssignableFrom(type))
-                            { // if (typeof)
-                                object control = null;
-
-
-                                if (type == GetType())
-                                    control = this;
-                                else
-                                    // try to find parameter less constructor first
-                                    foreach (ConstructorInfo constructor in type.GetConstructors())
-                                    {
-                                        if (constructor.GetParameters().Length == 0)
-                                            control = Activator.CreateInstance(type);
-                                    }
-
-                                if (control == null && type.GetConstructors().Length > 0)
-                                {
-                                    ConstructorInfo parameterConstructor = type.GetConstructors()[0];
-                                    var parameters = new List<object>(parameterConstructor.GetParameters().Length);
-                                    for (int i = 0; i < parameterConstructor.GetParameters().Length; i++)
-                                        parameters.Add(null);
-                                    control = parameterConstructor.Invoke(parameters.ToArray());
-                                }
-
-                                if (control == null)
-                                    continue;
-
-                                string name;
-
-                                if (control is Control)
-                                    name = ((Control)control).Name;
-                                else
-                                    name = control.GetType().Name;
-
-                                if (control is Form && !string.IsNullOrEmpty(name))
-                                {
-                                    if (!translateCategories.Items.Contains(name))
-                                        translateCategories.Items.Add(name);
-
-                                    AddTranslationItem(name, "$this", "Text", ((Form)control).Text);
-                                }
-
-                                foreach (FieldInfo fieldInfo in control.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                                {
-                                    //Skip controls with a name started with "_NO_TRANSLATE_"
-                                    //this is a naming convention, these are not translated
-                                    if (fieldInfo.Name.StartsWith("_NO_TRANSLATE_"))
-                                        continue;
-
-                                    var component = fieldInfo.GetValue(control) as Component;
-
-                                    if (component != null)
-                                    {
-                                        foreach (PropertyInfo propertyInfo in fieldInfo.FieldType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
-                                        {
-                                            if (propertyInfo.PropertyType == typeof(string) && ShouldBeTranslated(propertyInfo))
-                                            {
-                                                var value = (string)propertyInfo.GetValue(component, null);
-
-                                                //Only translate properties that have a neutral value
-                                                if (!string.IsNullOrEmpty(value))
-                                                {
-                                                    AddTranslationItem(name, fieldInfo.Name, propertyInfo.Name, value);
-                                                }
-                                            }
-
-                                            /*
-                                            var t = propertyInfo.GetCustomAttributes(true);
-                                            if (t.Length > 0)
-                                            {
-
-                                            }
-                                            */
-                                        }
-                                    }
-                                }
-                            }
+                            AddTranslationItem(className, "$this", "Text", ((Form)obj).Text);
                         }
                     }
-                    catch (Exception)
+
+                    foreach (FieldInfo fieldInfo in obj.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
                     {
+                        //Skip controls with a name started with "_NO_TRANSLATE_"
+                        //this is a naming convention, these are not translated
+                        if (fieldInfo.Name.StartsWith("_NO_TRANSLATE_"))
+                            continue;
+
+                        GetTranslatableFromComponent(className, obj, fieldInfo);
+                        GetTranslatableFromDataGridViewElement(className, obj, fieldInfo);
                     }
                 }
-
             }
             finally
             {
@@ -253,8 +304,10 @@ namespace GitUI
             }
         }
 
-        private static bool ShouldBeTranslated(PropertyInfo propertyInfo)
+        private bool IsTranslatableItemInComponent(PropertyInfo propertyInfo)
         {
+            if (propertyInfo.PropertyType != typeof(string))
+                return false;
             if (propertyInfo.Name.Equals("Caption", StringComparison.CurrentCultureIgnoreCase))
                 return true;
             if (propertyInfo.Name.Equals("Text", StringComparison.CurrentCultureIgnoreCase))
@@ -263,7 +316,19 @@ namespace GitUI
                 return true;
             if (propertyInfo.Name.Equals("Title", StringComparison.CurrentCultureIgnoreCase))
                 return true;
+            return false;
+        }
 
+        private bool IsTranslatableItemInDataGridViewElement(PropertyInfo propertyInfo, FieldInfo fieldInfo, Object obj)
+        {
+            if (propertyInfo.Name.Equals("HeaderText", StringComparison.CurrentCultureIgnoreCase))
+            {
+                DataGridViewColumn viewCol = fieldInfo.GetValue(obj) as DataGridViewColumn;
+                if (viewCol.Visible)
+                    return true;
+                else
+                    return false;
+            }
             return false;
         }
 
@@ -284,7 +349,7 @@ namespace GitUI
         private void saveAs_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(_NO_TRANSLATE_languageCode.Text))
-                if (MessageBox.Show("There is no languagecode selected." + Environment.NewLine + "Do you want to select a language code first?", "Language code", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                if (MessageBox.Show(this, noLanguageCodeSelected.Text, noLanguageCodeSelectedCaption.Text, MessageBoxButtons.YesNo) == DialogResult.Yes)
                     return;
 
             SaveAs();
@@ -315,7 +380,7 @@ namespace GitUI
 
             var fileDialog = new SaveFileDialog { Title = saveAsText.Text, FileName = translations.Text + ".xml" };
 
-            if (fileDialog.ShowDialog() == DialogResult.OK)
+            if (fileDialog.ShowDialog(this) == DialogResult.OK)
             {
                 TranslationSerializer.Serialize(foreignTranslation, fileDialog.FileName);
                 changesMade = false;
@@ -351,7 +416,7 @@ namespace GitUI
         {
             if (changesMade)
             {
-                if (MessageBox.Show(saveCurrentChangesText.Text, saveCurrentChangesCaption.Text, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                if (MessageBox.Show(this, saveCurrentChangesText.Text, saveCurrentChangesCaption.Text, MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
                     SaveAs();
                 }
@@ -396,6 +461,7 @@ namespace GitUI
 
                 if (translateItem == null) return;
 
+                Debug.Assert(translateItem == (TranslateItem)translateItemBindingSource.Current);
                 neutralTekst.Text = translateItem.NeutralValue;
                 translatedText.Text = translateItem.TranslatedValue;
             }
@@ -414,12 +480,8 @@ namespace GitUI
         {
             if (translateGrid.SelectedRows.Count == 1)
             {
-                if (translateGrid.SelectedRows[0].Index < translateGrid.Rows.Count - 1)
-                {
-                    int newIndex = translateGrid.SelectedRows[0].Index + 1;
-                    translateGrid.SelectedRows[0].Selected = false;
-                    translateGrid.Rows[newIndex].Selected = true;
-                }
+                if (translateGrid.CurrentCell.RowIndex < translateGrid.Rows.Count - 1)
+                    translateItemBindingSource.MoveNext();
             }
             else
                 if (translateGrid.Rows.Count > 0)
@@ -432,12 +494,8 @@ namespace GitUI
         {
             if (translateGrid.SelectedRows.Count == 1)
             {
-                if (translateGrid.SelectedRows[0].Index > 0)
-                {
-                    int newIndex = translateGrid.SelectedRows[0].Index - 1;
-                    translateGrid.SelectedRows[0].Selected = false;
-                    translateGrid.Rows[newIndex].Selected = true;
-                }
+                if (translateGrid.CurrentCell.RowIndex > 0)
+                    translateItemBindingSource.MovePrevious();
             }
             else
                 if (translateGrid.Rows.Count > 0)
@@ -450,7 +508,7 @@ namespace GitUI
         {
             if (string.IsNullOrEmpty(_NO_TRANSLATE_languageCode.Text))
             {
-                MessageBox.Show("Select a language code first.");
+                MessageBox.Show(this, selectLanguageCode.Text);
                 return;
             }
 
@@ -469,7 +527,7 @@ namespace GitUI
         {
             if (string.IsNullOrEmpty(_NO_TRANSLATE_languageCode.Text))
             {
-                MessageBox.Show("Select a language code first.");
+                MessageBox.Show(this, selectLanguageCode.Text);
                 return;
             }
 
@@ -489,6 +547,28 @@ namespace GitUI
         {
             translations.Text = "";
             translations_SelectedIndexChanged(null, null);
+        }
+
+        private void translatedText_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Alt && e.KeyCode == Keys.Up)
+            {
+                e.Handled = true;
+                previousButton_Click(sender, e);
+            }
+            else if (e.Alt && e.KeyCode == Keys.Down ||
+                e.Control && e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+                nextButton_Click(sender, e);
+            }
+            else if (e.Control && e.KeyCode == Keys.Down)
+            {
+                e.Handled = true;
+                translatedText.SelectionStart = 0;
+                translatedText.SelectionLength = translatedText.TextLength;
+                translatedText.SelectedText = neutralTekst.Text;
+            }
         }
     }
 }

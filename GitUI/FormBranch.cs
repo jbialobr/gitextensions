@@ -23,11 +23,11 @@ namespace GitUI
 
                 if (RevisionGrid.GetRevisions().Count != 1)
                 {
-                    MessageBox.Show(_selectOneRevision.Text, _branchCaption.Text);
+                    MessageBox.Show(this, _selectOneRevision.Text, _branchCaption.Text);
                     return;
                 }
 
-                new FormProcess(GitCommandHelpers.BranchCmd(BName.Text, RevisionGrid.GetRevisions()[0].Guid, CheckoutAfterCreate.Checked), PerFormSettingsName()).ShowDialog();
+                new FormProcess(GitCommandHelpers.BranchCmd(BName.Text, RevisionGrid.GetRevisions()[0].Guid, CheckoutAfterCreate.Checked), PerFormSettingsName()).ShowDialog(this);
 
                 Close();
 

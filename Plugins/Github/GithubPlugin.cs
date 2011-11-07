@@ -331,19 +331,19 @@ namespace Github
         {
             List<GithubHostedRemoteInformation> repoInfos = new List<GithubHostedRemoteInformation>();
 
-            var remoteNames = GitCommands.GitCommandHelpers.GetRemotes();
+            var remoteNames = GitCommands.Settings.Module.GetRemotes();
             foreach (var remote in remoteNames.Where(r => !string.IsNullOrEmpty(r)))
             {
-                var remoteUrl = GitCommands.GitCommandHelpers.GetSetting("remote." + remote + ".url");
+                var remoteUrl = GitCommands.Settings.Module.GetSetting("remote." + remote + ".url");
                 if (string.IsNullOrEmpty(remoteUrl))
                     continue;
 
                 var m = Regex.Match(remoteUrl, @"git(?:@|://)github.com[:/]([^/]+)/(\w+)\.git");
                 if (!m.Success)
-                    m = Regex.Match(remoteUrl, @"https?://(?:[^@:]+)?(?::[^/@:]+)?@?github.com/([^/]+)/([\w_\.]+).git");
+                    m = Regex.Match(remoteUrl, @"https?://(?:[^@:]+)?(?::[^/@:]+)?@?github.com/([^/]+)/([\w_\.]+)(?:.git)?");
                 if (m.Success)
                 {
-                    var t = new GithubHostedRemoteInformation() { Name = remote, Owner = m.Groups[1].Value, NameAtGithub = m.Groups[2].Value };
+                    var t = new GithubHostedRemoteInformation() { Name = remote, Owner = m.Groups[1].Value, NameAtGithub = m.Groups[2].Value.Replace(".git", "") };
                     if (!repoInfos.Contains(t))
                         repoInfos.Add(t);
                 }

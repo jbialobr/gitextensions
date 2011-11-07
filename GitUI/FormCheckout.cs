@@ -24,7 +24,7 @@ namespace GitUI
             {
                 if (RevisionGrid.GetRevisions().Count != 1)
                 {
-                    MessageBox.Show(_noRevisionSelectedMsgBox.Text, _noRevisionSelectedMsgBoxCaption.Text);
+                    MessageBox.Show(this, _noRevisionSelectedMsgBox.Text, _noRevisionSelectedMsgBoxCaption.Text);
                     return;
                 }
 
@@ -32,7 +32,7 @@ namespace GitUI
                 if (Force.Checked)
                     command += " --force";
 
-                new FormProcess(command, PerFormSettingsName()).ShowDialog();
+                new FormProcess(command, PerFormSettingsName()).ShowDialog(this);
 
                 Close();
             }

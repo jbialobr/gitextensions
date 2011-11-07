@@ -16,6 +16,14 @@ namespace GitUI
     {
         private const string PuttyCaption = "PuTTY";
 
+        private readonly TranslationString _areYouSureYouWantToRebaseMerge =
+            new TranslationString("The current commit is a merge." + Environment.NewLine +
+                                  //"." + Environment.NewLine +
+                                  "Are you sure you want to rebase this merge?");
+
+        private readonly TranslationString _areYouSureYouWantToRebaseMergeCaption =
+                        new TranslationString("Rebase merge commit?");
+
         private readonly TranslationString _allMergeConflictSolvedQuestion =
             new TranslationString("Are all merge conflicts solved? Do you want to commit?");
 
@@ -43,20 +51,29 @@ namespace GitUI
         private readonly TranslationString _selectSourceDirectory =
             new TranslationString("Please select a source directory");
 
+        private readonly TranslationString _questionInitSubmodules =
+             new TranslationString("The pulled has submodules configured." + Environment.NewLine +
+                                   "Do you want to initialize the submodules?" + Environment.NewLine +
+                                   "This will initialize and update all submodules recursive.");
+
+        private readonly TranslationString _questionInitSubmodulesCaption =
+            new TranslationString("Submodules");
+
         private List<GitHead> _heads;
         public bool ErrorOccurred { get; private set; }
+        private string branchRemote;
+        private string branch;
 
         public FormPull()
         {
             InitializeComponent();
             Translate();
+            
+            UpdateRemotesList();
 
-            IList<string> remotes = new List<string>(GitCommandHelpers.GetRemotes());
-            remotes.Insert(0, "[ All ]");
-            Remotes.DataSource = remotes;
-
-            string branch = GitCommandHelpers.GetSelectedBranch();
-            Remotes.Text = GitCommandHelpers.GetSetting(string.Format("branch.{0}.remote", branch));
+            branch = Settings.Module.GetSelectedBranch();
+            branchRemote = Settings.Module.GetSetting(string.Format("branch.{0}.remote", branch));
+            Remotes.Text = branchRemote;
             _NO_TRANSLATE_localBranch.Text = branch;
 
             Merge.Checked = Settings.PullMerge == "merge";
@@ -64,6 +81,13 @@ namespace GitUI
             Fetch.Checked = Settings.PullMerge == "fetch";
             AutoStash.Checked = Settings.AutoStash;
             ErrorOccurred = false;
+        }
+
+        private void UpdateRemotesList()
+        {
+            IList<string> remotes = new List<string>(Settings.Module.GetRemotes());
+            remotes.Insert(0, "[ All ]");
+            Remotes.DataSource = remotes;
         }
 
         public DialogResult PullAndShowDialogWhenFailed()
@@ -77,18 +101,18 @@ namespace GitUI
         private void BrowseSourceClick(object sender, EventArgs e)
         {
             var dialog = new FolderBrowserDialog { SelectedPath = PullSource.Text };
-            if (dialog.ShowDialog() == DialogResult.OK)
+            if (dialog.ShowDialog(this) == DialogResult.OK)
                 PullSource.Text = dialog.SelectedPath;
         }
 
         private void MergetoolClick(object sender, EventArgs e)
         {
-            GitCommandHelpers.RunRealCmd(Settings.GitCommand, "mergetool");
+            Settings.Module.RunGitRealCmd("mergetool");
 
-            if (MessageBox.Show(_allMergeConflictSolvedQuestion.Text, _allMergeConflictSolvedQuestionCaption.Text,
+            if (MessageBox.Show(this, _allMergeConflictSolvedQuestion.Text, _allMergeConflictSolvedQuestionCaption.Text,
                                 MessageBoxButtons.YesNo) != DialogResult.Yes)
                 return;
-            new FormCommit().ShowDialog();
+            new FormCommit().ShowDialog(this);
         }
 
         private void BranchesDropDown(object sender, EventArgs e)
@@ -107,7 +131,7 @@ namespace GitUI
             {
                 if (PullFromUrl.Checked)
                 {
-                    _heads = GitCommandHelpers.GetHeads(false, true);
+                    _heads = Settings.Module.GetHeads(false, true);
                 }
                 else
                 {
@@ -115,12 +139,12 @@ namespace GitUI
                     // all remote branches but it is also the slowest.
                     // Heads = GitCommands.GitCommands.GetRemoteHeads(Remotes.Text, false, true);
 
-                    // The code below is a quick way to get a list containg all remote branches.
-                    // It only returns the heads that are allready known to the repository. This
+                    // The code below is a quick way to get a list contains all remote branches.
+                    // It only returns the heads that are already known to the repository. This
                     // doesn't return heads that are new on the server. This can be updated using
                     // update branch info in the manage remotes dialog.
                     _heads = new List<GitHead>();
-                    foreach (var head in GitCommandHelpers.GetHeads(true, true))
+                    foreach (var head in Settings.Module.GetHeads(true, true))
                     {
                         if (!head.IsRemote ||
                             !head.Name.StartsWith(Remotes.Text, StringComparison.CurrentCultureIgnoreCase))
@@ -149,22 +173,28 @@ namespace GitUI
             }
         }
 
+        private bool AskIfSubmodulesShouldBeInitialized()
+        {
+            return MessageBox.Show(this, _questionInitSubmodules.Text, _questionInitSubmodulesCaption.Text,
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+        }
+
         public bool PullChanges()
         {
             if (PullFromUrl.Checked && string.IsNullOrEmpty(PullSource.Text))
             {
-                MessageBox.Show(_selectSourceDirectory.Text);
+                MessageBox.Show(this, _selectSourceDirectory.Text);
                 return false;
             }
             if (PullFromRemote.Checked && string.IsNullOrEmpty(Remotes.Text) && !PullAll())
             {
-                MessageBox.Show(_selectRemoteRepository.Text);
+                MessageBox.Show(this, _selectRemoteRepository.Text);
                 return false;
             }
 
             if (!Fetch.Checked && Branches.Text == "*")
             {
-                MessageBox.Show(_fetchAllBranchesCanOnlyWithFetch.Text);
+                MessageBox.Show(this, _fetchAllBranchesCanOnlyWithFetch.Text);
                 return false;
             }
 
@@ -176,6 +206,20 @@ namespace GitUI
                 Settings.PullMerge = "fetch";
 
             Settings.AutoStash = AutoStash.Checked;
+
+            string remoteBranchName = branchRemote + "/" + branch;
+            //ask only if exists commit not pushed to remote yet
+            if (Rebase.Checked && Settings.Module.ExistsMergeCommit(remoteBranchName, branch))
+            {
+                DialogResult dr = MessageBox.Show(this, _areYouSureYouWantToRebaseMerge.Text, _areYouSureYouWantToRebaseMergeCaption.Text, MessageBoxButtons.YesNoCancel);
+                if (dr == DialogResult.Cancel) 
+                {
+                    Close();
+                    return false;
+                }
+                else if (dr != DialogResult.Yes)
+                    return false;
+            }
 
             Repositories.RepositoryHistory.AddMostRecentRepository(PullSource.Text);
 
@@ -192,52 +236,58 @@ namespace GitUI
             ScriptManager.RunEventScripts(ScriptEvent.BeforePull);
 
             var stashed = false;
-            if (!Fetch.Checked && AutoStash.Checked && GitCommandHelpers.GitStatus(false).Count > 0)
+            if (!Fetch.Checked && AutoStash.Checked && Settings.Module.GitStatus(false).Count > 0)
             {
-                new FormProcess("stash save", "PullStash").ShowDialog();
+                new FormProcess("stash save", "PullStash").ShowDialog(this);
                 stashed = true;
             }
 
             FormProcess process = null;
             if (Fetch.Checked)
             {
-                process = new FormRemoteProcess(GitCommandHelpers.FetchCmd(source, Branches.Text, null), PerFormSettingsName());
+                process = new FormRemoteProcess(Settings.Module.FetchCmd(source, Branches.Text, null), PerFormSettingsName());
             }
             else
             {
-                string localBranch = GitCommandHelpers.GetSelectedBranch();
+                string localBranch = Settings.Module.GetSelectedBranch();
                 if (localBranch.Equals("(no branch)", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(Branches.Text))
                     localBranch = null;
 
                 if (Merge.Checked)
-                    process = new FormRemoteProcess(GitCommandHelpers.PullCmd(source, Branches.Text, localBranch, false), PerFormSettingsName());
+                    process = new FormRemoteProcess(Settings.Module.PullCmd(source, Branches.Text, localBranch, false), PerFormSettingsName());
                 else if (Rebase.Checked)
-                    process = new FormRemoteProcess(GitCommandHelpers.PullCmd(source, Branches.Text, localBranch, true), PerFormSettingsName());
+                    process = new FormRemoteProcess(Settings.Module.PullCmd(source, Branches.Text, localBranch, true), PerFormSettingsName());
             }
 
             if (process != null)
             {
                 if (!PullAll())
                     process.Remote = source;
-                process.ShowDialog();
+                process.ShowDialog(this);
                 ErrorOccurred = process.ErrorOccurred();
             }
 
             try
             {
-                if (!GitCommandHelpers.InTheMiddleOfConflictedMerge() &&
-                    !GitCommandHelpers.InTheMiddleOfRebase() &&
+                if (!Settings.Module.InTheMiddleOfConflictedMerge() &&
+                    !Settings.Module.InTheMiddleOfRebase() &&
                     (process != null && !process.ErrorOccurred()))
                 {
+                    if (!Fetch.Checked && File.Exists(Settings.WorkingDir + ".gitmodules"))
+                    {
+                        if (!IsSubmodulesIntialized() && AskIfSubmodulesShouldBeInitialized())
+                            GitUICommands.Instance.StartInitSubmodulesRecursiveDialog();
+                    }
+
                     return true;
                 }
 
                 // Rebase failed -> special 'rebase' merge conflict
-                if (Rebase.Checked && GitCommandHelpers.InTheMiddleOfRebase())
+                if (Rebase.Checked && Settings.Module.InTheMiddleOfRebase())
                 {
                     GitUICommands.Instance.StartRebaseDialog(null);
-                    if (!GitCommandHelpers.InTheMiddleOfConflictedMerge() &&
-                        !GitCommandHelpers.InTheMiddleOfRebase())
+                    if (!Settings.Module.InTheMiddleOfConflictedMerge() &&
+                        !Settings.Module.InTheMiddleOfRebase())
                     {
                         return true;
                     }
@@ -245,15 +295,15 @@ namespace GitUI
                 else
                 {
                     MergeConflictHandler.HandleMergeConflicts();
-                    if (!GitCommandHelpers.InTheMiddleOfConflictedMerge() &&
-                        !GitCommandHelpers.InTheMiddleOfRebase())
+                    if (!Settings.Module.InTheMiddleOfConflictedMerge() &&
+                        !Settings.Module.InTheMiddleOfRebase())
                     {
                         return true;
                     }
                 }
 
-                if (!AutoStash.Checked || !stashed || GitCommandHelpers.InTheMiddleOfConflictedMerge() ||
-                    GitCommandHelpers.InTheMiddleOfRebase())
+                if (!AutoStash.Checked || !stashed || Settings.Module.InTheMiddleOfConflictedMerge() ||
+                    Settings.Module.InTheMiddleOfRebase())
                 {
                     return true;
                 }
@@ -264,11 +314,11 @@ namespace GitUI
                 if (stashed && 
                     process != null && 
                     !process.ErrorOccurred() &&
-                    !GitCommandHelpers.InTheMiddleOfConflictedMerge() && 
-                    !GitCommandHelpers.InTheMiddleOfRebase() &&
-                    MessageBox.Show(_applyShashedItemsAgain.Text, _applyShashedItemsAgainCaption.Text, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    !Settings.Module.InTheMiddleOfConflictedMerge() &&
+                    !Settings.Module.InTheMiddleOfRebase() &&
+                    MessageBox.Show(this, _applyShashedItemsAgain.Text, _applyShashedItemsAgainCaption.Text, MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
-                    new FormProcess("stash pop", "PullStash").ShowDialog();
+                    new FormProcess("stash pop", "PullStash").ShowDialog(this);
                     MergeConflictHandler.HandleMergeConflicts();
                 }               
 
@@ -278,15 +328,29 @@ namespace GitUI
             return false;
         }
 
+        private bool IsSubmodulesIntialized()
+        {
+            // Fast submodules check
+            var submodules = Settings.Module.GetSubmodulesNames();
+            GitModule submodule = new GitModule();
+            foreach (var submoduleName in submodules)
+            {
+                submodule.WorkingDir = Settings.Module.WorkingDir + submoduleName + Settings.PathSeparator;
+                if (!submodule.ValidWorkingDir())
+                    return false;
+            }
+            return true;
+        }
+
         private void LoadPuttyKey()
         {
             if (!GitCommandHelpers.Plink())
                 return;
 
             if (File.Exists(Settings.Pageant))
-                GitCommandHelpers.StartPageantForRemote(Remotes.Text);
+                Settings.Module.StartPageantForRemote(Remotes.Text);
             else
-                MessageBox.Show(_cannotLoadPutty.Text, PuttyCaption);
+                MessageBox.Show(this, _cannotLoadPutty.Text, PuttyCaption);
         }
 
         private void FormPullLoad(object sender, EventArgs e)
@@ -347,9 +411,17 @@ namespace GitUI
             Rebase.Enabled = true;
         }
 
+        private bool bInternalUpdate = false;
+
         private void AddRemoteClick(object sender, EventArgs e)
         {
             GitUICommands.Instance.StartRemotesDialog();
+
+            bInternalUpdate = true;
+            string text = Remotes.Text;
+            UpdateRemotesList();
+            Remotes.Text = text;
+            bInternalUpdate = false;
         }
 
         private void MergeCheckedChanged(object sender, EventArgs e)
@@ -374,7 +446,8 @@ namespace GitUI
 
         private void Remotes_TextChanged(object sender, EventArgs e)
         {
-            RemotesValidating(null, null);
+            if (!bInternalUpdate)
+                RemotesValidating(null, null);
         }
 
         private void RemotesValidating(object sender, CancelEventArgs e)

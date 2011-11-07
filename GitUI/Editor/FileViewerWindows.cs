@@ -217,7 +217,6 @@ namespace GitUI.Editor
             TextEditor.ActiveTextAreaControl.VScrollBar.Width = 0;
             TextEditor.ActiveTextAreaControl.VScrollBar.Visible = enable;
             TextEditor.ActiveTextAreaControl.TextArea.Dock = DockStyle.Fill;
-            TextEditor.Enabled = enable;
         }
 
         public void AddPatchHighlighting()
@@ -302,7 +301,9 @@ namespace GitUI.Editor
             set
             {
                 var scrollBar = TextEditor.ActiveTextAreaControl.VScrollBar;
-                scrollBar.Value = scrollBar.Maximum > value ? value : scrollBar.Maximum;
+                int max = scrollBar.Maximum - scrollBar.LargeChange;
+                max = Math.Max(max, scrollBar.Minimum);
+                scrollBar.Value = max > value ? value : max;
             }
         }
 
