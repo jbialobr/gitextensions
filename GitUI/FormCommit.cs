@@ -161,7 +161,7 @@ namespace GitUI
 
             Unstaged.SetNoFilesText(_noUnstagedChanges.Text);
             Staged.SetNoFilesText(_noStagedChanges.Text);
-            Message.SetEmptyMessage(_enterCommitMessageHint.Text);
+            Message.WatermarkText = _enterCommitMessageHint.Text;
 
             _commitKind = commitKind;
             _editedCommit = editedCommit;
@@ -273,7 +273,7 @@ namespace GitUI
 
         private bool FocusCommitMessage()
         {
-            Message.StartEditing();
+            Message.Focus();
             return true;
         }
 
