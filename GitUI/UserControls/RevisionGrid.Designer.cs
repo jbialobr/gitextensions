@@ -121,6 +121,7 @@ namespace GitUI
             this.Author = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Date = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.createCherrypickBranchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.Revisions)).BeginInit();
             this.mainContextMenu.SuspendLayout();
             this.NoCommits.SuspendLayout();
@@ -438,7 +439,8 @@ namespace GitUI
             // 
             this.manipulateCommitToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fixupCommitToolStripMenuItem,
-            this.squashCommitToolStripMenuItem});
+            this.squashCommitToolStripMenuItem,
+            this.createCherrypickBranchToolStripMenuItem});
             this.manipulateCommitToolStripMenuItem.Name = "manipulateCommitToolStripMenuItem";
             this.manipulateCommitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
             this.manipulateCommitToolStripMenuItem.Text = "Advanced";
@@ -754,6 +756,13 @@ namespace GitUI
             this.toolStripSeparator9.Name = "toolStripSeparator9";
             this.toolStripSeparator9.Size = new System.Drawing.Size(149, 6);
             // 
+            // createCherrypickBranchToolStripMenuItem
+            // 
+            this.createCherrypickBranchToolStripMenuItem.Name = "createCherrypickBranchToolStripMenuItem";
+            this.createCherrypickBranchToolStripMenuItem.Size = new System.Drawing.Size(247, 24);
+            this.createCherrypickBranchToolStripMenuItem.Text = "Create cherry-pick branch";
+            this.createCherrypickBranchToolStripMenuItem.Click += new System.EventHandler(this.createCherrypickBranchToolStripMenuItem_Click);
+            // 
             // RevisionGrid
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
@@ -849,5 +858,6 @@ namespace GitUI
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemView;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
+        private System.Windows.Forms.ToolStripMenuItem createCherrypickBranchToolStripMenuItem;
     }
 }

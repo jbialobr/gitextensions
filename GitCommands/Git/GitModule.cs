@@ -1449,8 +1449,7 @@ namespace GitCommands
 
         public string CheckoutFiles(IEnumerable<string> fileList, string revision, bool force)
         {
-            string files = fileList.Select(s => s.Quote()).Join(" ");
-            return RunGitCmd("checkout " + force.AsForce() + revision.Quote() + " -- " + files);
+            return RunGitCmd(GitCommandHelpers.CheckoutFilesCmd(fileList, revision, force));
         }
 
 

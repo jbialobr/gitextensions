@@ -500,6 +500,13 @@ namespace GitCommands
             return string.Format("branch \"{0}\" \"{1}\"", branchName.Trim(), revision);
         }
 
+        public static string CheckoutFilesCmd(IEnumerable<string> fileList, string revision, bool force)
+        {
+            string files = fileList.Select(s => s.Quote()).Join(" ");
+            return "checkout " + force.AsForce() + revision.Quote() + " -- " + files;
+        }
+
+
         public static string MergedBranches()
         {
             return "branch --merged";

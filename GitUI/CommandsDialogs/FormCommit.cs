@@ -1317,8 +1317,8 @@ namespace GitUI.CommandsDialogs
                 default:
                     message = Module.GetMergeMessage();
 
-                    if (string.IsNullOrEmpty(message) && File.Exists(GitCommands.Commit.GetCommitMessagePath(Module)))
-                        message = File.ReadAllText(GitCommands.Commit.GetCommitMessagePath(Module), Module.CommitEncoding);
+                    if (string.IsNullOrEmpty(message))
+                        message = GitCommands.Commit.GetCommitMessage(Module);
                     break;
             }
 

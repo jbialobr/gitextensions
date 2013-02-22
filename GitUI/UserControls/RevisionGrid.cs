@@ -2442,5 +2442,10 @@ namespace GitUI
             if (children.Count > 0)
                 SetSelectedRevision(new GitRevision(Module, children[0]));
         }
+
+        private void createCherrypickBranchToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            UICommands.CreateCherrypickBranch(this, GetRevision(LastRow));
+        }
     }
 }

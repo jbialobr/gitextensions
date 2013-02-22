@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using GitCommands;
 using GitUI.CommandsDialogs;
@@ -12,6 +13,7 @@ using GitUIPluginInterfaces;
 using GitUIPluginInterfaces.RepositoryHosts;
 using Gravatar;
 using Settings = GitCommands.Settings;
+using GitCommands.Git;
 
 namespace GitUI
 {
@@ -1641,6 +1643,75 @@ namespace GitUI
                                 {
                                     new CreatePullRequestForm(this, gitHoster, chooseRemote, chooseBranch).Show(owner);
                                 });
+        }
+
+        public void CreateCherrypickBranch(IWin32Window owner, GitRevision revision)
+        {
+            if (revision == null)
+                return;
+
+            //TODO show info
+            if (revision.ParentGuids.Length == 0)
+                return;
+
+            string oldMsg = GitCommands.Commit.GetCommitMessage(Module);
+            RepoChangedNotifier.Lock();
+            try
+            {               
+                FormStatus.ProcessStart processStart =
+                form =>
+                {
+                    bool errorOccurred = true;
+
+                    Func<string, bool> runCommand = (command) =>
+                        {
+                            int exitCode;
+                            form.AddMessageLine(Settings.GitCommand + " " + command);
+                            var output = Module.RunGitCmd(command, out exitCode);
+                            if (!output.IsNullOrEmpty())
+                                form.AddMessageLine(output);
+
+                            RepoChangedNotifier.Notify();
+                            return exitCode == 0;
+                        };
+
+
+                        AsyncLoader.DoAsync(
+                        () =>
+                        {
+                            string cmd = GitCommandHelpers.BranchCmd("cherry-pick/" + revision.Guid, revision.ParentGuids[0], true);
+                            if (!runCommand(cmd))
+                                return;
+
+                            //commit each file separately
+                            var files = Module.GetDiffFiles(revision.Guid, revision.ParentGuids[0]);
+                            foreach (var file in files)
+                            {
+                                var filesToCheckout = new List<string>() { file.Name };
+                                cmd = GitCommandHelpers.CheckoutFilesCmd(filesToCheckout, revision.Guid, false);
+                                if (!runCommand(cmd))
+                                    return;
+
+                                GitCommands.Commit.SetCommitMessage(Module, file.Name + "\n\ncherry picked from " + revision.Guid);
+                                var commitCmd = Module.CommitCmd(false, false, string.Empty, true);
+                                if (!runCommand(commitCmd))
+                                    return;
+
+                                errorOccurred = false;
+                            }
+                        },
+                        () => form.Done(!errorOccurred)
+                        );
+                };
+                using (var process = new FormStatus(processStart, null) { Text = "Committing files" })
+                    process.ShowDialog(owner);
+
+            }
+            finally
+            {
+                RepoChangedNotifier.UnLock(false);
+                GitCommands.Commit.SetCommitMessage(Module, oldMsg);
+            }
         }
 
         public void RunCommand(string[] args)

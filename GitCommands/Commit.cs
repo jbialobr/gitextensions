@@ -47,6 +47,14 @@ namespace GitCommands
             }
         }
 
+        public static string GetCommitMessage(GitModule module)
+        {
+            if (File.Exists(GitCommands.Commit.GetCommitMessagePath(module)))
+                return File.ReadAllText(GitCommands.Commit.GetCommitMessagePath(module), module.CommitEncoding);
+            else
+                return string.Empty;
+        }
+
         public static string GetCommitMessagePath(GitModule module)
         {
             return module.WorkingDirGitDir() + Settings.PathSeparator.ToString() + "COMMITMESSAGE";
