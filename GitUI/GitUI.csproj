@@ -35,6 +35,8 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -488,7 +490,7 @@
     <Compile Include="SettingsDialog\Pages\ConfirmationsSettingsPage.Designer.cs">
       <DependentUpon>ConfirmationsSettingsPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="SettingsDialog\Pages\SettingsGroupPages.cs" />
+    <Compile Include="SettingsDialog\SettingsGroupPages.cs" />
     <Compile Include="SettingsDialog\Pages\GitExtensionsSettingsPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -946,6 +948,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="WindowPositionList.cs" />
+    <Compile Include="WordWrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="AboutBox.resx">
@@ -1764,4 +1767,5 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>
