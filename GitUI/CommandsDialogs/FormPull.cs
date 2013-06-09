@@ -81,10 +81,10 @@ namespace GitUI.CommandsDialogs
         private const string AllRemotes = "[ All ]";
 
         private FormPull()
-            : this(null, null, null)
+            : this(null, null)
         { }
 
-        public FormPull(GitUICommands aCommands, string defaultRemoteBranch, string defaultRemote)
+        public FormPull(GitUICommands aCommands, string defaultRemoteBranch)
             : base(aCommands)
         {
             InitializeComponent();
@@ -93,7 +93,7 @@ namespace GitUI.CommandsDialogs
             helpImageDisplayUserControl1.Visible = !Settings.DontShowHelpImages;
 
             if (aCommands != null)
-                Init(defaultRemote);
+                Init();
 
             Merge.Checked = Settings.FormPullAction == Settings.PullAction.Merge;
             Rebase.Checked = Settings.FormPullAction == Settings.PullAction.Rebase;
@@ -108,22 +108,12 @@ namespace GitUI.CommandsDialogs
             }
         }
 
-        private void Init(string defaultRemote)
+        private void Init()
         {            
             UpdateRemotesList();
 
             _branch = Module.GetSelectedBranch();
-
-            string currentBranchRemote;
-            if (defaultRemote.IsNullOrEmpty())
-            {
-                currentBranchRemote = Module.GetSetting(string.Format("branch.{0}.remote", _branch));
-            }
-            else
-            {
-                currentBranchRemote = defaultRemote;
-            }
-
+            string currentBranchRemote = Module.GetSetting(string.Format("branch.{0}.remote", _branch));
             if (currentBranchRemote.IsNullOrEmpty() && _NO_TRANSLATE_Remotes.Items.Count >= 3)
             {
                 IList<string> remotes = (IList<string>)_NO_TRANSLATE_Remotes.DataSource;
