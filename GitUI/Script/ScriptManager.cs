@@ -14,8 +14,6 @@ namespace GitUI.Script
     {
         private static BindingList<ScriptInfo> Scripts { get; set; }
 
-        public static GitCommands.GitModule gitModule;
-
         private static RepoDistSettings _repoDistSettings;
         
         public static RepoDistSettings repoDistSettings
@@ -31,7 +29,7 @@ namespace GitUI.Script
             }
         }
 
-        public static BindingList<ScriptInfo> GetScripts()
+        public static BindingList<ScriptInfo> GetScripts( GitCommands.GitModule gitModule )
         {
             if (Scripts == null)
             {
@@ -53,9 +51,9 @@ namespace GitUI.Script
                 _repoDistSettings.SetString( "ScriptManagerXML", xml );
         }
 
-        public static ScriptInfo GetScript(string key)
+        public static ScriptInfo GetScript(string key, GitCommands.GitModule gitModule )
         {
-            foreach (ScriptInfo script in GetScripts())
+            foreach (ScriptInfo script in GetScripts( gitModule ))
                 if (script.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase))
                     return script;
 
@@ -64,7 +62,7 @@ namespace GitUI.Script
 
         public static void RunEventScripts(GitModuleForm form, ScriptEvent scriptEvent)
         {
-            foreach (ScriptInfo scriptInfo in GetScripts())
+            foreach (ScriptInfo scriptInfo in GetScripts( form.Module ))
                 if (scriptInfo.Enabled && scriptInfo.OnEvent == scriptEvent)
                 {
                     if (scriptInfo.AskConfirmation)

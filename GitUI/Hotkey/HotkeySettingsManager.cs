@@ -38,13 +38,13 @@ namespace GitUI.Hotkey
             return UsedKeys.Contains(keyData);
         }
 
-        public static HotkeyCommand[] LoadHotkeys(string name)
+        public static HotkeyCommand[] LoadHotkeys(string name, GitCommands.GitModule gitModule )
         {
             //var settings = LoadSettings().FirstOrDefault(s => s.Name == name);
             HotkeySettings[] allSettings;
             HotkeySettings settings = new HotkeySettings();
             HotkeySettings scriptkeys = new HotkeySettings();
-            allSettings = LoadSettings();
+            allSettings = LoadSettings( gitModule );
 
             GetUsedHotkeys(allSettings);
 
@@ -72,10 +72,10 @@ namespace GitUI.Hotkey
             return null;
         }
 
-        public static HotkeySettings[] LoadSettings()
+        public static HotkeySettings[] LoadSettings( GitCommands.GitModule gitModule )
         {
             // Get the default settings
-            var defaultSettings = CreateDefaultSettings();
+            var defaultSettings = CreateDefaultSettings( gitModule );
             var loadedSettings = LoadSerializedSettings();
 
             // If the default settings and the loaded settings do not match, then get the default settings, as we don't trust the loaded ones
@@ -167,11 +167,11 @@ namespace GitUI.Hotkey
         }
 
         /// <summary>Asks the IHotkeyables to create their default hotkey settings</summary>
-        public static HotkeySettings[] CreateDefaultSettings()
+        public static HotkeySettings[] CreateDefaultSettings( GitCommands.GitModule gitModule )
         {
             Func<object, Keys, HotkeyCommand> hk = (en, k) => new HotkeyCommand((int)en, en.ToString()) { KeyData = k };
 
-            HotkeyCommand[] j = LoadScriptHotkeys();
+            HotkeyCommand[] j = LoadScriptHotkeys( gitModule );
             
             
             return new[]
@@ -243,9 +243,9 @@ namespace GitUI.Hotkey
               };
         }
 
-        public static HotkeyCommand[] LoadScriptHotkeys()
+        public static HotkeyCommand[] LoadScriptHotkeys( GitCommands.GitModule gitModule )
         {
-            var curScripts = GitUI.Script.ScriptManager.GetScripts();
+            var curScripts = GitUI.Script.ScriptManager.GetScripts( gitModule );
 
             HotkeyCommand[] scriptKeys = new HotkeyCommand[curScripts.Count];
             /* define unusable int for identifying a shortcut for a custom script is pressed

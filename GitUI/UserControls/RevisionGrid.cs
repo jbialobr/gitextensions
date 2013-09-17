@@ -768,7 +768,7 @@ namespace GitUI
 
         public void ReloadHotkeys()
         {
-            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
+            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName, Module );
             _revisionGridMenuCommands.CreateOrUpdateMenuCommands();
         }
 
@@ -2260,7 +2260,7 @@ namespace GitUI
 
         private void AddOwnScripts()
         {
-            IList<ScriptInfo> scripts = ScriptManager.GetScripts();
+            IList<ScriptInfo> scripts = ScriptManager.GetScripts( Module );
             if (scripts == null)
                 return;
             int lastIndex = mainContextMenu.Items.Count;

@@ -9,6 +9,17 @@
             Translate();
         }
 
+        private GitCommands.GitModule gitModule;
+
+        protected override void Init(ISettingsPageHost aPageHost)
+        {
+            base.Init(aPageHost);
+
+            FormSettings formSettings = aPageHost as FormSettings;
+            if( formSettings != null )
+                gitModule = formSettings.Module;
+        }
+
         protected override void SettingsToPage()
         {
             controlHotkeys.ReloadSettings();

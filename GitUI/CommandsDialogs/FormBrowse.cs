@@ -133,8 +133,6 @@ namespace GitUI.CommandsDialogs
         {
             InitializeComponent();
 
-            ScriptManager.gitModule = this.Module;
-
             // set tab page images
             {
                 var imageList = new ImageList();
@@ -184,7 +182,7 @@ namespace GitUI.CommandsDialogs
             GitTree.MouseMove += GitTree_MouseMove;
 
             this.HotkeysEnabled = true;
-            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
+            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName, Module);
             this.toolPanel.SplitterDistance = this.ToolStrip.Height;
             this._dontUpdateOnIndexChange = false;
             GitUICommandsChanged += (a, oldcommands) =>
@@ -584,7 +582,7 @@ namespace GitUI.CommandsDialogs
 
         private void LoadUserMenu()
         {
-            var scripts = ScriptManager.GetScripts().Where(script => script.Enabled
+            var scripts = ScriptManager.GetScripts( Module ).Where(script => script.Enabled
                 && script.OnEvent == ScriptEvent.ShowInUserMenuBar).ToList();
 
             for (int i = ToolStrip.Items.Count - 1; i >= 0; i--)
@@ -1529,7 +1527,7 @@ namespace GitUI.CommandsDialogs
             if (translation != Settings.Translation)
                 Translate();
 
-            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
+            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName, Module);
             RevisionGrid.ReloadHotkeys();
             RevisionGrid.ReloadTranslation();
         }

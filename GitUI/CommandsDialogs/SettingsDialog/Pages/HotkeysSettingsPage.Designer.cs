@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.controlHotkeys = new ControlHotkeys();
+            this.controlHotkeys = new ControlHotkeys( gitModule );
             this.SuspendLayout();
             // 
             // controlHotkeys

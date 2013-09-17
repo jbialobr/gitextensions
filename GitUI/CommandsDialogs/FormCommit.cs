@@ -185,7 +185,7 @@ namespace GitUI.CommandsDialogs
             _editedCommit = editedCommit;
 
             HotkeysEnabled = true;
-            Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
+            Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName, Module);
 
             SelectedDiff.AddContextMenuSeparator();
             _stageSelectedLinesToolStripMenuItem = SelectedDiff.AddContextMenuEntry(_stageSelectedLines.Text, StageSelectedLinesToolStripMenuItemClick);

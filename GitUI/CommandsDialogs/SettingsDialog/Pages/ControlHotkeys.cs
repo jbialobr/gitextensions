@@ -53,11 +53,14 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         #endregion
 
-        public ControlHotkeys()
+        public ControlHotkeys( GitCommands.GitModule gitModule )
         {
+            this.gitModule = gitModule;
             InitializeComponent();
             Translate();
         }
+
+        private GitCommands.GitModule gitModule;
 
         #region Methods
 
@@ -68,7 +71,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         public void ReloadSettings()
         {
-            this.Settings = HotkeySettingsManager.LoadSettings();
+            this.Settings = HotkeySettingsManager.LoadSettings( gitModule );
         }
 
         private void UpdateCombobox(HotkeySettings[] settings)
@@ -149,7 +152,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void bResetToDefaults_Click(object sender, EventArgs e)
         {
-            this.Settings = HotkeySettingsManager.CreateDefaultSettings();
+            this.Settings = HotkeySettingsManager.CreateDefaultSettings( gitModule );
         }
 
         #endregion

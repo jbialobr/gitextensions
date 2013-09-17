@@ -12,6 +12,8 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
     {
         private string IconName = "bug";
 
+        private GitCommands.GitModule gitModule;
+
         public ScriptsSettingsPage()
         {
             InitializeComponent();
@@ -19,6 +21,15 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             Translate();
 
             ScriptManager.repoDistSettings = CurrentSettings;
+        }
+
+        protected override void Init(ISettingsPageHost aPageHost)
+        {
+            base.Init(aPageHost);
+
+            FormSettings formSettings = aPageHost as FormSettings;
+            if( formSettings != null )
+                gitModule = formSettings.Module;
         }
 
         public override bool IsInstantSavePage
@@ -82,7 +93,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         private void LoadScripts()
         {
             ScriptManager.repoDistSettings = CurrentSettings;
-            ScriptList.DataSource = ScriptManager.GetScripts();
+            ScriptList.DataSource = ScriptManager.GetScripts( gitModule );
         }
 
         private void ClearScriptDetails()
@@ -122,7 +133,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         private void addScriptButton_Click(object sender, EventArgs e)
         {
             ScriptList.ClearSelection();
-            ScriptManager.GetScripts().AddNew();
+            ScriptManager.GetScripts( gitModule ).AddNew();
             ScriptList.Rows[ScriptList.RowCount - 1].Selected = true;
             ScriptList_SelectionChanged(null, null); //needed for linux
         }
@@ -131,7 +142,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         {
             if (ScriptList.SelectedRows.Count > 0)
             {
-                ScriptManager.GetScripts().Remove(ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo);
+                ScriptManager.GetScripts( gitModule ).Remove(ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo);
 
                 ClearScriptDetails();
             }
@@ -160,9 +171,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             if (ScriptList.SelectedRows.Count > 0)
             {
                 ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
-                int index = ScriptManager.GetScripts().IndexOf(scriptInfo);
-                ScriptManager.GetScripts().Remove(scriptInfo);
-                ScriptManager.GetScripts().Insert(Math.Max(index - 1, 0), scriptInfo);
+                int index = ScriptManager.GetScripts( gitModule ).IndexOf(scriptInfo);
+                ScriptManager.GetScripts( gitModule ).Remove(scriptInfo);
+                ScriptManager.GetScripts( gitModule ).Insert(Math.Max(index - 1, 0), scriptInfo);
 
                 ScriptList.ClearSelection();
                 ScriptList.Rows[Math.Max(index - 1, 0)].Selected = true;
@@ -175,9 +186,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             if (ScriptList.SelectedRows.Count > 0)
             {
                 ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
-                int index = ScriptManager.GetScripts().IndexOf(scriptInfo);
-                ScriptManager.GetScripts().Remove(scriptInfo);
-                ScriptManager.GetScripts().Insert(Math.Min(index + 1, ScriptManager.GetScripts().Count), scriptInfo);
+                int index = ScriptManager.GetScripts( gitModule ).IndexOf(scriptInfo);
+                ScriptManager.GetScripts( gitModule ).Remove(scriptInfo);
+                ScriptManager.GetScripts( gitModule ).Insert(Math.Min(index + 1, ScriptManager.GetScripts( gitModule ).Count), scriptInfo);
 
                 ScriptList.ClearSelection();
                 ScriptList.Rows[Math.Max(index + 1, 0)].Selected = true;

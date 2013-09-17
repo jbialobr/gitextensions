@@ -115,7 +115,7 @@ namespace GitUI.CommandsDialogs
             merge.Select();
 
             this.HotkeysEnabled = true;
-            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
+            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName, Module);
         }
 
         private void Mergetool_Click(object sender, EventArgs e)

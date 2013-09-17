@@ -165,7 +165,7 @@ namespace GitUI.Editor
 
         protected override void OnRuntimeLoad(EventArgs e)
         {
-            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
+            this.Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName, Module);
             Font = AppSettings.DiffFont;
         }
 
