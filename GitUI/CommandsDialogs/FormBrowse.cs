@@ -133,6 +133,8 @@ namespace GitUI.CommandsDialogs
         {
             InitializeComponent();
 
+            ScriptManager.gitModule = this.Module;
+
             // set tab page images
             {
                 var imageList = new ImageList();

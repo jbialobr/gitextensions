@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
 using GitCommands;
+using GitCommands.Settings;
 
 namespace GitUI.Script
 {
@@ -13,14 +14,43 @@ namespace GitUI.Script
     {
         private static BindingList<ScriptInfo> Scripts { get; set; }
 
+        public static GitCommands.GitModule gitModule;
+
+        private static RepoDistSettings _repoDistSettings;
+        
+        public static RepoDistSettings repoDistSettings
+        {
+            set
+            {
+                _repoDistSettings = value;
+                Scripts = null;
+            }
+            get
+            {
+                return _repoDistSettings;
+            }
+        }
+
         public static BindingList<ScriptInfo> GetScripts()
         {
             if (Scripts == null)
             {
-                DeserializeFromXml(AppSettings.ownScripts);
+                string xml = null;
+                if( _repoDistSettings == null )
+                    _repoDistSettings = RepoDistSettings.CreateEffective( gitModule ); 
+                
+                xml = _repoDistSettings.GetString( "ScriptManagerXML", "" );
+                DeserializeFromXml( xml );
             }
 
             return Scripts;
+        }
+
+        public static void SetScripts()
+        {
+            string xml = ScriptManager.SerializeIntoXml();
+            if( _repoDistSettings != null )
+                _repoDistSettings.SetString( "ScriptManagerXML", xml );
         }
 
         public static ScriptInfo GetScript(string key)

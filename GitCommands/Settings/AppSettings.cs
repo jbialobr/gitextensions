@@ -896,12 +896,6 @@ namespace GitCommands
             set { SetBool("dashboardshowcurrentbranch", value); }
         }
 
-        public static string ownScripts
-        {
-            get { return GetString("ownScripts", ""); }
-            set { SetString("ownScripts", value); }
-        }
-
         public static int RecursiveSubmodules
         {
             get { return GetInt("RecursiveSubmodules", 1); }

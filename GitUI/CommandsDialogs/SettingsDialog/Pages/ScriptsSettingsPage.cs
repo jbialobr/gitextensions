@@ -8,7 +8,7 @@ using GitUI.Script;
 
 namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
-    public partial class ScriptsSettingsPage : SettingsPageWithHeader
+    public partial class ScriptsSettingsPage : RepoDistSettingsPage
     {
         private string IconName = "bug";
 
@@ -17,6 +17,8 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             InitializeComponent();
             Text = "Scripts";
             Translate();
+
+            ScriptManager.repoDistSettings = CurrentSettings;
         }
 
         public override bool IsInstantSavePage
@@ -74,11 +76,12 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void SaveScripts()
         {
-            AppSettings.ownScripts = ScriptManager.SerializeIntoXml();
+            ScriptManager.SetScripts();
         }
 
         private void LoadScripts()
         {
+            ScriptManager.repoDistSettings = CurrentSettings;
             ScriptList.DataSource = ScriptManager.GetScripts();
         }
 
