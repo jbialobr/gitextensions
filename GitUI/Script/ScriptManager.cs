@@ -36,6 +36,7 @@ namespace GitUI.Script
         }
 
         private static BindingList<ScriptInfo> Scripts { get; set; }
+        private static bool effectiveSettingsSet = false;
 
         public static void InvalidateScripts()
         {
@@ -47,8 +48,13 @@ namespace GitUI.Script
             if (Scripts == null)
             {
                 string xml = null;
+
+                effectiveSettingsSet = false;
                 if( repoDistSettings == null )
+                {
                     repoDistSettings = RepoDistSettings.CreateEffective( gitModule );
+                    effectiveSettingsSet = true;
+                }
                 
                 if( merge == true )
                     repoDistSettings.GetValueWithMerger< string >( "ScriptManagerXML", "", s => s, out xml, new Merger() );
@@ -84,6 +90,8 @@ namespace GitUI.Script
 
         public static void RunEventScripts(GitModuleForm form, ScriptEvent scriptEvent)
         {
+            if( !effectiveSettingsSet )
+                InvalidateScripts();
             foreach (ScriptInfo scriptInfo in GetScripts( form.Module ))
                 if (scriptInfo.Enabled && scriptInfo.OnEvent == scriptEvent)
                 {
