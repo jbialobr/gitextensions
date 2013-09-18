@@ -110,6 +110,10 @@ namespace GitCommands.Settings
             value = defaultValue;
 
             // Go grab all instances of the given value at all priority levels.
+            // (Notice that unlike our earlier recursive algorithm, this one does
+            // not suffer from the problem of our desired value not existing at
+            // any one priority level.  We soak up all instances of the value and
+            // then return the correct merged result.)
             List<T> applicableValuesList = new List<T>();
             SettingsContainer<L> priorityLevel = this;
             while( priorityLevel != null )
