@@ -130,10 +130,10 @@ namespace GitCommands.Settings
                 while( applicableValuesList.Count > 1 )
                 {
                     T lowValue, highValue;
-                    highValue = applicableValuesList[0];
-                    lowValue = applicableValuesList[1];
-                    applicableValuesList.RemoveAt(0);
-                    applicableValuesList[0] = merge( lowValue, highValue );
+                    highValue = applicableValuesList[ applicableValuesList.Count - 2 ];
+                    lowValue = applicableValuesList[ applicableValuesList.Count - 1 ];
+                    applicableValuesList.RemoveAt( applicableValuesList.Count - 1 );
+                    applicableValuesList[ applicableValuesList.Count - 1 ] = merge( lowValue, highValue );
                 }
 
                 value = applicableValuesList[0];
