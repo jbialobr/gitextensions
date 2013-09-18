@@ -95,35 +95,44 @@ namespace GitCommands.Settings
             return false;
         }
 
-        public bool SetValueHere<T>( string name, T value, Func<T, string> encode )
+        public void SetValueHere<T>( string name, T value, Func<T, string> encode )
         {
             SettingsCache.SetValue<T>( name, value, encode );
-            return true;
         }
 
-        public bool GetValueHere<T>( string name, T defaultValue, Func<string, T> decode, out T value )
+        public void GetValueHere<T>( string name, T defaultValue, Func<string, T> decode, out T value )
         {
-            return SettingsCache.TryGetValue<T>( name, defaultValue, decode, out value );
+            SettingsCache.TryGetValue<T>( name, defaultValue, decode, out value );
         }
 
-        public bool GetValueHereWithMerge<T>( string name, T defaultValue, Func<string, T> decode, Func<T, T, T> merge, out T value )
+        public void GetValueHereWithMerge<T>( string name, T defaultValue, Func<string, T> decode, Func<T, T, T> merge, out T value )
         {
             value = defaultValue;
 
-            if( LowerPriority == null )
-                return GetValueHere<T>( name, defaultValue, decode, out value );
-            else
+            // Go grab all instances of the given value at all priority levels.
+            List<T> applicableValuesList = new List<T>();
+            SettingsContainer<L> priorityLevel = this;
+            while( priorityLevel != null )
             {
-                T highValue;
-                if( !GetValueHere<T>( name, defaultValue, decode, out highValue ) )
-                    return false;
+                if( priorityLevel.SettingsCache.HasValue( name ) )
+                    if( priorityLevel.SettingsCache.TryGetValue<T>( name, defaultValue, decode, out value ) )
+                        applicableValuesList.Add( value );
+                priorityLevel = priorityLevel.LowerPriority;
+            }
 
-                T lowValue;
-                if( !LowerPriority.GetValueHereWithMerge<T>( name, defaultValue, decode, merge, out lowValue ) )
-                    return false;
+            // Now go merge all of those values into one final value.
+            if( applicableValuesList.Count > 0 )
+            {
+                while( applicableValuesList.Count > 1 )
+                {
+                    T lowValue, highValue;
+                    highValue = applicableValuesList[0];
+                    lowValue = applicableValuesList[1];
+                    applicableValuesList.RemoveAt(0);
+                    applicableValuesList[0] = merge( lowValue, highValue );
+                }
 
-                value = merge( lowValue, highValue );
-                return true;
+                value = applicableValuesList[0];
             }
         }
     }
