@@ -4,10 +4,17 @@ using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Utils;
+using GitCommands.Settings;
 using GitUI.Script;
 
 namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
+    // TODO: There should be no way to add/removed scripts when viewing "Effective Settings".
+    //       In other words, the "Effective Settings" are read-only, because they are always
+    //       computed as a function of the local, distributed and global settings.
+
+    // TODO: Hot-key codes are not being properly allocated anymore.  Fix it.
+
     public partial class ScriptsSettingsPage : RepoDistSettingsPage
     {
         private string IconName = "bug";
@@ -20,7 +27,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             Text = "Scripts";
             Translate();
 
-            ScriptManager.repoDistSettings = CurrentSettings;
+            ScriptManager.InvalidateScripts();
         }
 
         protected override void Init(ISettingsPageHost aPageHost)
@@ -87,13 +94,17 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void SaveScripts()
         {
-            ScriptManager.SetScripts();
+            if( CurrentSettings != this.RepoDistSettingsSet.EffectiveSettings )
+                ScriptManager.SetScripts( CurrentSettings );
         }
 
         private void LoadScripts()
         {
-            ScriptManager.repoDistSettings = CurrentSettings;
-            ScriptList.DataSource = ScriptManager.GetScripts( gitModule );
+            bool merge = false;
+            if( CurrentSettings == this.RepoDistSettingsSet.EffectiveSettings )
+                merge = true;
+            ScriptManager.InvalidateScripts();
+            ScriptList.DataSource = ScriptManager.GetScripts( gitModule, CurrentSettings, merge );
         }
 
         private void ClearScriptDetails()

@@ -12,48 +12,70 @@ namespace GitUI.Script
 {
     public static class ScriptManager
     {
-        private static BindingList<ScriptInfo> Scripts { get; set; }
-
-        private static RepoDistSettings _repoDistSettings;
-        
-        public static RepoDistSettings repoDistSettings
+        public class Merger : SettingsContainer< RepoDistSettings >.Merger
         {
-            set
+            public override bool MergeValues< T >( T higherPriorityValue, T lowerPriorityValue, out T mergedValue, Func<string, T> decode )
             {
-                _repoDistSettings = value;
-                Scripts = null;
-            }
-            get
-            {
-                return _repoDistSettings;
+                mergedValue = higherPriorityValue;
+
+                if( typeof(T) == typeof( string ) )
+                {
+                    string higherPriorityString = higherPriorityValue as string;
+                    string lowerPriorityString = lowerPriorityValue as string;
+                    string mergedString = mergedValue as string;
+
+                    if( !ScriptManager.MergeSettings( higherPriorityString, lowerPriorityString, out mergedString ) )
+                        return false;
+
+                    mergedValue = decode( mergedString );
+                    return true;
+                }
+
+                return false;
             }
         }
 
-        public static BindingList<ScriptInfo> GetScripts( GitCommands.GitModule gitModule )
+        private static BindingList<ScriptInfo> Scripts { get; set; }
+
+        public static void InvalidateScripts()
+        {
+            Scripts = null;
+        }
+
+        public static BindingList<ScriptInfo> GetScripts( GitCommands.GitModule gitModule, RepoDistSettings repoDistSettings = null, bool merge = true )
         {
             if (Scripts == null)
             {
                 string xml = null;
-                if( _repoDistSettings == null )
-                    _repoDistSettings = RepoDistSettings.CreateEffective( gitModule ); 
+                if( repoDistSettings == null )
+                    repoDistSettings = RepoDistSettings.CreateEffective( gitModule );
                 
-                xml = _repoDistSettings.GetString( "ScriptManagerXML", "" );
+                if( merge == true )
+                    repoDistSettings.GetValueWithMerger< string >( "ScriptManagerXML", "", s => s, out xml, new Merger() );
+                else
+                    repoDistSettings.GetValueHere< string >( "ScriptManagerXML", "", s => s, out xml );
+                
                 DeserializeFromXml( xml );
             }
 
             return Scripts;
         }
 
-        public static void SetScripts()
+        public static void SetScripts( RepoDistSettings repoDistSettings )
         {
             string xml = ScriptManager.SerializeIntoXml();
-            if( _repoDistSettings != null )
-                _repoDistSettings.SetString( "ScriptManagerXML", xml );
+            if( repoDistSettings != null )
+                repoDistSettings.SetStringHere( "ScriptManagerXML", xml );
         }
 
         public static ScriptInfo GetScript(string key, GitCommands.GitModule gitModule )
         {
-            foreach (ScriptInfo script in GetScripts( gitModule ))
+            return GetScript( key, GetScripts( gitModule ) );
+        }
+
+        private static ScriptInfo GetScript( string key, BindingList< ScriptInfo > bindingList )
+        {
+            foreach( ScriptInfo script in bindingList )
                 if (script.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase))
                     return script;
 
@@ -73,13 +95,38 @@ namespace GitUI.Script
                 }
         }
 
+        public static bool MergeSettings( string lowerPrioritySettings, string higherPrioritySettings, out string mergedSettings )
+        {
+            mergedSettings = "";
+
+            BindingList< ScriptInfo > finalList;
+            if( !DeserializeFromXml( higherPrioritySettings, out finalList ) )
+                return false;
+
+            BindingList< ScriptInfo > additionalList;
+            if( !DeserializeFromXml( lowerPrioritySettings, out additionalList ) )
+                return false;
+
+            foreach( ScriptInfo scriptInfo in additionalList )
+                if( null == GetScript( scriptInfo.Name, finalList ) )
+                    finalList.Add( scriptInfo );
+
+            mergedSettings = SerializeIntoXml( finalList );
+            return true;
+        }
+
         public static string SerializeIntoXml()
+        {
+            return SerializeIntoXml( Scripts );
+        }
+
+        private static string SerializeIntoXml( BindingList< ScriptInfo > bindingList )
         {
             try
             {
                 var sw = new StringWriter();
                 var serializer = new XmlSerializer(typeof(BindingList<ScriptInfo>));
-                serializer.Serialize(sw, Scripts);
+                serializer.Serialize(sw, bindingList);
                 return sw.ToString();
             }
             catch
@@ -90,12 +137,21 @@ namespace GitUI.Script
 
         public static void DeserializeFromXml(string xml)
         {
+            BindingList< ScriptInfo > result;
+            DeserializeFromXml( xml, out result );
+            Scripts = result;
+        }
+
+        private static bool DeserializeFromXml( string xml, out BindingList< ScriptInfo > result )
+        {
+            result = null;
+
             //When there is nothing to deserialize, add default scripts
             if (string.IsNullOrEmpty(xml))
             {
-                Scripts = new BindingList<ScriptInfo>();
+                result = new BindingList<ScriptInfo>();
                 AddDefaultScripts();
-                return;
+                return true;
             }
 
             try
@@ -104,16 +160,20 @@ namespace GitUI.Script
                 using (var stringReader = new StringReader(xml))
                 {
                     var xmlReader = new XmlTextReader(stringReader);
-                    Scripts = serializer.Deserialize(xmlReader) as BindingList<ScriptInfo>;
+                    result = serializer.Deserialize(xmlReader) as BindingList<ScriptInfo>;
                 }
             }
             catch (Exception ex)
             {
-                Scripts = new BindingList<ScriptInfo>();
+                result = new BindingList<ScriptInfo>();
                 DeserializeFromOldFormat(xml);
                 
                 Trace.WriteLine(ex.Message);                
             }
+
+            if( result == null )
+                return false;
+            return true;
         }
 
         private static void AddDefaultScripts()
