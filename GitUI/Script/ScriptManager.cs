@@ -140,17 +140,17 @@ namespace GitUI.Script
             BindingList< ScriptInfo > result;
             DeserializeFromXml( xml, out result );
             Scripts = result;
+            if( string.IsNullOrEmpty( xml ) )   //When there is nothing to deserialize, add default scripts
+                AddDefaultScripts();
         }
 
         private static bool DeserializeFromXml( string xml, out BindingList< ScriptInfo > result )
         {
             result = null;
 
-            //When there is nothing to deserialize, add default scripts
             if (string.IsNullOrEmpty(xml))
             {
                 result = new BindingList<ScriptInfo>();
-                AddDefaultScripts();
                 return true;
             }
 
