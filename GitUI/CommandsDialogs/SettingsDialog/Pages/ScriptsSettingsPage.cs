@@ -90,6 +90,8 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         protected override void PageToSettings()
         {
             SaveScripts();
+
+            UpdateEnabledness();
         }
 
         private void SaveScripts()
@@ -143,6 +145,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void addScriptButton_Click(object sender, EventArgs e)
         {
+            if( CurrentSettings == RepoDistSettingsSet.EffectiveSettings )
+                return;
+
             ScriptList.ClearSelection();
             ScriptManager.GetScripts( gitModule ).AddNew();
             ScriptList.Rows[ScriptList.RowCount - 1].Selected = true;
@@ -151,6 +156,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void removeScriptButton_Click(object sender, EventArgs e)
         {
+            if( CurrentSettings == RepoDistSettingsSet.EffectiveSettings )
+                return;
+
             if (ScriptList.SelectedRows.Count > 0)
             {
                 ScriptManager.GetScripts( gitModule ).Remove(ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo);
@@ -179,6 +187,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void moveUpButton_Click(object sender, EventArgs e)
         {
+            if( CurrentSettings == RepoDistSettingsSet.EffectiveSettings )
+                return;
+
             if (ScriptList.SelectedRows.Count > 0)
             {
                 ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
@@ -194,6 +205,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void moveDownButton_Click(object sender, EventArgs e)
         {
+            if( CurrentSettings == RepoDistSettingsSet.EffectiveSettings )
+                return;
+
             if (ScriptList.SelectedRows.Count > 0)
             {
                 ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
@@ -209,6 +223,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void browseScriptButton_Click(object sender, EventArgs e)
         {
+            if( CurrentSettings == RepoDistSettingsSet.EffectiveSettings )
+                return;
+
             using (var ofd = new OpenFileDialog
             {
                 InitialDirectory = "c:\\",
@@ -224,22 +241,40 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         private void ScriptList_SelectionChanged(object sender, EventArgs e)
         {
             if (ScriptList.SelectedRows.Count > 0)
-            {
                 RefreshScriptDetails();
+            else
+                ClearScriptDetails();
 
-                removeScriptButton.Enabled = true;
-                moveDownButton.Enabled = moveUpButton.Enabled = false;
-                if (ScriptList.SelectedRows[0].Index > 0)
-                    moveUpButton.Enabled = true;
-                if (ScriptList.SelectedRows[0].Index < ScriptList.RowCount - 1)
-                    moveDownButton.Enabled = true;
+            UpdateEnabledness();
+        }
+
+        private void UpdateEnabledness()
+        {
+            if( CurrentSettings != RepoDistSettingsSet.EffectiveSettings )
+            {
+                addScriptButton.Enabled = true;
+                if( ScriptList.SelectedRows.Count > 0 )
+                {
+                    removeScriptButton.Enabled = true;
+                    moveDownButton.Enabled = moveUpButton.Enabled = false;
+                    if (ScriptList.SelectedRows[0].Index > 0)
+                        moveUpButton.Enabled = true;
+                    if (ScriptList.SelectedRows[0].Index < ScriptList.RowCount - 1)
+                        moveDownButton.Enabled = true;
+                }
+                else
+                {
+                    removeScriptButton.Enabled = false;
+                    moveUpButton.Enabled = false;
+                    moveDownButton.Enabled = false;
+                }
             }
             else
             {
+                addScriptButton.Enabled = false;
                 removeScriptButton.Enabled = false;
                 moveUpButton.Enabled = false;
                 moveDownButton.Enabled = false;
-                ClearScriptDetails();
             }
         }
 
