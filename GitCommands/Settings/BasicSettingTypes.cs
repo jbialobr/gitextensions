@@ -267,18 +267,6 @@ namespace GitCommands.Settings
         {
             return iss.GetValue<string>(name, defaultValue, x => x);
         }
-
-        public static void SetStringHere( this ISettingsSource iss, string name, string value )
-        {
-            iss.SetValueHere< string >( name, value, s => s );
-        }
-
-        public static string GetStringHere( this ISettingsSource iss, string name, string defaultValue )
-        {
-            string value = null;
-            iss.GetValueHere< string >( name, defaultValue, x => x, out value );
-            return value;
-        }
     }
 
 

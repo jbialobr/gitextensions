@@ -32,16 +32,5 @@ namespace GitCommands.Settings
         {
             Parent.SetValue(PathFor(name), value, encode);
         }
-
-        public bool GetValueHere<T>( string name, T defaultValue, Func<string, T> decode, out T value )
-        {
-            value = defaultValue;
-            return false;
-        }
-
-        public bool SetValueHere<T>( string name, T value, Func<T, string> encode )
-        {
-            return false;
-        }
     }
 }

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
@@ -12,29 +13,7 @@ namespace GitUI.Script
 {
     public static class ScriptManager
     {
-        public class Merger : SettingsContainer< RepoDistSettings >.Merger
-        {
-            public override bool MergeValues< T >( T higherPriorityValue, T lowerPriorityValue, out T mergedValue, Func<string, T> decode )
-            {
-                mergedValue = higherPriorityValue;
-
-                if( typeof(T) == typeof( string ) )
-                {
-                    string higherPriorityString = higherPriorityValue as string;
-                    string lowerPriorityString = lowerPriorityValue as string;
-                    string mergedString = mergedValue as string;
-
-                    if( !ScriptManager.MergeSettings( higherPriorityString, lowerPriorityString, out mergedString ) )
-                        return false;
-
-                    mergedValue = decode( mergedString );
-                    return true;
-                }
-
-                return false;
-            }
-        }
-
+        //TODO Spencer - it can not be static no longer
         private static BindingList<ScriptInfo> Scripts { get; set; }
         private static bool effectiveSettingsSet = false;
 
@@ -47,21 +26,21 @@ namespace GitUI.Script
         {
             if (Scripts == null)
             {
-                string xml = null;
-
                 effectiveSettingsSet = false;
-                if( repoDistSettings == null )
+                if (repoDistSettings == null)
                 {
-                    repoDistSettings = RepoDistSettings.CreateEffective( gitModule );
+                    repoDistSettings = RepoDistSettings.CreateEffective(gitModule);
                     effectiveSettingsSet = true;
                 }
-                
-                if( merge == true )
-                    repoDistSettings.GetValueWithMerger< string >( "ScriptManagerXML", "", s => s, out xml, new Merger() );
+
+                Func<BindingList<ScriptInfo>, BindingList<ScriptInfo>, BindingList<ScriptInfo>> mergeFnc;
+                if (merge)
+                    mergeFnc = MergeSettings;
                 else
-                    repoDistSettings.GetValueHere< string >( "ScriptManagerXML", "", s => s, out xml );
-                
-                DeserializeFromXml( xml );
+                    mergeFnc = null;
+
+                Scripts = repoDistSettings.GetValue<BindingList<ScriptInfo>>("ScriptManagerXML",
+                    new BindingList<ScriptInfo>(), DeserializeFromXml, mergeFnc);
             }
 
             return Scripts;
@@ -69,9 +48,8 @@ namespace GitUI.Script
 
         public static void SetScripts( RepoDistSettings repoDistSettings )
         {
-            string xml = ScriptManager.SerializeIntoXml();
-            if( repoDistSettings != null )
-                repoDistSettings.SetStringHere( "ScriptManagerXML", xml );
+            Debug.Assert(repoDistSettings != null);
+            repoDistSettings.SetValue("ScriptManagerXML", Scripts, SerializeIntoXml);
         }
 
         public static ScriptInfo GetScript(string key, GitCommands.GitModule gitModule )
@@ -103,29 +81,18 @@ namespace GitUI.Script
                 }
         }
 
-        public static bool MergeSettings( string lowerPrioritySettings, string higherPrioritySettings, out string mergedSettings )
+        public static BindingList<ScriptInfo> MergeSettings(BindingList<ScriptInfo> lowerPrioritySettings, BindingList<ScriptInfo> higherPrioritySettings)
         {
-            mergedSettings = "";
+            BindingList<ScriptInfo> finalList = new BindingList<ScriptInfo>();
 
-            BindingList< ScriptInfo > finalList;
-            if( !DeserializeFromXml( higherPrioritySettings, out finalList ) )
-                return false;
+            finalList.AddAll(higherPrioritySettings);
 
-            BindingList< ScriptInfo > additionalList;
-            if( !DeserializeFromXml( lowerPrioritySettings, out additionalList ) )
-                return false;
-
-            foreach( ScriptInfo scriptInfo in additionalList )
+            //TODO Spencer  O(m*n) complexity
+            foreach (ScriptInfo scriptInfo in lowerPrioritySettings)
                 if( null == GetScript( scriptInfo.Name, finalList ) )
                     finalList.Add( scriptInfo );
 
-            mergedSettings = SerializeIntoXml( finalList );
-            return true;
-        }
-
-        public static string SerializeIntoXml()
-        {
-            return SerializeIntoXml( Scripts );
+            return finalList;
         }
 
         private static string SerializeIntoXml( BindingList< ScriptInfo > bindingList )
@@ -143,13 +110,14 @@ namespace GitUI.Script
             }
         }
 
-        public static void DeserializeFromXml(string xml)
+        public static BindingList<ScriptInfo> DeserializeFromXml(string xml)
         {
             BindingList< ScriptInfo > result;
             DeserializeFromXml( xml, out result );
-            Scripts = result;
-            if( string.IsNullOrEmpty( xml ) )   //When there is nothing to deserialize, add default scripts
-                AddDefaultScripts();
+            //When there is nothing to deserialize, add default scripts
+            if (string.IsNullOrEmpty(xml))
+                AddDefaultScripts();//TODO Spencer
+            return result;
         }
 
         private static bool DeserializeFromXml( string xml, out BindingList< ScriptInfo > result )

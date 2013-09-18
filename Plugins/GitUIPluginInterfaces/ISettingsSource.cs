@@ -10,9 +10,5 @@ namespace GitUIPluginInterfaces
         T GetValue<T>(string name, T defaultValue, Func<string, T> decode);
 
         void SetValue<T>(string name, T value, Func<T, string> encode);
-
-        bool GetValueHere<T>( string name, T defaultValue, Func<string, T> decode, out T value );
-
-        bool SetValueHere<T>( string name, T value, Func<T, string> encode );
     }
 }
