@@ -18,6 +18,8 @@
             FormSettings formSettings = aPageHost as FormSettings;
             if( formSettings != null )
                 gitModule = formSettings.Module;
+
+            this.controlHotkeys.AssignModule( gitModule );
         }
 
         protected override void SettingsToPage()

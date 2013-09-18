@@ -82,7 +82,6 @@ namespace GitCommands.Settings
 
             if (LowerPriority != null && LowerPriority.TryGetValue(name, defaultValue, decode, merge, out lowerPrioValue))
             {
-
                 if (isSetHere && merge != null)
                 {
                     value = merge(lowerPrioValue, value);
@@ -94,6 +93,38 @@ namespace GitCommands.Settings
             }
 
             return false;
+        }
+
+        public bool SetValueHere<T>( string name, T value, Func<T, string> encode )
+        {
+            SettingsCache.SetValue<T>( name, value, encode );
+            return true;
+        }
+
+        public bool GetValueHere<T>( string name, T defaultValue, Func<string, T> decode, out T value )
+        {
+            return SettingsCache.TryGetValue<T>( name, defaultValue, decode, out value );
+        }
+
+        public bool GetValueHereWithMerge<T>( string name, T defaultValue, Func<string, T> decode, Func<T, T, T> merge, out T value )
+        {
+            value = defaultValue;
+
+            if( LowerPriority == null )
+                return GetValueHere<T>( name, defaultValue, decode, out value );
+            else
+            {
+                T highValue;
+                if( !GetValueHere<T>( name, defaultValue, decode, out highValue ) )
+                    return false;
+
+                T lowValue;
+                if( !LowerPriority.GetValueHereWithMerge<T>( name, defaultValue, decode, merge, out lowValue ) )
+                    return false;
+
+                value = merge( lowValue, highValue );
+                return true;
+            }
         }
     }
 }

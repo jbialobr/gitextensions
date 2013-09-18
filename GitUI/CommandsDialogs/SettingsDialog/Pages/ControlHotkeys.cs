@@ -55,12 +55,17 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         public ControlHotkeys( GitCommands.GitModule gitModule )
         {
-            this.gitModule = gitModule;
+            AssignModule( gitModule );
             InitializeComponent();
             Translate();
         }
 
         private GitCommands.GitModule gitModule;
+
+        public void AssignModule( GitCommands.GitModule gitModule )
+        {
+            this.gitModule = gitModule;
+        }
 
         #region Methods
 

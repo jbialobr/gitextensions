@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using System.ComponentModel;
 using GitCommands;
 using GitCommands.Utils;
 using GitCommands.Settings;
@@ -26,8 +27,6 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             InitializeComponent();
             Text = "Scripts";
             Translate();
-
-            ScriptManager.InvalidateScripts();
         }
 
         protected override void Init(ISettingsPageHost aPageHost)
@@ -97,7 +96,11 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         private void SaveScripts()
         {
             if( CurrentSettings != this.RepoDistSettingsSet.EffectiveSettings )
-                ScriptManager.SetScripts( CurrentSettings );
+            {
+                BindingList< ScriptInfo > scripts = ScriptList.DataSource as BindingList< ScriptInfo >;
+                if( scripts != null )
+                    ScriptManager.SetScripts( CurrentSettings, scripts );
+            }
         }
 
         private void LoadScripts()
@@ -105,7 +108,6 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             bool merge = false;
             if( CurrentSettings == this.RepoDistSettingsSet.EffectiveSettings )
                 merge = true;
-            ScriptManager.InvalidateScripts();
             ScriptList.DataSource = ScriptManager.GetScripts( gitModule, CurrentSettings, merge );
         }
 
@@ -148,10 +150,14 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             if( CurrentSettings == RepoDistSettingsSet.EffectiveSettings )
                 return;
 
-            ScriptList.ClearSelection();
-            ScriptManager.GetScripts( gitModule ).AddNew();
-            ScriptList.Rows[ScriptList.RowCount - 1].Selected = true;
-            ScriptList_SelectionChanged(null, null); //needed for linux
+            BindingList< ScriptInfo > scripts = ScriptList.DataSource as BindingList< ScriptInfo >;
+            if( scripts != null )
+            {
+                ScriptList.ClearSelection();
+                scripts.AddNew();
+                ScriptList.Rows[ScriptList.RowCount - 1].Selected = true;
+                ScriptList_SelectionChanged(null, null); //needed for linux
+            }
         }
 
         private void removeScriptButton_Click(object sender, EventArgs e)
@@ -161,9 +167,12 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
             if (ScriptList.SelectedRows.Count > 0)
             {
-                ScriptManager.GetScripts( gitModule ).Remove(ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo);
-
-                ClearScriptDetails();
+                BindingList< ScriptInfo > scripts = ScriptList.DataSource as BindingList< ScriptInfo >;
+                if( scripts != null )
+                {
+                    scripts.Remove(ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo);
+                    ClearScriptDetails();
+                }
             }
         }
 
@@ -192,14 +201,18 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
             if (ScriptList.SelectedRows.Count > 0)
             {
-                ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
-                int index = ScriptManager.GetScripts( gitModule ).IndexOf(scriptInfo);
-                ScriptManager.GetScripts( gitModule ).Remove(scriptInfo);
-                ScriptManager.GetScripts( gitModule ).Insert(Math.Max(index - 1, 0), scriptInfo);
+                BindingList< ScriptInfo > scripts = ScriptList.DataSource as BindingList< ScriptInfo >;
+                if( scripts != null )
+                {
+                    ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
+                    int index = scripts.IndexOf(scriptInfo);
+                    scripts.Remove(scriptInfo);
+                    scripts.Insert(Math.Max(index - 1, 0), scriptInfo);
 
-                ScriptList.ClearSelection();
-                ScriptList.Rows[Math.Max(index - 1, 0)].Selected = true;
-                ScriptList.Focus();
+                    ScriptList.ClearSelection();
+                    ScriptList.Rows[Math.Max(index - 1, 0)].Selected = true;
+                    ScriptList.Focus();
+                }
             }
         }
 
@@ -210,14 +223,18 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
             if (ScriptList.SelectedRows.Count > 0)
             {
-                ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
-                int index = ScriptManager.GetScripts( gitModule ).IndexOf(scriptInfo);
-                ScriptManager.GetScripts( gitModule ).Remove(scriptInfo);
-                ScriptManager.GetScripts( gitModule ).Insert(Math.Min(index + 1, ScriptManager.GetScripts( gitModule ).Count), scriptInfo);
+                BindingList< ScriptInfo > scripts = ScriptList.DataSource as BindingList< ScriptInfo >;
+                if( scripts != null )
+                {
+                    ScriptInfo scriptInfo = ScriptList.SelectedRows[0].DataBoundItem as ScriptInfo;
+                    int index = scripts.IndexOf(scriptInfo);
+                    scripts.Remove(scriptInfo);
+                    scripts.Insert(Math.Min(index + 1, scripts.Count), scriptInfo);
 
-                ScriptList.ClearSelection();
-                ScriptList.Rows[Math.Max(index + 1, 0)].Selected = true;
-                ScriptList.Focus();
+                    ScriptList.ClearSelection();
+                    ScriptList.Rows[Math.Max(index + 1, 0)].Selected = true;
+                    ScriptList.Focus();
+                }
             }
         }
 
