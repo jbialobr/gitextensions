@@ -136,7 +136,7 @@ namespace GitCommands.Settings
 
                 LastFileModificationDate = GetLastFileModificationUTC();
                 LastFileRead = DateTime.UtcNow;
-                if (SaveTimer != null)
+                if (SaveTimer != null && Directory.Exists(_fileWatcher.Path))
                     _fileWatcher.EnableRaisingEvents = true;
             }
 
@@ -155,7 +155,8 @@ namespace GitCommands.Settings
                 {
                     ReadSettings(SettingsFilePath);
                     LastFileRead = DateTime.UtcNow;
-                    _fileWatcher.EnableRaisingEvents = true;
+                    if( Directory.Exists(_fileWatcher.Path) )
+                        _fileWatcher.EnableRaisingEvents = true;
                 }
                 catch (IOException e)
                 {
