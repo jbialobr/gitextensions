@@ -21,11 +21,11 @@ namespace GitUI.Script
             if (repoDistSettings == null)
                 repoDistSettings = RepoDistSettings.CreateEffective(gitModule);
 
-            Func<BindingList<ScriptInfo>, BindingList<ScriptInfo>, BindingList<ScriptInfo>> mergeFnc;
-            if (merge)
-                mergeFnc = MergeSettings;
-            else
-                mergeFnc = null;
+            //Func<BindingList<ScriptInfo>, BindingList<ScriptInfo>, BindingList<ScriptInfo>> mergeFnc;
+            //if (merge)
+            //    mergeFnc = MergeSettings;
+            //else
+            //    mergeFnc = null;
 
             // POSSIBLE BUG: In the case that mergeFnc is null, we really need to be attempting
             //               to get our scripts list value from the desired RepoDistSettings object,
@@ -35,8 +35,16 @@ namespace GitUI.Script
             //scripts = repoDistSettings.GetValue<BindingList<ScriptInfo>>("ScriptManagerXML",
             //                    new BindingList<ScriptInfo>(), DeserializeFromXml, mergeFnc);
 
-            repoDistSettings.GetValueHereWithMerge< BindingList< ScriptInfo > >( "ScriptManagerXML",
-                               new BindingList< ScriptInfo >(), DeserializeFromXml, mergeFnc, out scripts );
+            if( merge )
+            {
+                repoDistSettings.GetValueHereWithMerge< BindingList< ScriptInfo > >( "ScriptManagerXML",
+                                new BindingList< ScriptInfo >(), DeserializeFromXml, MergeSettings, out scripts );
+            }
+            else
+            {
+                repoDistSettings.GetValueHere< BindingList< ScriptInfo > >( "ScriptManagerXML",
+                                new BindingList< ScriptInfo >(), DeserializeFromXml, out scripts );
+            }
 
             return scripts;
         }
