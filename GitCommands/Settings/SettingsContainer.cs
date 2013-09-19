@@ -92,7 +92,7 @@ namespace GitCommands.Settings
                 return true;
             }
 
-            return false;
+            return isSetHere;
         }
 
         public void SetValueHere<T>( string name, T value, Func<T, string> encode )

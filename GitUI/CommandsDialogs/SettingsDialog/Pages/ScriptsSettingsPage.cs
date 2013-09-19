@@ -16,8 +16,6 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
     {
         private string IconName = "bug";
 
-        private GitCommands.GitModule gitModule;
-
         public ScriptsSettingsPage()
         {
             InitializeComponent();
@@ -28,10 +26,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         protected override void Init(ISettingsPageHost aPageHost)
         {
             base.Init(aPageHost);
-
-            FormSettings formSettings = aPageHost as FormSettings;
-            if( formSettings != null )
-                gitModule = formSettings.Module;
+            ScriptManager.AddDefaultScripts(RepoDistSettingsSet.GlobalSettings);
         }
 
         public override bool IsInstantSavePage
@@ -101,10 +96,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void LoadScripts()
         {
-            bool merge = false;
-            if( CurrentSettings == this.RepoDistSettingsSet.EffectiveSettings )
-                merge = true;
-            ScriptList.DataSource = ScriptManager.GetScripts( CurrentSettings, merge );
+            ScriptList.DataSource = ScriptManager.GetScripts( CurrentSettings );
         }
 
         private void ClearScriptDetails()
