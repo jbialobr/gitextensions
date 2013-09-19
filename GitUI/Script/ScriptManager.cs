@@ -21,20 +21,6 @@ namespace GitUI.Script
             if (repoDistSettings == null)
                 repoDistSettings = RepoDistSettings.CreateEffective(gitModule);
 
-            //Func<BindingList<ScriptInfo>, BindingList<ScriptInfo>, BindingList<ScriptInfo>> mergeFnc;
-            //if (merge)
-            //    mergeFnc = MergeSettings;
-            //else
-            //    mergeFnc = null;
-
-            // POSSIBLE BUG: In the case that mergeFnc is null, we really need to be attempting
-            //               to get our scripts list value from the desired RepoDistSettings object,
-            //               even if no such settings exist in it (at that priority level).
-            //               This "GetValue" function does not necessarily do a "GetValueHere", and
-            //               so we may actually be grabbing the wrong list.
-            //scripts = repoDistSettings.GetValue<BindingList<ScriptInfo>>("ScriptManagerXML",
-            //                    new BindingList<ScriptInfo>(), DeserializeFromXml, mergeFnc);
-
             if( merge )
             {
                 repoDistSettings.GetValueHereWithMerge< BindingList< ScriptInfo > >( "ScriptManagerXML",
@@ -52,12 +38,6 @@ namespace GitUI.Script
         public static void SetScripts( RepoDistSettings repoDistSettings, BindingList< ScriptInfo > scripts )
         {
             Debug.Assert(repoDistSettings != null);
-
-            // POSSIBLE BUG: I'm fairly certain that we really need to be setting
-            //               our scripts list value on the desired RepoDistSettings object.
-            //               This "SetValue" function does not necessarily do a "SetValueHere", and
-            //               so we may actually be setting our list on the wrong priority level.
-            //repoDistSettings.SetValue("ScriptManagerXML", scripts, SerializeIntoXml);
 
             repoDistSettings.SetValueHere< BindingList< ScriptInfo > >( "ScriptManagerXML", scripts, SerializeIntoXml );
         }
@@ -124,9 +104,6 @@ namespace GitUI.Script
 
             finalList.AddAll(higherPrioritySettings);
 
-            // In the case that we don't build a dictionary, we're O(m*n).
-            // In the case that we do, we should be O(m log n).
-            // For small n, the O(m*n) algorithm may be faster than the O(m log n) version.
             Dictionary< string, int > dictionary = null;
             const int threshold = 30;
             if( finalList.Count > threshold )
