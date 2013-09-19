@@ -14,20 +14,25 @@ namespace GitUI.Script
 {
     public static class ScriptManager
     {
-        public static BindingList<ScriptInfo> GetScripts( RepoDistSettings repoDistSettings, bool merge = true )
+        public static BindingList<ScriptInfo> GetScripts( RepoDistSettings repoDistSettings )
         {
-            BindingList< ScriptInfo > scripts = null;
-            
-            if( merge )
+            BindingList<ScriptInfo> scripts = TryGetScripts(repoDistSettings);
+
+            if (scripts == null)
             {
-                repoDistSettings.GetValueHereWithMerge< BindingList< ScriptInfo > >( "ScriptManagerXML",
-                                new BindingList< ScriptInfo >(), DeserializeFromXml, MergeSettings, out scripts );
+                scripts = new BindingList<ScriptInfo>();
+                SetScripts(repoDistSettings, scripts);
             }
-            else
-            {
-                repoDistSettings.GetValueHere< BindingList< ScriptInfo > >( "ScriptManagerXML",
-                                new BindingList< ScriptInfo >(), DeserializeFromXml, out scripts );
-            }
+
+            return  scripts;
+        }
+
+        private static BindingList<ScriptInfo> TryGetScripts(RepoDistSettings repoDistSettings)
+        {
+            BindingList<ScriptInfo> scripts = null;
+
+            scripts = repoDistSettings.GetValue<BindingList<ScriptInfo>>("ScriptManagerXML",
+                    null, DeserializeFromXml, MergeSettings);
 
             return scripts;
         }
@@ -156,7 +161,7 @@ namespace GitUI.Script
 
             if (string.IsNullOrEmpty(xml))
             {
-                result = new BindingList<ScriptInfo>();
+                result = new BindingList<ScriptInfo>();                
                 return true;
             }
 
@@ -180,7 +185,12 @@ namespace GitUI.Script
             return true;
         }
 
-        // TODO: When/where should we call this?
+        public static void AddDefaultScripts(RepoDistSettings settings)
+        {
+            if (TryGetScripts(settings) == null)
+                AddDefaultScripts(GetScripts(settings));
+        }
+
         private static void AddDefaultScripts( BindingList< ScriptInfo > scripts )
         {
             ScriptInfo fetchAfterCommitScript = new ScriptInfo();
