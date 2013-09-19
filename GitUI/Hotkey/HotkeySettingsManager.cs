@@ -245,24 +245,29 @@ namespace GitUI.Hotkey
 
         public static HotkeyCommand[] LoadScriptHotkeys( GitCommands.GitModule gitModule )
         {
+            HotkeyCommand[] scriptKeys = null;
+
             var curScripts = GitUI.Script.ScriptManager.GetScripts( gitModule );
-
-            HotkeyCommand[] scriptKeys = new HotkeyCommand[curScripts.Count];
-            /* define unusable int for identifying a shortcut for a custom script is pressed
-             * all integers above 9000 represent a scripthotkey 
-             * these integers are never matched in the 'switch' routine on a form and
-             * therefore execute the 'default' action
-             */
-
-            int i=0;
-            foreach (GitUI.Script.ScriptInfo s in curScripts)
+            if( curScripts != null )
             {
-                if (!string.IsNullOrEmpty(s.Name))
+                scriptKeys = new HotkeyCommand[curScripts.Count];
+                /* define unusable int for identifying a shortcut for a custom script is pressed
+                 * all integers above 9000 represent a scripthotkey 
+                 * these integers are never matched in the 'switch' routine on a form and
+                 * therefore execute the 'default' action
+                 */
+
+                int i=0;
+                foreach (GitUI.Script.ScriptInfo s in curScripts)
                 {
-                    scriptKeys[i] = new HotkeyCommand((int)s.HotkeyCommandIdentifier, s.Name) { KeyData = (Keys.None) };
-                    i++;
+                    if (!string.IsNullOrEmpty(s.Name))
+                    {
+                        scriptKeys[i] = new HotkeyCommand((int)s.HotkeyCommandIdentifier, s.Name) { KeyData = (Keys.None) };
+                        i++;
+                    }
                 }
             }
+
             return scriptKeys;
         }
 
