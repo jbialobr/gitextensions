@@ -23,6 +23,7 @@ GitExtensionsShellEx/Generated/
 #ignore some unwanted files
 *.ncb
 *.suo
+*.tss
 *.csproj.user
 *.orig
 *.msi
