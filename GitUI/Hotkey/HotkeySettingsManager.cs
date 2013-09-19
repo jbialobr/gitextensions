@@ -247,7 +247,7 @@ namespace GitUI.Hotkey
         {
             HotkeyCommand[] scriptKeys = null;
 
-            var curScripts = GitUI.Script.ScriptManager.GetScripts( gitModule );
+            var curScripts = GitUI.Script.ScriptManager.GetScripts( gitModule.Settings );
             if( curScripts != null )
             {
                 scriptKeys = new HotkeyCommand[curScripts.Count];

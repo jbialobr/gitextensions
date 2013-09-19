@@ -2260,7 +2260,7 @@ namespace GitUI
 
         private void AddOwnScripts()
         {
-            IList<ScriptInfo> scripts = ScriptManager.GetScripts( Module );
+            IList<ScriptInfo> scripts = ScriptManager.GetScripts( Module.Settings );
             if (scripts == null)
                 return;
             int lastIndex = mainContextMenu.Items.Count;

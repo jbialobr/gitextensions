@@ -132,7 +132,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             bool merge = false;
             if( CurrentSettings == this.RepoDistSettingsSet.EffectiveSettings )
                 merge = true;
-            ScriptList.DataSource = ScriptManager.GetScripts( gitModule, CurrentSettings, merge );
+            ScriptList.DataSource = ScriptManager.GetScripts( CurrentSettings, merge );
         }
 
         private void ClearScriptDetails()
