@@ -100,7 +100,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             else
             {
                 // In this case, we have to determine what's changed, and then update the appropriate lists at the appropriate priority levels.
-                BindingList< ScriptInfo > originalScripts = ScriptManager.GetScripts( gitModule, CurrentSettings, true );
+                BindingList< ScriptInfo > originalScripts = ScriptManager.GetScripts( CurrentSettings, true );
                 BindingList< ScriptInfo > addedScripts, deletedScripts;
                 FindScriptListDelta( originalScripts, scripts, out addedScripts, out deletedScripts );
                 //ScriptManager.SetScriptsAtAppropriatePriorityLevels( addedScripts );
