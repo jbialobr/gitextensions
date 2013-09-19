@@ -14,7 +14,7 @@ namespace GitUI.Script
 {
     public static class ScriptManager
     {
-        public static BindingList<ScriptInfo> GetScripts( RepoDistSettings repoDistSettings = null, bool merge = true )
+        public static BindingList<ScriptInfo> GetScripts( RepoDistSettings repoDistSettings, bool merge = true )
         {
             BindingList< ScriptInfo > scripts = null;
             
