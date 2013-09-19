@@ -582,7 +582,7 @@ namespace GitUI.CommandsDialogs
 
         private void LoadUserMenu()
         {
-            var scripts = ScriptManager.GetScripts( Module ).Where(script => script.Enabled
+            var scripts = ScriptManager.GetScripts( Module.Settings ).Where(script => script.Enabled
                 && script.OnEvent == ScriptEvent.ShowInUserMenuBar).ToList();
 
             for (int i = ToolStrip.Items.Count - 1; i >= 0; i--)

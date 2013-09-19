@@ -14,7 +14,7 @@ namespace GitUI.Script
     {
         public static bool ExecuteScriptCommand(IWin32Window owner, GitModule aModule, int command, RevisionGrid revisionGrid = null)
         {
-            var curScripts = ScriptManager.GetScripts( aModule );
+            var curScripts = ScriptManager.GetScripts( aModule.Settings );
             bool anyScriptExecuted = false;
 
             foreach (ScriptInfo s in curScripts)

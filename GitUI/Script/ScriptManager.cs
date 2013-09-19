@@ -14,13 +14,10 @@ namespace GitUI.Script
 {
     public static class ScriptManager
     {
-        public static BindingList<ScriptInfo> GetScripts( GitCommands.GitModule gitModule, RepoDistSettings repoDistSettings = null, bool merge = true )
+        public static BindingList<ScriptInfo> GetScripts( RepoDistSettings repoDistSettings = null, bool merge = true )
         {
             BindingList< ScriptInfo > scripts = null;
             
-            if (repoDistSettings == null)
-                repoDistSettings = RepoDistSettings.CreateEffective(gitModule);
-
             if( merge )
             {
                 repoDistSettings.GetValueHereWithMerge< BindingList< ScriptInfo > >( "ScriptManagerXML",
@@ -44,7 +41,7 @@ namespace GitUI.Script
 
         public static ScriptInfo GetScript(string key, GitCommands.GitModule gitModule )
         {
-            return GetScript( key, GetScripts( gitModule ) );
+            return GetScript( key, GetScripts( gitModule.Settings ) );
         }
 
         private static ScriptInfo GetScript( string key, BindingList< ScriptInfo > scripts, Dictionary< string, int > dictionary = null )
@@ -83,7 +80,7 @@ namespace GitUI.Script
         public static void RunEventScripts(GitModuleForm form, ScriptEvent scriptEvent, BindingList< ScriptInfo > scripts = null)
         {
             if( scripts == null )
-                scripts = GetScripts( form.Module );
+                scripts = GetScripts( form.Module.Settings );
             foreach (ScriptInfo scriptInfo in scripts)
             {
                 if (scriptInfo.Enabled && scriptInfo.OnEvent == scriptEvent)
