@@ -19,7 +19,7 @@
             if( formSettings != null )
                 gitModule = formSettings.Module;
 
-            this.controlHotkeys.AssignModule( gitModule );
+            controlHotkeys.gitModule = gitModule;
         }
 
         protected override void SettingsToPage()
