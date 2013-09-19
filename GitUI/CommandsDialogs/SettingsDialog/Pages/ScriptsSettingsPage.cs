@@ -100,31 +100,13 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             else
             {
                 // In this case, we have to determine what's changed, and then update the appropriate lists at the appropriate priority levels.
-                BindingList< ScriptInfo > originalScripts = ScriptManager.GetScripts( CurrentSettings, true );
-                BindingList< ScriptInfo > addedScripts, deletedScripts;
-                FindScriptListDelta( originalScripts, scripts, out addedScripts, out deletedScripts );
+                /*BindingList< ScriptInfo > originalScripts = ScriptManager.GetScripts( CurrentSettings, true );
+                BindingList< ScriptInfo > addedScripts = new BindingList< ScriptInfo >();
+                BindingList< ScriptInfo > deletedScripts = new BindingList< ScriptInfo >();
+                ScriptManager.FindScriptListDelta( originalScripts, scripts, addedScripts, deletedScripts );*/
                 //ScriptManager.SetScriptsAtAppropriatePriorityLevels( addedScripts );
                 //ScriptManager.RemoveScriptsFromAppropriatePriorityLevels( deletedScripts );
             }
-        }
-
-        public void FindScriptListDelta( BindingList< ScriptInfo > oldList, BindingList< ScriptInfo > newList,
-                                            out BindingList< ScriptInfo > addedScripts, out BindingList< ScriptInfo > deletedScripts )
-        {
-            addedScripts = new BindingList< ScriptInfo >();
-            deletedScripts = new BindingList< ScriptInfo >();
-
-            Dictionary< string, int > oldListDictionary, newListDictionary;
-            ScriptManager.BuildDictionary( oldList, out oldListDictionary );
-            ScriptManager.BuildDictionary( newList, out newListDictionary );
-
-            foreach( ScriptInfo newScript in newList )
-                if( null == ScriptManager.GetScript( newScript.Name, oldList, oldListDictionary ) )
-                    addedScripts.Add( newScript );
-             
-            foreach( ScriptInfo oldScript in oldList )
-                if( null == ScriptManager.GetScript( oldScript.Name, newList, newListDictionary ) )
-                    deletedScripts.Add( oldScript );
         }
 
         private void LoadScripts()

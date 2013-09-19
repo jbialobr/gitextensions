@@ -100,18 +100,32 @@ namespace GitUI.Script
             BindingList<ScriptInfo> additionalList = new BindingList<ScriptInfo>();
 
             finalList.AddAll(higherPrioritySettings);
-
-            Dictionary< string, int > dictionary = null;
-            const int threshold = 30;
-            if( finalList.Count > threshold )
-                BuildDictionary( finalList, out dictionary );
-
-            foreach (ScriptInfo scriptInfo in lowerPrioritySettings)
-                if( null == GetScript( scriptInfo.Name, finalList, dictionary ) )
-                    additionalList.Add( scriptInfo );
-
+            FindScriptListDelta( finalList, lowerPrioritySettings, additionalList, null );
             finalList.AddAll( additionalList );
+
             return finalList;
+        }
+
+        public static void FindScriptListDelta( BindingList< ScriptInfo > oldList, BindingList< ScriptInfo > newList,
+                                            BindingList< ScriptInfo > addedScripts, BindingList< ScriptInfo > deletedScripts )
+        {
+            if( addedScripts != null )
+            {
+                Dictionary< string, int > oldListDictionary;
+                ScriptManager.BuildDictionary( oldList, out oldListDictionary );
+                foreach( ScriptInfo newScript in newList )
+                    if( null == ScriptManager.GetScript( newScript.Name, oldList, oldListDictionary ) )
+                        addedScripts.Add( newScript );
+            }
+
+            if( deletedScripts != null )
+            {
+                Dictionary< string, int > newListDictionary;
+                ScriptManager.BuildDictionary( newList, out newListDictionary );
+                foreach( ScriptInfo oldScript in oldList )
+                    if( null == ScriptManager.GetScript( oldScript.Name, newList, newListDictionary ) )
+                        deletedScripts.Add( oldScript );
+            }
         }
 
         private static string SerializeIntoXml( BindingList< ScriptInfo > scripts )
