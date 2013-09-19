@@ -10,10 +10,6 @@ using GitUI.Script;
 
 namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
-    // TODO: There should be no way to add/removed scripts when viewing "Effective Settings".
-    //       In other words, the "Effective Settings" are read-only, because they are always
-    //       computed as a function of the local, distributed and global settings.
-
     // TODO: Hot-key codes are not being properly allocated anymore.  Fix it.
 
     public partial class ScriptsSettingsPage : RepoDistSettingsPage
