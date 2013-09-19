@@ -47,7 +47,7 @@ namespace GitUI.Script
             return GetScript( key, GetScripts( gitModule ) );
         }
 
-        private static ScriptInfo GetScript( string key, BindingList< ScriptInfo > scripts, Dictionary< string, int > dictionary = null )
+        public static ScriptInfo GetScript( string key, BindingList< ScriptInfo > scripts, Dictionary< string, int > dictionary = null )
         {
             if( dictionary == null )
             {
@@ -69,7 +69,7 @@ namespace GitUI.Script
             return null;
         }
 
-        private static void BuildDictionary( BindingList< ScriptInfo > scripts, out Dictionary< string, int > dictionary )
+        public static void BuildDictionary( BindingList< ScriptInfo > scripts, out Dictionary< string, int > dictionary )
         {
             dictionary = new Dictionary< string, int >();
             for( int index = 0; index < scripts.Count; index++ )

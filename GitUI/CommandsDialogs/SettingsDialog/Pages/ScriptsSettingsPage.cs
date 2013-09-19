@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using System.ComponentModel;
+using System.Collections.Generic;
 using GitCommands;
 using GitCommands.Utils;
 using GitCommands.Settings;
@@ -85,18 +86,45 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         protected override void PageToSettings()
         {
             SaveScripts();
-
-            UpdateEnabledness();
         }
 
         private void SaveScripts()
         {
-            if( CurrentSettings != this.RepoDistSettingsSet.EffectiveSettings )
+            BindingList<ScriptInfo> scripts = ScriptList.DataSource as BindingList<ScriptInfo>;
+            if( CurrentSettings != RepoDistSettingsSet.EffectiveSettings )
             {
-                BindingList< ScriptInfo > scripts = ScriptList.DataSource as BindingList< ScriptInfo >;
+                // In this case we save the scripts list to the priority level that we are currently editing.
                 if( scripts != null )
                     ScriptManager.SetScripts( CurrentSettings, scripts );
             }
+            else
+            {
+                // In this case, we have to determine what's changed, and then update the appropriate lists at the appropriate priority levels.
+                BindingList< ScriptInfo > originalScripts = ScriptManager.GetScripts( gitModule, CurrentSettings, true );
+                BindingList< ScriptInfo > addedScripts, deletedScripts;
+                FindScriptListDelta( originalScripts, scripts, out addedScripts, out deletedScripts );
+                //ScriptManager.SetScriptsAtAppropriatePriorityLevels( addedScripts );
+                //ScriptManager.RemoveScriptsFromAppropriatePriorityLevels( deletedScripts );
+            }
+        }
+
+        public void FindScriptListDelta( BindingList< ScriptInfo > oldList, BindingList< ScriptInfo > newList,
+                                            out BindingList< ScriptInfo > addedScripts, out BindingList< ScriptInfo > deletedScripts )
+        {
+            addedScripts = new BindingList< ScriptInfo >();
+            deletedScripts = new BindingList< ScriptInfo >();
+
+            Dictionary< string, int > oldListDictionary, newListDictionary;
+            ScriptManager.BuildDictionary( oldList, out oldListDictionary );
+            ScriptManager.BuildDictionary( newList, out newListDictionary );
+
+            foreach( ScriptInfo newScript in newList )
+                if( null == ScriptManager.GetScript( newScript.Name, oldList, oldListDictionary ) )
+                    addedScripts.Add( newScript );
+             
+            foreach( ScriptInfo oldScript in oldList )
+                if( null == ScriptManager.GetScript( oldScript.Name, newList, newListDictionary ) )
+                    deletedScripts.Add( oldScript );
         }
 
         private void LoadScripts()
@@ -263,28 +291,17 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void UpdateEnabledness()
         {
-            if( CurrentSettings != RepoDistSettingsSet.EffectiveSettings )
+            if( ScriptList.SelectedRows.Count > 0 )
             {
-                addScriptButton.Enabled = true;
-                if( ScriptList.SelectedRows.Count > 0 )
-                {
-                    removeScriptButton.Enabled = true;
-                    moveDownButton.Enabled = moveUpButton.Enabled = false;
-                    if (ScriptList.SelectedRows[0].Index > 0)
-                        moveUpButton.Enabled = true;
-                    if (ScriptList.SelectedRows[0].Index < ScriptList.RowCount - 1)
-                        moveDownButton.Enabled = true;
-                }
-                else
-                {
-                    removeScriptButton.Enabled = false;
-                    moveUpButton.Enabled = false;
-                    moveDownButton.Enabled = false;
-                }
+                removeScriptButton.Enabled = true;
+                moveDownButton.Enabled = moveUpButton.Enabled = false;
+                if (ScriptList.SelectedRows[0].Index > 0)
+                    moveUpButton.Enabled = true;
+                if (ScriptList.SelectedRows[0].Index < ScriptList.RowCount - 1)
+                    moveDownButton.Enabled = true;
             }
             else
             {
-                addScriptButton.Enabled = false;
                 removeScriptButton.Enabled = false;
                 moveUpButton.Enabled = false;
                 moveDownButton.Enabled = false;
