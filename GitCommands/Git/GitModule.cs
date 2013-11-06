@@ -3408,7 +3408,9 @@ namespace GitCommands
 
         public RepositoryLock Shared()
         {
-            return GetRepoFromPool(mrewLock.AcquireReaderLock, mrewLock.ReleaseReaderLock);
+            return Exclusive();
+
+            //return GetRepoFromPool(mrewLock.AcquireReaderLock, mrewLock.ReleaseReaderLock);
         }
 
         public RepositoryLock Exclusive()
