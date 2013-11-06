@@ -34,7 +34,7 @@ namespace GitCommands
                 filter = new CommitFilter { SortBy = CommitSortStrategies.Topological };
             }
 
-            foreach (var commit in _module.Repository.Commits.QueryBy(filter))
+            foreach (var commit in _module.SharedAccess<ICommitLog>(repo => repo.Commits.QueryBy(filter)))
             {
                 GitRevision revision = new GitRevision(_module, null);
                 revision.Author = commit.Author.Name;

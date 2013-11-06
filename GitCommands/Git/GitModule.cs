@@ -50,25 +50,42 @@ namespace GitCommands
             if (String.IsNullOrEmpty(_workingdir))
                 return;
 
+            LibGit2Sharp.Repository repo;
             try
             {
-                 _repository = new LibGit2Sharp.Repository(_workingdir);
+                repo = new LibGit2Sharp.Repository(_workingdir);
             }
             catch (RepositoryNotFoundException)
             {
-                _repository = null;
+                repo = null;
             }
+
+            _RepositoryPool = new RepositoryPool(repo);
         }
 
         private readonly string _workingdir;
-        private LibGit2Sharp.Repository _repository;
+        private RepositoryPool _RepositoryPool;
 
-        public LibGit2Sharp.Repository Repository
+        public RepositoryLock SharedRepository()
         {
-            get
-            {
-                return _repository;
-            }
+            return _RepositoryPool.Shared();
+        }
+
+        public RepositoryLock ExclusiveRepository()
+        {
+            return _RepositoryPool.Exclusive();
+        }
+
+        public T SharedAccess<T>(Func<LibGit2Sharp.Repository, T> action)
+        {
+            using (var repo = SharedRepository())
+                return action(repo.Repository);
+        }
+
+        public T ExclusiveAccess<T>(Func<LibGit2Sharp.Repository, T> action)
+        {
+            using (var repo = ExclusiveRepository())
+                return action(repo.Repository);
         }
 
         public string WorkingDir
@@ -278,7 +295,7 @@ namespace GitCommands
         /// <summary>Indicates whether the <see cref="WorkingDir"/> contains a git repository.</summary>
         public bool IsValidGitWorkingDir()
         {
-            return _repository != null;
+            return _RepositoryPool != null && _RepositoryPool.IsValid;
         }
 
         /// <summary>Indicates whether the specified directory contains a git repository.</summary>
@@ -1070,7 +1087,15 @@ namespace GitCommands
 
         public string GetCurrentCheckout()
         {
-            return IsValidGitWorkingDir() ? _repository.Head.Tip.Sha : "";
+            if (IsValidGitWorkingDir())
+            {
+                using (var repo = SharedRepository())
+                {
+                    return repo.Repository.Head.Tip.Sha;
+                }
+            }
+
+            return string.Empty;
         }
 
         public KeyValuePair<char, string> GetSuperprojectCurrentCheckout()
@@ -2329,10 +2354,12 @@ namespace GitCommands
 
         public PatchApply.Patch GetCurrentChangesUseLibGit2(string fileName, string oldFileName, bool staged, string extraDiffArguments, Encoding encoding)
         {
-            var changes = Repository.Diff.Compare<LibGit2Sharp.Patch>(Repository.Head.Tip.Tree,
+            Func<LibGit2Sharp.Repository, ContentChanges> computePatch = (Repository) =>
+                Repository.Diff.Compare<LibGit2Sharp.Patch>(Repository.Head.Tip.Tree,
                                                   staged ? DiffTargets.Index : DiffTargets.WorkingDirectory,
                                                   new[] { fileName }).FirstOrDefault();
 
+            var changes = SharedAccess<ContentChanges>(computePatch);
             if (changes == null)
                 return null;
 
@@ -2399,7 +2426,7 @@ namespace GitCommands
             string head = GetSelectedBranchFast(repositoryPath);
 
             if (string.IsNullOrEmpty(head))
-                return Repository.Head.CanonicalName;
+                return SharedAccess<string>(repo => repo.Head.CanonicalName);
 
             return head;
         }
@@ -2546,32 +2573,36 @@ namespace GitCommands
             if (!IsValidGitWorkingDir())
                 return "";
 
-            if (tags && branches)
-            {
-                return Repository.Refs
-                    .Select(
-                        r =>
-                        string.Format("{0} {1}", r.ResolveToDirectReference().TargetIdentifier, r.CanonicalName))
-                    .Aggregate(new StringBuilder(), (sb, s) => sb.AppendLine(s))
-                    .ToString();
-            }
+            return SharedAccess<string>((Repository) =>
+                {
 
-            if (tags)
-                return Repository.Tags
-                    .Select(r => string.Format("{0} {1}", r.Target.Sha, r.CanonicalName))
-                    .Aggregate(new StringBuilder(), (sb, s) => sb.AppendLine(s))
-                    .ToString();
+                    if (tags && branches)
+                    {
+                        return Repository.Refs
+                            .Select(
+                                r =>
+                                string.Format("{0} {1}", r.ResolveToDirectReference().TargetIdentifier, r.CanonicalName))
+                            .Aggregate(new StringBuilder(), (sb, s) => sb.AppendLine(s))
+                            .ToString();
+                    }
 
-            if (branches)
-            {
-                var refs = Repository.Branches
-                    .Where(r => !r.IsRemote);
-                var sb = new StringBuilder();
-                foreach (var r in refs.Where(r => r.Tip != null))
-                    sb.AppendLine(string.Format("{0} {1}", r.Tip.Sha, r.CanonicalName));
-                return sb.ToString();
-            }
-            return "";
+                    if (tags)
+                        return Repository.Tags
+                            .Select(r => string.Format("{0} {1}", r.Target.Sha, r.CanonicalName))
+                            .Aggregate(new StringBuilder(), (sb, s) => sb.AppendLine(s))
+                            .ToString();
+
+                    if (branches)
+                    {
+                        var refs = Repository.Branches
+                            .Where(r => !r.IsRemote);
+                        var sb = new StringBuilder();
+                        foreach (var r in refs.Where(r => r.Tip != null))
+                            sb.AppendLine(string.Format("{0} {1}", r.Tip.Sha, r.CanonicalName));
+                        return sb.ToString();
+                    }
+                    return "";
+                });
         }
 
         private IList<GitRef> GetTreeRefs(string tree)
@@ -2740,16 +2771,19 @@ namespace GitCommands
         //TODO: submodules should be implemented in libgit2sharp
         public List<IGitItem> GetTreeNew(string id, bool full)
         {
-            var tree = Repository.Lookup<Tree>(id);
-            return tree.Where(t => t.TargetType == TreeEntryTargetType.Tree || t.TargetType == TreeEntryTargetType.Blob)
-                .Select(t => (IGitItem)new GitItem(this)
-                    {
-                        Mode = ((int)t.Mode).ToString(),
-                        ItemType = t.TargetType.ToString().ToLower(),
-                        Guid = t.Target.Sha,
-                        Name = t.Name,
-                        FileName = t.Name
-                    }).ToList();
+            using (var repoLock = SharedRepository())
+            {
+                var tree = repoLock.Repository.Lookup<Tree>(id);
+                return tree.Where(t => t.TargetType == TreeEntryTargetType.Tree || t.TargetType == TreeEntryTargetType.Blob)
+                    .Select(t => (IGitItem)new GitItem(this)
+                        {
+                            Mode = ((int)t.Mode).ToString(),
+                            ItemType = t.TargetType.ToString().ToLower(),
+                            Guid = t.Target.Sha,
+                            Name = t.Name,
+                            FileName = t.Name
+                        }).ToList();
+            }
         }
 
         public List<IGitItem> GetTreeOld(string id, bool full)
@@ -2856,7 +2890,7 @@ namespace GitCommands
 
         public string GetFileText(string id, Encoding encoding)
         {
-            var blob = Repository.Lookup<LibGit2Sharp.Blob>(new ObjectId(id));
+            var blob = SharedAccess<LibGit2Sharp.Blob>(repo => repo.Lookup<LibGit2Sharp.Blob>(new ObjectId(id)));
             return encoding.GetString(blob.Content);
         }
 
@@ -2897,7 +2931,7 @@ namespace GitCommands
 
         public Stream GetFileStream(string blob)
         {
-            return Repository.Lookup<Blob>(new ObjectId(blob)).GetContentStream();
+            return SharedAccess<Stream>(repo => repo.Lookup<Blob>(new ObjectId(blob)).GetContentStream());
         }
 
         public IEnumerable<string> GetPreviousCommitMessages(int count)
@@ -2954,12 +2988,15 @@ namespace GitCommands
 
         public string GetMergeBase(string a, string b)
         {
-            var aCommit = Repository.Lookup<Commit>(a);
-            var bCommit = Repository.Lookup<Commit>(b);
-            if (aCommit == null || bCommit == null)
-                return null;
-            var baseCommit = Repository.Commits.FindCommonAncestor(aCommit, bCommit);
-            return baseCommit != null ? baseCommit.Sha : null;
+            return SharedAccess<string>((Repository) =>
+                {
+                    var aCommit = Repository.Lookup<Commit>(a);
+                    var bCommit = Repository.Lookup<Commit>(b);
+                    if (aCommit == null || bCommit == null)
+                        return null;
+                    var baseCommit = Repository.Commits.FindCommonAncestor(aCommit, bCommit);
+                    return baseCommit != null ? baseCommit.Sha : null;
+                });
         }
 
         public SubmoduleStatus CheckSubmoduleStatus(string commit, string oldCommit, CommitData data, CommitData olddata, bool loaddata = false)
@@ -3284,11 +3321,12 @@ namespace GitCommands
         
         public void Dispose()
         {
-            if (_repository == null)
+            RepositoryPool pool = _RepositoryPool;
+            _RepositoryPool = null;
+            if (pool == null)
                 return;
 
-            _repository.Dispose();
-            _repository = null;
+            pool.Dispose();
             GC.SuppressFinalize(this);
         }        
 
@@ -3319,5 +3357,124 @@ namespace GitCommands
         {
             return GitWorkingDir;
         }
+    }
+
+    public class RepositoryLock : IDisposable
+    {
+        private RepositoryPool Pool;
+        public readonly LibGit2Sharp.Repository Repository;
+        private Action OnReturnToPool;
+
+        public RepositoryLock(RepositoryPool aPool, LibGit2Sharp.Repository aRepository, Action aOnReturnToPool)
+        {
+            Pool = aPool;
+            Repository = aRepository;
+            OnReturnToPool = aOnReturnToPool;
+        }
+
+        public void Dispose()
+        {
+            lock (Repository)
+            {
+                if (Pool != null)
+                {
+                    Pool.ReturnToPool(this);
+                    OnReturnToPool();
+                    Pool = null;
+                }
+            }
+        }        
+    }
+
+    public class RepositoryPool : IDisposable
+    {
+        private LibGit2Sharp.Repository modelRepo;
+        private Stack<LibGit2Sharp.Repository> available = new Stack<LibGit2Sharp.Repository>();
+        private HashSet<RepositoryLock> inUse = new HashSet<RepositoryLock>();
+        private ReaderWriterLock mrewLock = new ReaderWriterLock();
+
+        public RepositoryPool(LibGit2Sharp.Repository aModelRepo)
+        {
+            modelRepo = aModelRepo;
+        }
+
+        public bool IsValid
+        {
+            get
+            {
+                return modelRepo != null;
+            }
+        }
+
+        public RepositoryLock Shared()
+        {
+            return GetRepoFromPool(mrewLock.AcquireReaderLock, mrewLock.ReleaseReaderLock);
+        }
+
+        public RepositoryLock Exclusive()
+        {
+            return GetRepoFromPool(mrewLock.AcquireWriterLock, mrewLock.ReleaseWriterLock);
+        }
+
+        public RepositoryLock GetRepoFromPool(Action<int> AcquireLock, Action ReleaseLock)
+        {
+            if (modelRepo == null)
+                return null;
+
+            bool needToRelease = true;
+            AcquireLock(Timeout.Infinite);
+            try
+            {
+                lock (available)
+                {
+                    LibGit2Sharp.Repository repo;
+
+                    if (available.Count == 0)
+                    {
+                        repo = new LibGit2Sharp.Repository(modelRepo.Info.Path);
+                    }
+                    else
+                    {
+                        repo = available.Pop();
+                    }
+
+                    RepositoryLock result = new RepositoryLock(this, repo, () => ReleaseLock());
+                    needToRelease = false;
+
+                    inUse.Add(result);
+
+                    return result;
+                }
+            }
+            finally
+            {
+                if (needToRelease)
+                    ReleaseLock();
+            }
+        }
+
+        internal void ReturnToPool(RepositoryLock repoLock)
+        {
+            lock (available)
+            {
+                if (inUse.Remove(repoLock))
+                    available.Push(repoLock.Repository);
+                else
+                    throw new ArgumentException("Repositroy not taken from a pool or returned twice.");
+            }            
+        }
+
+        public void Dispose()
+        {
+            lock (available)
+            {
+                foreach (var repo in available)
+                    repo.Dispose();
+
+                foreach (var repoLock in inUse)
+                    repoLock.Repository.Dispose();
+            }            
+        }
+
     }
 }

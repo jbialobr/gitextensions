@@ -183,7 +183,7 @@ namespace GitCommands
             if (sha1 == null)
                 throw new ArgumentNullException("sha1");
 
-            var commit = module.Repository.Lookup<Commit>(sha1);
+            var commit = module.SharedAccess<Commit>(repo => repo.Lookup<Commit>(sha1));
             if (commit == null)
             {
                 error = "Cannot find commit " + sha1;

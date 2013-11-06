@@ -265,10 +265,13 @@ namespace GitUI
 
         private StatusEntry[] RunStatusCommand()
         {
-            if (Module.Repository == null)
+            if (!Module.IsValidGitWorkingDir())
                 return null;
-            var index = Module.Repository.Index;
-            return index.RetrieveStatus().Where(entry => entry.State != FileStatus.Ignored).ToArray();
+            using (var repoLock = Module.SharedRepository())
+            {
+                var index = repoLock.Repository.Index;
+                return index.RetrieveStatus().Where(entry => entry.State != FileStatus.Ignored).ToArray();
+            }
         }
 
         private void UpdatedStatusReceived(StatusEntry[] entries)
