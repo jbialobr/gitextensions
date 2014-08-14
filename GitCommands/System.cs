@@ -70,11 +70,17 @@ namespace System
                 return left + sep + right;
         }
 
+        /// <summary>
+        /// Quotes string with "
+        /// </summary>
         public static string Quote(this string s)
         {
             return s.Quote("\"");
         }
 
+        /// <summary>
+        /// Quotes string with given <paramref name="quotationMark"/>
+        /// </summary>
         public static string Quote(this string s, string quotationMark)
         {
             if (s == null)
@@ -197,11 +203,30 @@ namespace System
             return value.Substring(1 + value.IndexOf(separator, StringComparison.InvariantCultureIgnoreCase));
         }
 
+        /// <summary>
+        /// Shortens string that it will be no longer than given <paramref name="maxLength"/>.
+        /// If string is longer than <paramref name="maxLength"/>, it's truncated to the length of <paramref name="maxLength"/>-3
+        /// and "..." are appended to the end of the resulting string.
+        /// </summary>
+        public static string ShortenTo(this string str, int maxLength)
+        {
+            if (str.IsNullOrEmpty())
+                return string.Empty;
+
+            if (str.Length <= maxLength)
+                return str;
+            else
+                return str.Substring(0, maxLength - 3) + "...";
+        }
+
     }
 
     public static class BoolExtensions
     {
 
+        /// <summary>
+        /// Translates bool value to git's command line force flag
+        /// </summary>
         public static string AsForce(this bool force)
         {
             return force ? " -f " : string.Empty;
