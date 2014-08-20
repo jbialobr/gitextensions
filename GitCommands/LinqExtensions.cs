@@ -143,7 +143,37 @@ namespace System.Linq
             }
         }
 
+        public static int BinarySearch<TSource, TKey>(this IList<TSource> source, TKey key, Func<TKey, TSource, int> comparer)
+        {
+            //implementation taken from mono
+            //https://github.com/mono/mono/blob/a31c107f59298053e4ff17fd09b2fa617b75c1ba/mcs/class/corlib/System.Collections/ArrayList.cs
+            int index = 0;
+            int count = source.Count;
 
+            int r, x, y, z;
+            x = index;
+            y = index + count - 1;
+            while (x <= y)
+            {
+                // Be careful with overflows
+                z = x + ((y - x) / 2);
+                r = comparer(key, source[z]);
+                if (r < 0)
+                {
+                    y = z - 1;
+                }
+                else if (r > 0)
+                {
+                    x = z + 1;
+                }
+                else
+                {
+                    return z;
+                }
+            }
+            return ~x;
+        }
+        
         //
         // Summary:
         //     Transforms each element of an array into a new form by incorporating the

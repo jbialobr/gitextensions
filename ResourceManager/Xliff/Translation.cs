@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace ResourceManager.Xliff
@@ -11,7 +13,7 @@ namespace ResourceManager.Xliff
         public Translation()
         {
             Version = "1.0";
-            TranslationCategories = new List<TranslationCategory>();
+            _translationCategories = new List<TranslationCategory>();
         }
 
         public Translation(string gitExVersion, string languageCode)
@@ -31,37 +33,48 @@ namespace ResourceManager.Xliff
         [XmlAttribute("LanguageCode")]
         public string LanguageCode { get { return _languageCode; } }
 
+        private IList<TranslationCategory> _translationCategories;
         [XmlElement(ElementName = "file")]
-        public List<TranslationCategory> TranslationCategories { get; set; }
+        public IEnumerable<TranslationCategory> TranslationCategories { get { return _translationCategories; } }
+
+        private int CategoryNameComparer(string categoryName, TranslationCategory category)
+        { 
+            return categoryName.TrimStart('_').CompareTo(categoryName.TrimStart('_'));
+        }
 
         public TranslationCategory FindOrAddTranslationCategory(string translationCategory)
         {
-            TranslationCategory tc = GetTranslationCategory(translationCategory);
-            if (tc == null)
+            if (string.IsNullOrEmpty(translationCategory))
+                new InvalidOperationException("Cannot add translationCategory without name");
+
+            TranslationCategory tc;
+
+
+            int index = _translationCategories.
+            if (index < 0)
             {
                 tc = new TranslationCategory(translationCategory, "en");
-                AddTranslationCategory(tc);
+                _translationCategories.Insert(~index, tc);
             }
+            else
+            {
+                tc = _translationCategories[index];
+            }
+
             return tc;
         }
 
-        public void AddTranslationCategory(TranslationCategory translationCategory)
-        {
-            if (string.IsNullOrEmpty(translationCategory.Name))
-                new InvalidOperationException("Cannot add translationCategory without name");
-
-            TranslationCategories.Add(translationCategory);
-        }
 
         public TranslationCategory GetTranslationCategory(string name)
         {
-            return TranslationCategories.Find(t => t.Name.TrimStart('_') == name.TrimStart('_'));
+            TranslationCategory tc = new TranslationCategory(name, "en");
+            return null;// TranslationCategories.Find(t => t.Name.TrimStart('_') == name.TrimStart('_'));
         }
 
-        public void Sort()
+        private void Sort()
         {
-            TranslationCategories.Sort();
-            foreach(TranslationCategory tc in TranslationCategories)
+
+            foreach (TranslationCategory tc in _translationCategories)
                 tc.Body.TranslationItems.Sort();
         }
 
@@ -90,6 +103,12 @@ namespace ResourceManager.Xliff
                 return ti.Source;
 
             return ti.Value;
+        }
+
+        [OnDeserialized()]
+        internal void OnDeserializedMethod(StreamingContext context)
+        {
+            Sort();
         }
     }
 }

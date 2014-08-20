@@ -34,6 +34,7 @@ namespace ResourceManager.Xliff
             {
                 if (translationItem.Property == "ToolTipText")
                 {
+                    //don't add a translationItem if there exists item with property Text and with the same value
                     ti = GetTranslationItem(translationItem.Name, "Text");
                     if (ti == null || translationItem.Value != ti.Value)
                         TranslationItems.Add(translationItem);
