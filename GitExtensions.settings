@@ -58,6 +58,14 @@
   </item>
   <item>
     <key>
+      <string>Find large filesFind large files bigger than (Mb)</string>
+    </key>
+    <value>
+      <string>5</string>
+    </value>
+  </item>
+  <item>
+    <key>
       <string>RevisionLinkDefs</string>
     </key>
     <value>
