@@ -136,6 +136,7 @@ Global
 		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Default|Any CPU.ActiveCfg = Debug|Any CPU
 		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Default|Any CPU.Build.0 = Debug|Any CPU
 		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Default|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Default|Mixed Platforms.Build.0 = Debug|Any CPU
 		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F15A69AF-7EBD-4F69-A026-5071FA3EC61B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
