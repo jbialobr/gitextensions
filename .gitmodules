@@ -7,3 +7,7 @@
 [submodule "Externals/Git.hub"]
 	path = Externals/Git.hub
 	url = git://github.com/gitextensions/Git.hub.git
+[submodule "conemu-inside"]
+	path = conemu-inside
+	url = https://github.com/Maximus5/conemu-inside.git
+	branch = winforms
