@@ -325,7 +325,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.Controls.Add(this.tableLayoutPanel2);
             this.Name = "AdvancedSettingsPage";
-            this.Size = new System.Drawing.Size(1059, 891);
+            this.Size = new System.Drawing.Size(974, 429);
             this.tableLayoutPanel2.ResumeLayout(false);
             this.tableLayoutPanel2.PerformLayout();
             this.DiffViewerGB.ResumeLayout(false);
