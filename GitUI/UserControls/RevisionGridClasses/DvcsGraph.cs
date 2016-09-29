@@ -245,21 +245,15 @@ namespace GitUI.RevisionGridClasses
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
-        public string[] SelectedIds
+        public IEnumerable<string> SelectedIds
         {
             get
             {
-                if (SelectedRows.Count == 0)
-                {
-                    return null;
-                }
-                var data = new string[SelectedRows.Count];
                 for (int i = 0; i < SelectedRows.Count; i++)
                 {
                     if (_graphData[SelectedRows[i].Index] != null)
-                        data[SelectedRows.Count - 1 - i] = _graphData[SelectedRows[i].Index].Node.Id;
-                }
-                return data;
+                        yield return _graphData[SelectedRows[i].Index].Node.Id;
+                }                
             }
             set
             {
@@ -287,6 +281,26 @@ namespace GitUI.RevisionGridClasses
                         }
                     }
                 }
+            }
+        }
+
+        internal void TryExtendSelection(IEnumerable<string> ids)
+        {
+            foreach (string id in ids)
+            {
+                int rowIdx = FindRow(id);
+                if (rowIdx != -1 && rowIdx < RowCount)
+                {
+                    Rows[rowIdx].Selected = true;
+                    if (CurrentCell == null)
+                    {
+                        // Set the current cell to the first item. We use cell
+                        // 1 because cell 0 could be hidden if they've chosen to
+                        // not see the graph
+                        CurrentCell = Rows[rowIdx].Cells[1];
+                    }
+                }
+
             }
         }
 
@@ -440,16 +454,15 @@ namespace GitUI.RevisionGridClasses
         {
             lock (_graphData)
             {
-                int i;
-                for (i = 0; i < _graphData.CachedCount; i++)
+                for (int i = 0; i < _graphData.CachedCount; i++)
                 {
                     if (_graphData[i] != null && _graphData[i].Node.Id.CompareTo(aId) == 0)
                     {
-                        break;
+                        return i;
                     }
                 }
 
-                return i == _graphData.Count ? -1 : i;
+                return -1;
             }
         }
 

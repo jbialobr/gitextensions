@@ -198,8 +198,7 @@ namespace GitUI
         public Font SuperprojectFont { get; private set; }
         [Browsable(false)]
         public int LastScrollPos { get; private set; }
-        [Browsable(false)]
-        public string[] LastSelectedRows { get; private set; }
+        private RestoreSelectionInfo LastSelectedRows = new RestoreSelectionInfo();
         [Browsable(false)]
         public Font RefsFont { get; private set; }
         private Font _normalFont;
@@ -322,6 +321,19 @@ namespace GitUI
             // flag and deal with it next time we paint (a bit of a hack, but
             // it works)
             _isLoading = e.IsLoading;
+            if (!_isLoading)
+            {
+                this.InvokeAsync(TryRestoreSelectedRows);
+            }
+        }
+
+        private void TryRestoreSelectedRows()
+        {
+            if (LastSelectedRows.ThereAreIdsNotRestoredWhileInitialLoad())
+            {
+                Revisions.TryExtendSelection(LastSelectedRows.IdsToRestoreWhileInitialLoad);
+                Revisions.SelectedIds.ForEach(id => LastSelectedRows.IdsToRestoreWhileInitialLoad.Remove(id));
+            }
         }
 
         private void ShowQuickSearchString()
@@ -944,12 +956,12 @@ namespace GitUI
                 // new current checkout instead.
                 if (newCurrentCheckout == CurrentCheckout)
                 {
-                    LastSelectedRows = Revisions.SelectedIds;
+                    LastSelectedRows.SetSelectionToRestore(Revisions.SelectedIds);
                 }
                 else
                 {
-                    // This is a new checkout, so ensure the variable is cleared out.
-                    LastSelectedRows = null;
+                    // This is a new checkout, so ensure there is no selection to restore
+                    LastSelectedRows.Clear();
                 }
 
                 Revisions.ClearSelection();
@@ -1189,18 +1201,13 @@ namespace GitUI
 
         private void SelectInitialRevision()
         {
-            string filtredCurrentCheckout = _filtredCurrentCheckout;
-            string[] lastSelectedRows = LastSelectedRows ?? new string[0];
-
-            //filter out all unavailable commits from LastSelectedRows.
-            lastSelectedRows = lastSelectedRows.Where(revision => FindRevisionIndex(revision) >= 0).ToArray();
-
-            if (lastSelectedRows.Any())
+            if (LastSelectedRows.ThereAreIdsNotRestoredWhileInitialLoad())
             {
-                Revisions.SelectedIds = lastSelectedRows;
-                LastSelectedRows = null;
+                Revisions.SelectedIds = LastSelectedRows.IdsToRestore;
             }
-            else
+            LastSelectedRows.Clear();
+
+            if (!Revisions.SelectedIds.Any())
             {
                 if (!string.IsNullOrEmpty(_initialSelectedRevision))
                 {
@@ -1210,16 +1217,16 @@ namespace GitUI
                 }
                 else
                 {
-                    SetSelectedRevision(filtredCurrentCheckout);
+                    SetSelectedRevision(_filtredCurrentCheckout);
                 }
             }
 
-            if (string.IsNullOrEmpty(filtredCurrentCheckout))
+            if (string.IsNullOrEmpty(_filtredCurrentCheckout))
                 return;
 
-            if (!Revisions.IsRevisionRelative(filtredCurrentCheckout))
+            if (!Revisions.IsRevisionRelative(_filtredCurrentCheckout))
             {
-                HighlightBranch(filtredCurrentCheckout);
+                HighlightBranch(_filtredCurrentCheckout);
             }
         }
 
