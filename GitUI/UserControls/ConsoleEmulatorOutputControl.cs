@@ -118,8 +118,7 @@ namespace GitUI.UserControls
 
             startinfo.ConsoleEmulatorClosedEventSink = (s, e) =>
                 {
-                    if (!(s as ConEmuSession).IsConsoleProcessExited
-                        && s == _terminal.RunningSession)
+                    if (s == _terminal.RunningSession)
                     {
                         FireTerminated();
                     }
