@@ -40,7 +40,7 @@
             this.chkCheckForRCVersions = new System.Windows.Forms.CheckBox();
             this.chkAlwaysShowAdvOpt = new System.Windows.Forms.CheckBox();
             this.chkDontSHowHelpImages = new System.Windows.Forms.CheckBox();
-            this.chkConsoleEmulator = new System.Windows.Forms.CheckBox();
+            this.chkConsoleEmulatorEx = new System.Windows.Forms.CheckBox();
             this.tableLayoutPanel4 = new System.Windows.Forms.TableLayoutPanel();
             this.chkAutoNormaliseBranchName = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -148,7 +148,7 @@
             this.tableLayoutPanel1.Controls.Add(this.chkCheckForRCVersions, 0, 2);
             this.tableLayoutPanel1.Controls.Add(this.chkAlwaysShowAdvOpt, 0, 1);
             this.tableLayoutPanel1.Controls.Add(this.chkDontSHowHelpImages, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.chkConsoleEmulator, 0, 4);
+            this.tableLayoutPanel1.Controls.Add(this.chkConsoleEmulatorEx, 0, 4);
             this.tableLayoutPanel1.Controls.Add(this.tableLayoutPanel4, 0, 5);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(8, 22);
@@ -195,15 +195,15 @@
             // 
             // chkConsoleEmulator
             // 
-            this.chkConsoleEmulator.AutoSize = true;
-            this.chkConsoleEmulator.Dock = System.Windows.Forms.DockStyle.Top;
-            this.chkConsoleEmulator.Location = new System.Drawing.Point(3, 72);
-            this.chkConsoleEmulator.Name = "chkConsoleEmulator";
-            this.chkConsoleEmulator.Size = new System.Drawing.Size(1323, 17);
-            this.chkConsoleEmulator.TabIndex = 4;
-            this.chkConsoleEmulator.Text = "Use Console Emulator for console output in command dialogs";
-            this.tooltip.SetToolTip(this.chkConsoleEmulator, resources.GetString("chkConsoleEmulator.ToolTip"));
-            this.chkConsoleEmulator.UseVisualStyleBackColor = true;
+            this.chkConsoleEmulatorEx.AutoSize = true;
+            this.chkConsoleEmulatorEx.Dock = System.Windows.Forms.DockStyle.Top;
+            this.chkConsoleEmulatorEx.Location = new System.Drawing.Point(3, 72);
+            this.chkConsoleEmulatorEx.Name = "chkConsoleEmulator";
+            this.chkConsoleEmulatorEx.Size = new System.Drawing.Size(1323, 17);
+            this.chkConsoleEmulatorEx.TabIndex = 4;
+            this.chkConsoleEmulatorEx.Text = "Use Console Emulator for console output in command dialogs (experimental)";
+            this.tooltip.SetToolTip(this.chkConsoleEmulatorEx, resources.GetString("chkConsoleEmulator.ToolTip"));
+            this.chkConsoleEmulatorEx.UseVisualStyleBackColor = true;
             // 
             // tableLayoutPanel4
             // 
@@ -304,7 +304,7 @@
         private System.Windows.Forms.CheckBox chkUseLocalChangesAction;
         private System.Windows.Forms.CheckBox chkAlwaysShowAdvOpt;
         private System.Windows.Forms.CheckBox chkCheckForRCVersions;
-        private System.Windows.Forms.CheckBox chkConsoleEmulator;
+        private System.Windows.Forms.CheckBox chkConsoleEmulatorEx;
         private System.Windows.Forms.ToolTip tooltip;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel4;
         private System.Windows.Forms.CheckBox chkAutoNormaliseBranchName;

@@ -1328,8 +1328,8 @@ namespace GitCommands
 
         public static bool UseConsoleEmulatorForCommands
         {
-            get { return GetBool("UseConsoleEmulatorForCommands", true); }
-            set { SetBool("UseConsoleEmulatorForCommands", value); }
+            get { return GetBool("UseConsoleEmulatorForCommandsEx", false); }
+            set { SetBool("UseConsoleEmulatorForCommandsEx", value); }
         }
 
         public static string GetGitExtensionsFullPath()
