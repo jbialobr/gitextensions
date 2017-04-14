@@ -502,7 +502,7 @@ namespace GitUI.CommandsDialogs
         {
             Height = Screen.PrimaryScreen.Bounds.Height;
             MaximumSize = new Size(Screen.PrimaryScreen.Bounds.Width, tableLayoutPanel1.PreferredSize.Height + 40);
-            MinimumSize = new Size(tableLayoutPanel1.PreferredSize.Width + 40, MaximumSize.Height);
+            MinimumSize = new Size(tableLayoutPanel1.PreferredSize.Width, MaximumSize.Height);
         }
 
         private void rbReset_CheckedChanged(object sender, EventArgs e)
