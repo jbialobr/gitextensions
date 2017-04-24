@@ -10,6 +10,8 @@ using ResourceManager;
 
 namespace GitUI
 {
+    public delegate bool GetNextFileFnc(bool seekBackward, bool loop, out int fileIndex, out string fileContent);
+
     public partial class FindAndReplaceForm : GitExtensionsForm
     {
         private readonly TranslationString _findAndReplaceString =
@@ -38,7 +40,7 @@ namespace GitUI
         private TextEditorControl _editor;
         private bool _lastSearchLoopedAround;
         private bool _lastSearchWasBackward;
-        private Func<bool, Tuple<int, string>> _fileLoader;
+        private GetNextFileFnc _fileLoader;
 
         public FindAndReplaceForm()
         {
@@ -169,9 +171,13 @@ namespace GitUI
                     range = null;
                     if (currentIdx != -1 && startIdx == -1)
                         startIdx = currentIdx;
-                    Tuple<int, string> nextFile = _fileLoader.Invoke(searchBackward);
-                    currentIdx = nextFile.Item1;
-                    Editor.Text = nextFile.Item2;
+                    string fileContent;
+                    int fileIndex;
+                    if (_fileLoader(searchBackward, true, out fileIndex, out fileContent))
+                    {
+                        currentIdx = fileIndex;
+                        Editor.Text = fileContent;
+                    }
                 }
             } while (range == null && startIdx != currentIdx && currentIdx != -1);
             if (range == null && messageIfNotFound != null)
@@ -314,7 +320,7 @@ namespace GitUI
         }
 
 
-        internal void SetFileLoader(Func<bool, Tuple<int, string>> fileLoader)
+        internal void SetFileLoader(GetNextFileFnc fileLoader)
         {
             _fileLoader = fileLoader;
         }

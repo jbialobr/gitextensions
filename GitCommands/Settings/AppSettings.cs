@@ -318,6 +318,7 @@ namespace GitCommands
         public static readonly StringSetting ConEmuTerminal = new StringSetting("ConEmuTerminal", DetailedSettingsPath, "bash");
         public static readonly StringSetting ConEmuFontSize = new StringSetting("ConEmuFontSize", DetailedSettingsPath, "12");
         public static readonly BoolNullableSetting ShowRevisionInfoNextToRevisionGrid = new BoolNullableSetting("ShowRevisionInfoNextToRevisionGrid", DetailedSettingsPath, false);
+        public static readonly BoolNullableSetting EnableFluentDiffScroll = new BoolNullableSetting("EnableFluentDiffScroll", DetailedSettingsPath, true);
 
         public static bool ProvideAutocompletion
         {

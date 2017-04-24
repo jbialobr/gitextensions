@@ -24,6 +24,8 @@ namespace GitUI.Editor
         event EventHandler<SelectedLineEventArgs> SelectedLineChanged;
         event KeyEventHandler KeyDown;
         event EventHandler DoubleClick;
+        event EventHandler ScrolledAfterEnd;
+        event EventHandler ScrolledBeforeBegining;
 
         void EnableScrollBars(bool enable);
         void Find();
@@ -64,6 +66,7 @@ namespace GitUI.Editor
         Font Font { get; set; }
         void FocusTextArea();
 
-        void SetFileLoader(Func<bool, Tuple<int, string>> fileLoader);
+        void SetFileLoader(GetNextFileFnc fileLoader);
+        void ScrollToEnd();
     }
 }
