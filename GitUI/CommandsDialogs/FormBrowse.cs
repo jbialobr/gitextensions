@@ -2684,13 +2684,16 @@ namespace GitUI.CommandsDialogs
         }
         #endregion
 
-        private int getNextIdx(int curIdx, int maxIdx, bool searchBackward)
+        private int getNextIdx(int curIdx, int maxIdx, bool searchBackward, bool loop)
         {
             if (searchBackward)
             {
                 if (curIdx == 0)
                 {
-                    curIdx = maxIdx;
+                    if (loop)
+                    {
+                        curIdx = maxIdx;
+                    }
                 }
                 else
                 {
@@ -2701,7 +2704,10 @@ namespace GitUI.CommandsDialogs
             {
                 if (curIdx == maxIdx)
                 {
-                    curIdx = 0;
+                    if (loop)
+                    {
+                        curIdx = 0;
+                    }
                 }
                 else
                 {
@@ -2711,18 +2717,30 @@ namespace GitUI.CommandsDialogs
             return curIdx;
         }
 
-        private Tuple<int, string> getNextPatchFile(bool searchBackward)
+        private bool getNextPatchFile(bool searchBackward, bool loop, out int fileIndex, out string fileContent)
         {
+            fileIndex = -1;
+            fileContent = string.Empty;
             var revisions = RevisionGrid.GetSelectedRevisions();
             if (revisions.Count == 0)
-                return null;
+                return false;
+
             int idx = DiffFiles.SelectedIndex;
             if (idx == -1)
-                return new Tuple<int, string>(idx, null);
+                return false;
 
-            idx = getNextIdx(idx, DiffFiles.GitItemStatuses.Count() - 1, searchBackward);
-            DiffFiles.SetSelectedIndex(idx, notify: false);
-            return new Tuple<int, string>(idx, DiffText.GetSelectedPatch(RevisionGrid, DiffFiles.SelectedItem));
+            fileIndex = getNextIdx(idx, DiffFiles.GitItemStatuses.Count() - 1, searchBackward, loop);
+            if (fileIndex == idx)
+            {
+                if (!loop)
+                    return false;
+            }
+            else
+            {
+                DiffFiles.SetSelectedIndex(fileIndex, notify: false);
+            }
+            fileContent = DiffText.GetSelectedPatch(RevisionGrid, DiffFiles.SelectedItem);
+            return true;
         }
 
         //
