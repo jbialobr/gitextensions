@@ -13,6 +13,8 @@ using GitCommands.GitExtLinks;
 using GitUI.Editor.RichTextBoxExtension;
 using ResourceManager;
 using GitUI.Editor;
+using System.Collections.Specialized;
+using System.Web;
 
 namespace GitUI.CommitInfo
 {
@@ -57,7 +59,8 @@ namespace GitUI.CommitInfo
                     if (CommandClick != null)
                     {
                         string path = result.AbsolutePath.TrimStart('/');
-                        CommandClick(sender, new CommandEventArgs(result.Host, path));
+                        NameValueCollection parameters = HttpUtility.ParseQueryString(result.Query);
+                        CommandClick(sender, new CommandEventArgs(result.Host, path, parameters));
                     }
                 }
                 else
@@ -550,11 +553,11 @@ namespace GitUI.CommitInfo
             ReloadCommitInfo();
         }
 
-        private void DoCommandClick(string command, string data)
+        private void DoCommandClick(string command, string path)
         {
             if (CommandClick != null)
             {
-                CommandClick(this, new CommandEventArgs(command, data));
+                CommandClick(this, new CommandEventArgs(command, path, null));
             }
         }
 

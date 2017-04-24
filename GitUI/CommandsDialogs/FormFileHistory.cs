@@ -441,12 +441,12 @@ namespace GitUI.CommandsDialogs
         {
             if (e.Command == "gotocommit")
             {
-                FileChanges.SetSelectedRevision(GitRevision.CreateForShortSha1(Module, e.Data));
+                FileChanges.SetSelectedRevision(GitRevision.CreateForShortSha1(Module, e.Path));
             }
             else if (e.Command == "gotobranch" || e.Command == "gototag")
             {
                 string error = "";
-                CommitData commit = CommitData.GetCommitData(Module, e.Data, ref error);
+                CommitData commit = CommitData.GetCommitData(Module, e.Path, ref error);
                 if (commit != null)
                     FileChanges.SetSelectedRevision(new GitRevision(Module, commit.Guid));
             }
