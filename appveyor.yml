@@ -13,8 +13,7 @@ build:
   verbosity: minimal
 
 cache:
-  #- packages -> **\packages.config      # preserve "packages" directory in the root of build folder but will reset it if packages.config is modified
-  - packages\WiX.3.10.3 -> Setup\packages.config
+  - packages -> **\packages.config
   - Setup\cache -> Setup\DownloadExternals.cmd
 
 install:
