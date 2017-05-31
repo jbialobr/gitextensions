@@ -53,6 +53,7 @@
     </Property>
     <?endforeach ?>
     <PropertyRef Id="VS2015DEVENV" />
+        <PropertyRef Id="VS2017DEVENV" />
     <DirectoryRef Id="INSTALLDIR">
       <Component Id="gitextensions.ico" Guid="*">
         <File Source="..\bin\logo\git-extensions-logo-final-256.ico" />
@@ -869,8 +870,8 @@
           <ComponentRef Id="VS$(var.VsVersion)_GitPlugin.resources.dll" />
         </Feature>
         <?endforeach ?>
-        <Feature Id="VS2015FeatureId" Title="Visual Studio 2015 integration" Level="1">
-          <Condition Level="2">NOT VS2015DEVENV</Condition>
+          <Feature Id="VS2015FeatureId" Title="Visual Studio 2015 - 2017 integration" Level="2">
+            <Condition Level="1">VS2015DEVENV OR VS2017DEVENV</Condition>
           <ComponentRef Id="VS2015_VSIX" />
         </Feature>
       </Feature>
