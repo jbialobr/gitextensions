@@ -794,6 +794,12 @@ namespace GitCommands
             set { SetBool("relativedate", value); }
         }
 
+        public static bool ShowGpgInformation
+        {
+            get { return GetBool("gpginformation", false); }
+            set { SetBool("gpginformation", value); }
+        }
+
         public static bool UseFastChecks
         {
             get { return GetBool("usefastchecks", false); }

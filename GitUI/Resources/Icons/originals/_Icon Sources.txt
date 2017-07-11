@@ -29,6 +29,13 @@ IconFinder
 1350825545_refresh yellow.png - Webdesigner Depot - http://www.webdesignerdepot.com
 1350825556_refresh yellow.png - Webdesigner Depot - http://www.webdesignerdepot.com
 1384303864_help.png - https://www.iconfinder.com/icons/49832/help_question_mark_icon
+if_tag-green_43972.png - https://www.iconfinder.com/icons/43972/green_tag_icon#size=32
+if_tag-purple-delete_43983.png - https://www.iconfinder.com/icons/43983/delete_purple_tag_icon#size=32
+if_tag-orange-add_84142.png - https://www.iconfinder.com/icons/84142/add_orange_tag_icon#size=32
+if_stock_certificate_21083.png - https://www.iconfinder.com/icons/21083/certificate_stock_icon#size=48
+if_gtk-stop_20551.png - https://www.iconfinder.com/icons/20551/gtk_stop_icon#size=32
+
+
 
 fatcow
 ------

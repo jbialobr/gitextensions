@@ -1,4 +1,4 @@
-﻿﻿﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -13,6 +13,8 @@ using GitCommands.GitExtLinks;
 using GitUI.Editor.RichTextBoxExtension;
 using ResourceManager;
 using GitUI.Editor;
+using GitCommands.Gpg;
+
 
 namespace GitUI.CommitInfo
 {
@@ -23,9 +25,12 @@ namespace GitUI.CommitInfo
         private readonly TranslationString containedInTags = new TranslationString("Contained in tags:");
         private readonly TranslationString containedInNoTag = new TranslationString("Contained in no tag");
         private readonly TranslationString trsLinksRelatedToRevision = new TranslationString("Related links:");
+        private readonly TranslationString trsGpgTagInfo = new TranslationString("GPG Tag Info");
+        private readonly TranslationString trsGpgCommitInfo = new TranslationString("GPG Commit Info");
 
         private const int MaximumDisplayedRefs = 20;
         private LinkFactory _linkFactory = new LinkFactory();
+        private IGitGpgController _gpgController = new GitGpgController();
 
         public CommitInfo()
         {
@@ -124,7 +129,8 @@ namespace GitUI.CommitInfo
 
         private void ReloadCommitInfo()
         {
-            _RevisionHeader.BackColor = ColorHelper.MakeColorDarker(this.BackColor);
+            _RevisionHeader.BackColor =
+                tlpnlRevisionHeader.BackColor = ColorHelper.MakeColorDarker(this.BackColor);
 
             showContainedInBranchesToolStripMenuItem.Checked = AppSettings.CommitInfoShowContainedInBranchesLocal;
             showContainedInBranchesRemoteToolStripMenuItem.Checked = AppSettings.CommitInfoShowContainedInBranchesRemote;
@@ -140,7 +146,6 @@ namespace GitUI.CommitInfo
             _RevisionHeader.SelectionTabs = GetRevisionHeaderTabStops();
             _RevisionHeader.Text = string.Empty;
             _RevisionHeader.Refresh();
-
             string error = "";
             CommitData data = CommitData.CreateFromRevision(_revision);
             if (_revision.Body == null)
@@ -171,6 +176,73 @@ namespace GitUI.CommitInfo
 
             if (AppSettings.CommitInfoShowContainedInTags)
                 ThreadPool.QueueUserWorkItem(_ => loadTagInfo(_revision.Guid));
+
+
+            commitSignPicture.Visible = tagSignPicture.Visible = AppSettings.ShowGpgInformation;
+
+            if (AppSettings.ShowGpgInformation)
+            {
+                /* Setup GpgController */
+                _gpgController.Revision = _revision;
+                _gpgController.Module = Module;
+
+                /* COMMIT section */
+                
+                /* Let the icon visible, will be invisible in only one case */
+                commitSignPicture.Visible = true;
+
+
+                this.InvokeAsync(() => {
+                    switch (_gpgController.CheckCommitSign())
+                    {
+                        case GitGpgController.CommitStatus.GoodSignature:
+                            commitSignPicture.Image = GitUI.Properties.Resources.commit_ok;
+                            break;
+                        case GitGpgController.CommitStatus.MissingPublicKey:
+                            commitSignPicture.Image = GitUI.Properties.Resources.commit_warning;
+                            break;
+                        case GitGpgController.CommitStatus.NoSignature:
+                            commitSignPicture.Visible = false;
+                            break;
+                        case GitGpgController.CommitStatus.SignatureError:
+                            commitSignPicture.Image = GitUI.Properties.Resources.commit_error;
+                            break;
+                    }
+                });
+                
+
+
+                /* TAG section */
+                int _howManyTag = _gpgController.NumberOfTag;
+                
+                if (_howManyTag > 0)
+                {
+                    tagSignPicture.Visible = true;
+
+                    this.InvokeAsync(() => {
+                        switch (_gpgController.CheckTagSign())
+                        {
+                            case GitGpgController.TagStatus.OneGood:
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_ok;
+                                break;
+                            case GitGpgController.TagStatus.OneBad:
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_error;
+                                break;
+                            case GitGpgController.TagStatus.Many:
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_many;
+                                break;
+                            case GitGpgController.TagStatus.NoPubKey:
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_warning;
+                                break;
+                        }
+                    });
+                }
+                else
+                {
+                    tagSignPicture.Visible = false;
+                }
+
+            }
         }
 
         /// <summary>
@@ -274,6 +346,7 @@ namespace GitUI.CommitInfo
             _tags = Module.GetAllTagsWhichContainGivenCommit(revision).ToList();
             this.InvokeAsync(updateText);
         }
+
 
         private void loadBranchInfo(string revision)
         {
@@ -594,5 +667,24 @@ namespace GitUI.CommitInfo
             _headerResize = e.NewRectangle;
         }
 
+        private void commitSignPicture_Click(object sender, EventArgs e)
+        {
+            using (FormSignatureInfo form = new FormSignatureInfo())
+            {
+                form.Text = trsGpgCommitInfo.Text;
+                form.ShowGpgMessage(_gpgController.GetCommitVerificationMessage());
+                form.ShowDialog();
+            }
+        }
+
+        private void tagSignPicture_Click(object sender, EventArgs e)
+        {
+            using (FormSignatureInfo form = new FormSignatureInfo())
+            {
+                form.Text = trsGpgTagInfo.Text;
+                form.ShowGpgMessage(_gpgController.TagVerifyMessage);
+                form.ShowDialog();
+            }
+        }
     }
 }
