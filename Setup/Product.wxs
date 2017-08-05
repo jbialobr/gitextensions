@@ -717,7 +717,6 @@
                 </Feature>
                 <Feature Id="Stash" Title="Atlassian Stash integration" Level="1">
                     <ComponentRef Id="Stash.dll" />
-                    <ComponentRef Id="Newtonsoft.Json.dll" />
                 </Feature>
                 <Feature Id="AppVeyorIntegration" Title="AppVeyor integration" Level="1">
                     <ComponentRef Id="System.Net.Http.dll" />
