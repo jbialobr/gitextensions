@@ -64,7 +64,8 @@ namespace GitUI
         private Brush _selectedItemBrush;
         private SolidBrush _authoredRevisionsBrush;
         private Brush _filledItemBrush; // disposable brush
-        private readonly IGravatarService _gravatarService = new GravatarService();
+        private readonly IImageCache _avatarCache;
+        private readonly IAvatarService _gravatarService;
         private readonly FormRevisionFilter _revisionFilter = new FormRevisionFilter();
 
         private RefsFiltringOptions _refsOptions = RefsFiltringOptions.All | RefsFiltringOptions.Boundary;
@@ -122,6 +123,9 @@ namespace GitUI
             this.Loading.Image = global::GitUI.Properties.Resources.loadingpanel;
 
             Translate();
+
+            _avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+            _gravatarService = new GravatarService(_avatarCache);
 
             _revisionGridMenuCommands = new RevisionGridMenuCommands(this);
             _revisionGridMenuCommands.CreateOrUpdateMenuCommands();

@@ -52,6 +52,86 @@ namespace GravatarTests
         }
 
         [Test]
+        public async void Clear_should_return_if_folder_absent()
+        {
+            _directory.Exists(Arg.Any<string>()).Returns(false);
+
+            await _cache.ClearAsync();
+
+            _directory.DidNotReceive().GetFiles(Arg.Any<string>());
+        }
+
+        [Test]
+        public async void Clear_should_remove_all()
+        {
+            var fileSystem = new MockFileSystem();
+            _cache = new DirectoryImageCache(FolderPath, 2, fileSystem);
+
+            fileSystem.AddFile($"{FolderPath}\\a@a.com.png", new MockFileData(""));
+            fileSystem.AddFile($"{FolderPath}\\b@b.com.png", new MockFileData(""));
+            fileSystem.AllFiles.Count().Should().Be(2);
+
+            await _cache.ClearAsync();
+
+            fileSystem.AllFiles.Count().Should().Be(0);
+        }
+
+        [Test]
+        public void Clear_should_ignore_errors()
+        {
+            _directory.Exists(Arg.Any<string>()).Returns(true);
+            _directory.GetFiles(FolderPath).Returns(new[] { "c:\\file.txt", "boot.sys" });
+            _file.When(x => x.Delete(Arg.Any<string>()))
+                .Do(x =>
+                {
+                    throw new DivideByZeroException();
+                });
+
+            Func<Task> act = async () =>
+            {
+                await _cache.ClearAsync();
+            };
+            act.ShouldNotThrow();
+        }
+
+        [Test]
+        public async void DeleteImage_should_return_if_folder_absent()
+        {
+            _file.Exists(Arg.Any<string>()).Returns(false);
+
+            await _cache.DeleteImageAsync(FileName);
+
+            _file.DidNotReceive().Delete(Arg.Any<string>());
+        }
+
+        [Test]
+        public async void DeleteImage_should_delete()
+        {
+            _file.Exists(Arg.Any<string>()).Returns(true);
+
+            await _cache.DeleteImageAsync(FileName);
+
+            _file.Received(1).Delete(Arg.Any<string>());
+        }
+
+        [Test]
+        public void DeleteImage_should_ignore_errors()
+        {
+            _file.Exists(Arg.Any<string>()).Returns(true);
+            _file.When(x => x.Delete(FileName))
+                .Do(x =>
+                {
+                    throw new DivideByZeroException();
+                });
+
+            Func<Task> act = async () =>
+            {
+                await _cache.DeleteImageAsync(FileName);
+            };
+            act.ShouldNotThrow();
+        }
+
+        [Test]
         public async void GetImage_return_null_if_file_absent()
         {
             _fileInfo.Exists.Returns(false);
@@ -86,86 +166,6 @@ namespace GravatarTests
             Func<Task> act = async () =>
             {
                 await _cache.GetImageAsync(FileName, null);
-            };
-            act.ShouldNotThrow();
-        }
-
-        [Test]
-        public async void RemoveAll_should_return_if_folder_absent()
-        {
-            _directory.Exists(Arg.Any<string>()).Returns(false);
-
-            await _cache.RemoveAllAsync();
-
-            _directory.DidNotReceive().GetFiles(Arg.Any<string>());
-        }
-
-        [Test]
-        public async void RemoveAll_should_remove_all()
-        {
-            var fileSystem = new MockFileSystem();
-            _cache = new DirectoryImageCache(FolderPath, 2, fileSystem);
-
-            fileSystem.AddFile($"{FolderPath}\\a@a.com.png", new MockFileData(""));
-            fileSystem.AddFile($"{FolderPath}\\b@b.com.png", new MockFileData(""));
-            fileSystem.AllFiles.Count().Should().Be(2);
-
-            await _cache.RemoveAllAsync();
-
-            fileSystem.AllFiles.Count().Should().Be(0);
-        }
-
-        [Test]
-        public void RemoveAll_should_ignore_errors()
-        {
-            _directory.Exists(Arg.Any<string>()).Returns(true);
-            _directory.GetFiles(FolderPath).Returns(new[] { "c:\\file.txt", "boot.sys" });
-            _file.When(x => x.Delete(Arg.Any<string>()))
-                .Do(x =>
-                {
-                    throw new DivideByZeroException();
-                });
-
-            Func<Task> act = async () =>
-            {
-                await _cache.RemoveAllAsync();
-            };
-            act.ShouldNotThrow();
-        }
-
-        [Test]
-        public async void RemoveImage_should_return_if_folder_absent()
-        {
-            _file.Exists(Arg.Any<string>()).Returns(false);
-
-            await _cache.RemoveImageAsync(FileName);
-
-            _file.DidNotReceive().Delete(Arg.Any<string>());
-        }
-
-        [Test]
-        public async void RemoveImage_should_delete()
-        {
-            _file.Exists(Arg.Any<string>()).Returns(true);
-
-            await _cache.RemoveImageAsync(FileName);
-
-            _file.Received(1).Delete(Arg.Any<string>());
-        }
-
-        [Test]
-        public void RemoveImage_should_ignore_errors()
-        {
-            _file.Exists(Arg.Any<string>()).Returns(true);
-            _file.When(x => x.Delete(FileName))
-                .Do(x =>
-                {
-                    throw new DivideByZeroException();
-                });
-
-            Func<Task> act = async () =>
-            {
-                await _cache.RemoveImageAsync(FileName);
             };
             act.ShouldNotThrow();
         }

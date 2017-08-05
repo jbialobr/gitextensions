@@ -8,10 +8,31 @@ namespace Gravatar
 {
     public interface IImageCache
     {
+        /// <summary>
+        /// Adds the image to the cache from the supplied stream.
+        /// </summary>
+        /// <param name="imageFileName">The image file name.</param>
+        /// <param name="imageStream">The stream which contains the image.</param>
         Task AddImageAsync(string imageFileName, Stream imageStream);
+
+        /// <summary>
+        /// Clears the cache by deleting all images.
+        /// </summary>
+        Task ClearAsync();
+
+        /// <summary>
+        /// Deletes the specified image from the cache.
+        /// </summary>
+        /// <param name="imageFileName">The image file name.</param>
+        Task DeleteImageAsync(string imageFileName);
+
+        /// <summary>
+        /// Retrieves the image from the cache.
+        /// </summary>
+        /// <param name="imageFileName">The image file name.</param>
+        /// <param name="defaultBitmap">The default image to return 
+        /// if the requested image does not exist in the cache.</param>
         Task<Image> GetImageAsync(string imageFileName, Bitmap defaultBitmap);
-        Task RemoveAllAsync();
-        Task RemoveImageAsync(string imageFileName);
     }
 
     public class DirectoryImageCache : IImageCache
@@ -39,6 +60,11 @@ namespace Gravatar
         }
 
 
+        /// <summary>
+        /// Adds the image to the cache from the supplied stream.
+        /// </summary>
+        /// <param name="imageFileName">The image file name.</param>
+        /// <param name="imageStream">The stream which contains the image.</param>
         public async Task AddImageAsync(string imageFileName, Stream imageStream)
         {
             if (!_fileSystem.Directory.Exists(_cachePath))
@@ -70,6 +96,55 @@ namespace Gravatar
             }
         }
 
+        /// <summary>
+        /// Clears the cache by deleting all images.
+        /// </summary>
+        public async Task ClearAsync()
+        {
+            if (!_fileSystem.Directory.Exists(_cachePath))
+            {
+                return;
+            }
+            foreach (var file in _fileSystem.Directory.GetFiles(_cachePath))
+            {
+                try
+                {
+                    await Task.Run(() => _fileSystem.File.Delete(file));
+                }
+                catch
+                {
+                    // do nothing
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the specified image from the cache.
+        /// </summary>
+        /// <param name="imageFileName">The image file name.</param>
+        public async Task DeleteImageAsync(string imageFileName)
+        {
+            string file = Path.Combine(_cachePath, imageFileName);
+            if (!_fileSystem.File.Exists(file))
+            {
+                return;
+            }
+            try
+            {
+                await Task.Run(() => _fileSystem.File.Delete(file));
+            }
+            catch
+            {
+                // do nothing
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the image from the cache.
+        /// </summary>
+        /// <param name="imageFileName">The image file name.</param>
+        /// <param name="defaultBitmap">The default image to return 
+        /// if the requested image does not exist in the cache.</param>
         public async Task<Image> GetImageAsync(string imageFileName, Bitmap defaultBitmap)
         {
             string file = Path.Combine(_cachePath, imageFileName);
@@ -90,42 +165,6 @@ namespace Gravatar
             catch
             {
                 return null;
-            }
-        }
-
-        public async Task RemoveAllAsync()
-        {
-            if (!_fileSystem.Directory.Exists(_cachePath))
-            {
-                return;
-            }
-            foreach (var file in _fileSystem.Directory.GetFiles(_cachePath))
-            {
-                try
-                {
-                    await Task.Run(() => _fileSystem.File.Delete(file));
-                }
-                catch
-                {
-                    // do nothing
-                }
-            }
-        }
-
-        public async Task RemoveImageAsync(string imageFileName)
-        {
-            string file = Path.Combine(_cachePath, imageFileName);
-            if (!_fileSystem.File.Exists(file))
-            {
-                return;
-            }
-            try
-            {
-                await Task.Run(() => _fileSystem.File.Delete(file));
-            }
-            catch
-            {
-                // do nothing
             }
         }
 

@@ -6,20 +6,8 @@ using System.Threading.Tasks;
 
 namespace Gravatar
 {
-    public interface IGravatarService
+    public interface IAvatarService
     {
-        /// <summary>
-        /// Removes all cached images.
-        /// </summary>
-        Task ClearCacheAsync();
-
-        /// <summary>
-        /// Configures the local cache.
-        /// </summary>
-        /// <param name="imageCachePath">The path to the cache folder.</param>
-        /// <param name="cacheDays">The number of days to keep images in the cache.</param>
-        void ConfigureCache(string imageCachePath, int cacheDays);
-
         /// <summary>
         /// Loads avatar either from the local cache or from the remote service.
         /// </summary>
@@ -28,51 +16,25 @@ namespace Gravatar
         /// <summary>
         /// Removes the avatar from the local cache.
         /// </summary>
-        Task RemoveAvatarAsync(string email);
+        Task DeleteAvatarAsync(string email);
     }
 
-    public class GravatarService : IGravatarService
+    public class GravatarService : IAvatarService
     {
-        private IImageCache _cache;
-        private readonly IImageCacheFactory _imageCacheFactory;
+        private readonly IImageCache _cache;
 
 
-        public GravatarService(IImageCacheFactory imageCacheFactory)
+        public GravatarService(IImageCache imageCache)
         {
-            _imageCacheFactory = imageCacheFactory;
+            _cache = imageCache;
         }
 
-        public GravatarService()
-            : this(new ImageCacheFactory())
-        {
-        }
-
-
-        /// <summary>
-        /// Removes all cached images.
-        /// </summary>
-        public async Task ClearCacheAsync()
-        {
-            EnsureCacheConfigured();
-            await _cache.RemoveAllAsync();
-        }
-
-        /// <summary>
-        /// Configures the local cache.
-        /// </summary>
-        /// <param name="imageCachePath">The path to the cache folder.</param>
-        /// <param name="cacheDays">The number of days to keep images in the cache.</param>
-        public void ConfigureCache(string imageCachePath, int cacheDays)
-        {
-            _cache = _imageCacheFactory.Create(imageCachePath, cacheDays);
-        }
 
         /// <summary>
         /// Loads avatar either from the local cache or from the remote service.
         /// </summary>
         public async Task<Image> GetAvatarAsync(string email, int imageSize, DefaultImageType defaultImageType)
         {
-            EnsureCacheConfigured();
             var imageFileName = GetImageFileName(email);
             var image = await _cache.GetImageAsync(imageFileName, null);
             if (image == null)
@@ -85,11 +47,10 @@ namespace Gravatar
         /// <summary>
         /// Removes the avatar from the local cache.
         /// </summary>
-        public async Task RemoveAvatarAsync(string email)
+        public async Task DeleteAvatarAsync(string email)
         {
-            EnsureCacheConfigured();
             var imageFileName = GetImageFileName(email);
-            await _cache.RemoveImageAsync(imageFileName);
+            await _cache.DeleteImageAsync(imageFileName);
         }
 
 
@@ -119,15 +80,6 @@ namespace Gravatar
             builder.Query = query;
 
             return builder.Uri;
-        }
-
-        private void EnsureCacheConfigured()
-        {
-            if (_cache != null)
-            {
-                return;
-            }
-            throw new NotSupportedException($"{nameof(ConfigureCache)} must be called first");
         }
 
         /// <summary>

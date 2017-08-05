@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
 using Gravatar;
@@ -20,13 +19,16 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         private Font _diffFont;
         private Font _applicationFont;
         private Font commitFont;
-        private readonly IGravatarService _gravatarService = new GravatarService();
+        private readonly IImageCache _avatarCache;
+
 
         public AppearanceSettingsPage()
         {
             InitializeComponent();
             Text = "Appearance";
             Translate();
+
+            _avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
 
             NoImageService.Items.AddRange(Enum.GetNames(typeof(DefaultImageType)));
         }
@@ -197,7 +199,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void ClearImageCache_Click(object sender, EventArgs e)
         {
-            _gravatarService.ClearCacheAsync();
+            _avatarCache.ClearAsync();
         }
 
         private void helpTranslate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

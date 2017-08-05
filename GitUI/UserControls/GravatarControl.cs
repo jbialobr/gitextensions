@@ -12,7 +12,8 @@ namespace GitUI
 {
     public partial class GravatarControl : GitExtensionsControl
     {
-        private readonly IGravatarService _gravatarService = new GravatarService();
+        private readonly IImageCache _avatarCache;
+        private readonly IAvatarService _gravatarService;
 
         public GravatarControl()
         {
@@ -25,7 +26,8 @@ namespace GitUI
             wavatarToolStripMenuItem.Tag = DefaultImageType.Wavatar;
             retroToolStripMenuItem.Tag = DefaultImageType.Retro;
 
-            _gravatarService.ConfigureCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+            _avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+            _gravatarService = new GravatarService(_avatarCache);
         }
 
         [Browsable(false)]
@@ -81,7 +83,7 @@ namespace GitUI
 
         private async void RefreshToolStripMenuItemClick(object sender, EventArgs e)
         {
-            await _gravatarService.RemoveAvatarAsync(Email);
+            await _gravatarService.DeleteAvatarAsync(Email);
             UpdateGravatar();
         }
 
@@ -99,7 +101,7 @@ namespace GitUI
 
         private async void ClearImagecacheToolStripMenuItemClick(object sender, EventArgs e)
         {
-            await _gravatarService.ClearCacheAsync();
+            await _avatarCache.ClearAsync();
             UpdateGravatar();
         }
 
@@ -111,7 +113,7 @@ namespace GitUI
                 return;
             }
             AppSettings.GravatarDefaultImageType = ((DefaultImageType)tag).ToString();
-            await _gravatarService.ClearCacheAsync();
+            await _avatarCache.ClearAsync();
             UpdateGravatar();
         }
 

@@ -12,17 +12,15 @@ using GitUI.CommandsDialogs.SettingsDialog;
 using GitUIPluginInterfaces;
 using GitUIPluginInterfaces.RepositoryHosts;
 using Gravatar;
-
 using JetBrains.Annotations;
-
-using Settings = GitCommands.AppSettings;
 
 namespace GitUI
 {
     /// <summary>Contains methods to invoke GitEx forms, dialogs, etc.</summary>
     public sealed class GitUICommands : IGitUICommands
     {
-        private readonly IGravatarService _gravatarService = new GravatarService();
+        private readonly IImageCache _avatarCache;
+        private readonly IAvatarService _gravatarService;
 
 
         public GitUICommands(GitModule module)
@@ -30,6 +28,9 @@ namespace GitUI
             Module = module;
             RepoChangedNotifier = new ActionNotifier(
                 () => InvokeEvent(null, PostRepositoryChanged));
+
+            _avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+            _gravatarService = new GravatarService(_avatarCache);
         }
 
         public GitUICommands(string workingDir)
@@ -219,9 +220,9 @@ namespace GitUI
         private DefaultImageType GetDefaultImageType()
         {
             DefaultImageType defaultImageType;
-            if (!Enum.TryParse(Settings.GravatarDefaultImageType, true, out defaultImageType))
+            if (!Enum.TryParse(AppSettings.GravatarDefaultImageType, true, out defaultImageType))
             {
-                Settings.GravatarDefaultImageType = DefaultImageType.None.ToString();
+                AppSettings.GravatarDefaultImageType = DefaultImageType.None.ToString();
                 defaultImageType = DefaultImageType.None;
             }
             return defaultImageType;
@@ -229,7 +230,7 @@ namespace GitUI
 
         public void CacheAvatar(string email)
         {
-            _gravatarService.GetAvatarAsync(email, Settings.AuthorImageSize, GetDefaultImageType());
+            _gravatarService.GetAvatarAsync(email, AppSettings.AuthorImageSize, GetDefaultImageType());
         }
 
         public Icon FormIcon { get { return GitExtensionsForm.ApplicationIcon; } }
@@ -716,7 +717,7 @@ namespace GitUI
                 return false;
             Func<bool> action = () =>
             {
-                return FormProcess.ShowDialog(owner, Module, Settings.GitCommand, GitSvnCommandHelpers.DcommitCmd());
+                return FormProcess.ShowDialog(owner, Module, AppSettings.GitCommand, GitSvnCommandHelpers.DcommitCmd());
             };
 
             return DoActionOnRepo(owner, true, true, PreSvnDcommit, PostSvnDcommit, action);
@@ -733,7 +734,7 @@ namespace GitUI
                 return false;
             Func<bool> action = () =>
             {
-                FormProcess.ShowDialog(owner, Module, Settings.GitCommand, GitSvnCommandHelpers.RebaseCmd());
+                FormProcess.ShowDialog(owner, Module, AppSettings.GitCommand, GitSvnCommandHelpers.RebaseCmd());
                 return true;
             };
 
@@ -751,7 +752,7 @@ namespace GitUI
                 return false;
             Func<bool> action = () =>
             {
-                return FormProcess.ShowDialog(owner, Module, Settings.GitCommand, GitSvnCommandHelpers.FetchCmd());
+                return FormProcess.ShowDialog(owner, Module, AppSettings.GitCommand, GitSvnCommandHelpers.FetchCmd());
             };
 
             return DoActionOnRepo(owner, true, true, PreSvnFetch, PostSvnFetch, action);
@@ -2172,13 +2173,13 @@ namespace GitUI
         private static void UpdateSettingsBasedOnArguments(Dictionary<string, string> arguments)
         {
             if (arguments.ContainsKey("merge"))
-                Settings.FormPullAction = Settings.PullAction.Merge;
+                AppSettings.FormPullAction = AppSettings.PullAction.Merge;
             if (arguments.ContainsKey("rebase"))
-                Settings.FormPullAction = Settings.PullAction.Rebase;
+                AppSettings.FormPullAction = AppSettings.PullAction.Rebase;
             if (arguments.ContainsKey("fetch"))
-                Settings.FormPullAction = Settings.PullAction.Fetch;
+                AppSettings.FormPullAction = AppSettings.PullAction.Fetch;
             if (arguments.ContainsKey("autostash"))
-                Settings.AutoStash = true;
+                AppSettings.AutoStash = true;
         }
 
         internal void RaisePreBrowseInitialize(IWin32Window owner)
