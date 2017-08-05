@@ -1,89 +1,87 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
-using System.Threading;
 using System.Windows.Forms;
+using GitCommands;
 using GitUI.Properties;
 using Gravatar;
 using ResourceManager;
-using Settings = GitCommands.AppSettings;
 
 namespace GitUI
 {
     public partial class GravatarControl : GitExtensionsControl
     {
-        private readonly SynchronizationContext _syncContext;
+        private readonly IGravatarService _gravatarService = new GravatarService();
 
         public GravatarControl()
         {
-            _syncContext = SynchronizationContext.Current;
-
             InitializeComponent();
             Translate();
 
-            _gravatarImg.Visible = false;
+            noneToolStripMenuItem.Tag = DefaultImageType.None;
+            identiconToolStripMenuItem.Tag = DefaultImageType.Identicon;
+            monsterIdToolStripMenuItem.Tag = DefaultImageType.MonsterId;
+            wavatarToolStripMenuItem.Tag = DefaultImageType.Wavatar;
+            retroToolStripMenuItem.Tag = DefaultImageType.Retro;
+
+            _gravatarService.ConfigureCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
         }
 
         [Browsable(false)]
         public string Email { get; private set; }
 
-        [Browsable(false)]
-        public string ImageFileName { get; private set; }
 
-        public void LoadImageForEmail(string email)
+        public void LoadImage(string email)
         {
-            if (!string.IsNullOrEmpty(email))
-                _gravatarImg.Visible = true;
-            Email = email;
-            ImageFileName = string.Concat(Email, ".png");
-            UpdateGravatar();
-        }
-
-        /// <summary>
-        ///   Update the Gravatar anytime an attribute is changed
-        /// </summary>
-        private void UpdateGravatar()
-        {
-            // resize our control (I'm not using AutoSize for a reason)
-            Size = new Size(Settings.AuthorImageSize, Settings.AuthorImageSize);
-            _gravatarImg.Size = new Size(Settings.AuthorImageSize, Settings.AuthorImageSize);
-
-            if (!Settings.ShowAuthorGravatar || string.IsNullOrEmpty(Email))
+            if (string.IsNullOrEmpty(email))
             {
                 RefreshImage(Resources.User);
                 return;
             }
 
-            FallBackService gravatarFallBack = FallBackService.Identicon;
-            try
-            {
-                gravatarFallBack = (FallBackService)Enum.Parse(typeof(FallBackService), Settings.GravatarFallbackService);
-            }
-            catch
-            {
-                Settings.GravatarFallbackService = gravatarFallBack.ToString();
-            }
+            Email = email;
+            UpdateGravatar();
+        }
 
-            ThreadPool.QueueUserWorkItem(o =>
-                                         GravatarService.LoadCachedImage(
-                                             ImageFileName,
-                                             Email,
-                                             Resources.User,
-                                             Settings.AuthorImageCacheDays,
-                                             Settings.AuthorImageSize,
-                                             Settings.GravatarCachePath,
-                                             RefreshImage,
-                                             gravatarFallBack));
+
+        private DefaultImageType GetDefaultImageType()
+        {
+            DefaultImageType defaultImageType;
+            if (!Enum.TryParse(AppSettings.GravatarDefaultImageType, true, out defaultImageType))
+            {
+                AppSettings.GravatarDefaultImageType = DefaultImageType.None.ToString();
+                defaultImageType = DefaultImageType.None;
+            }
+            return defaultImageType;
         }
 
         private void RefreshImage(Image image)
         {
-            _syncContext.Post(state => { _gravatarImg.Image = image; _gravatarImg.Refresh(); }, null);
+            _gravatarImg.Image = image ?? Resources.User;
+            _gravatarImg.Refresh();
         }
 
-        private void RefreshToolStripMenuItemClick(object sender, EventArgs e)
+        private async void UpdateGravatar()
         {
-            GravatarService.RemoveImageFromCache(ImageFileName);
+            // resize our control (I'm not using AutoSize for a reason)
+            var size = new Size(AppSettings.AuthorImageSize, AppSettings.AuthorImageSize);
+            Size = _gravatarImg.Size = size;
+
+            if (!AppSettings.ShowAuthorGravatar || string.IsNullOrEmpty(Email))
+            {
+                RefreshImage(Resources.User);
+                return;
+            }
+
+            var image = await _gravatarService.GetAvatarAsync(Email, AppSettings.AuthorImageSize, GetDefaultImageType());
+            RefreshImage(image);
+        }
+
+
+        private async void RefreshToolStripMenuItemClick(object sender, EventArgs e)
+        {
+            await _gravatarService.RemoveAvatarAsync(Email);
             UpdateGravatar();
         }
 
@@ -91,7 +89,7 @@ namespace GitUI
         {
             try
             {
-                GravatarService.OpenGravatarRegistration();
+                Process.Start(@"http://www.gravatar.com");
             }
             catch (Exception ex)
             {
@@ -99,54 +97,42 @@ namespace GitUI
             }
         }
 
-        private void ClearImagecacheToolStripMenuItemClick(object sender, EventArgs e)
+        private async void ClearImagecacheToolStripMenuItemClick(object sender, EventArgs e)
         {
-            GravatarService.ClearImageCache();
+            await _gravatarService.ClearCacheAsync();
             UpdateGravatar();
         }
 
-
-        private void toolStripMenuItemClick(object sender, EventArgs e)
+        private async void noImageService_Click(object sender, EventArgs e)
         {
-            var toolStripItem = (ToolStripItem)sender;
-            Settings.AuthorImageSize = int.Parse((string)toolStripItem.Tag);
-            GravatarService.ClearImageCache();
+            var tag = (sender as ToolStripMenuItem)?.Tag;
+            if (!(tag is DefaultImageType))
+            {
+                return;
+            }
+            AppSettings.GravatarDefaultImageType = ((DefaultImageType)tag).ToString();
+            await _gravatarService.ClearCacheAsync();
             UpdateGravatar();
         }
 
-        private void identiconToolStripMenuItem_Click(object sender, EventArgs e)
+        private void noImageGeneratorToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
         {
-            Settings.GravatarFallbackService = FallBackService.Identicon.ToString();
-            GravatarService.ClearImageCache();
-            UpdateGravatar();
-        }
+            var defaultImageType = GetDefaultImageType();
+            ToolStripMenuItem selectedItem = null;
+            foreach (ToolStripMenuItem menu in noImageGeneratorToolStripMenuItem.DropDownItems)
+            {
+                menu.Checked = false;
+                if ((DefaultImageType)menu.Tag == defaultImageType)
+                {
+                    selectedItem = menu;
+                }
+            }
 
-        private void monsterIdToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Settings.GravatarFallbackService = FallBackService.MonsterId.ToString();
-            GravatarService.ClearImageCache();
-            UpdateGravatar();
-        }
-
-        private void wavatarToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Settings.GravatarFallbackService = FallBackService.Wavatar.ToString();
-            GravatarService.ClearImageCache();
-            UpdateGravatar();
-        }
-
-        private void retroToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Settings.GravatarFallbackService = FallBackService.Retro.ToString();
-            GravatarService.ClearImageCache();
-            UpdateGravatar();
-        }
-
-        private void noneToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Settings.GravatarFallbackService = FallBackService.None.ToString();
-            GravatarService.ClearImageCache();
-            UpdateGravatar();
+            if (selectedItem == null)
+            {
+                selectedItem = noneToolStripMenuItem;
+            }
+            selectedItem.Checked = true;
         }
     }
 }
