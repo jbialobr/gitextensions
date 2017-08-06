@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Drawing.Imaging;
+using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Gravatar;
+using GravatarTests.Properties;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -40,15 +44,49 @@ namespace GravatarTests
 
 
         [Test]
+        public async void AddImage_should_exit_if_stream_null()
+        {
+            await _cache.AddImageAsync("file", null);
+
+            _directory.DidNotReceive().Exists(FolderPath);
+        }
+
+        [Test]
         public async void AddImage_should_create_if_folder_absent()
         {
             var fileSystem = new MockFileSystem();
             _cache = new DirectoryImageCache(FolderPath, 2, fileSystem);
             fileSystem.Directory.Exists(FolderPath).Should().BeFalse();
 
-            await _cache.AddImageAsync("file", null);
+            using (var s = new MemoryStream())
+            {
+                await _cache.AddImageAsync("file", s);
+            }
 
             fileSystem.Directory.Exists(FolderPath).Should().BeTrue();
+        }
+
+        [Test]
+        public async void AddImage_should_create_image_from_stream()
+        {
+            var currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var folderPath = Path.Combine(currentFolder, "Images");
+            Console.WriteLine(folderPath);
+
+            using (var imageStream = new MemoryStream())
+            {
+                var fileSystem = new FileSystem();
+                Resources.User.Save(imageStream, ImageFormat.Png);
+                imageStream.Position = 0;
+
+                _cache = new DirectoryImageCache(folderPath, 2, fileSystem);
+                fileSystem.Directory.Exists(FolderPath).Should().BeFalse();
+
+                await _cache.AddImageAsync("file.png", imageStream);
+
+                fileSystem.Directory.Exists(folderPath).Should().BeTrue();
+                fileSystem.File.Exists(Path.Combine(folderPath, "file.png")).Should().BeTrue();
+            }
         }
 
         [Test]
@@ -137,7 +175,7 @@ namespace GravatarTests
             _fileInfo.Exists.Returns(false);
 
             var image = await _cache.GetImageAsync(FileName, null);
-            
+
             image.Should().BeNull();
             var not_used = _fileInfo.DidNotReceive().LastWriteTime;
         }
@@ -149,7 +187,7 @@ namespace GravatarTests
             _fileInfo.LastWriteTime.Returns(new DateTime(2010, 1, 1));
 
             var image = await _cache.GetImageAsync(FileName, null);
-            
+
             image.Should().BeNull();
             var not_used = _fileInfo.Received(1).LastWriteTime;
         }

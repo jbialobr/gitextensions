@@ -67,6 +67,10 @@ namespace Gravatar
         /// <param name="imageStream">The stream which contains the image.</param>
         public async Task AddImageAsync(string imageFileName, Stream imageStream)
         {
+            if (imageStream == null)
+            {
+                return;
+            }
             if (!_fileSystem.Directory.Exists(_cachePath))
             {
                 _fileSystem.Directory.CreateDirectory(_cachePath);
@@ -77,17 +81,7 @@ namespace Gravatar
                 string file = Path.Combine(_cachePath, imageFileName);
                 using (var output = new FileStream(file, FileMode.Create))
                 {
-                    byte[] buffer = new byte[1024];
-                    int read;
-
-                    if (imageStream == null)
-                    {
-                        return;
-                    }
-                    while ((read = await imageStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                    {
-                        output.Write(buffer, 0, read);
-                    }
+                    await imageStream.CopyToAsync(output);
                 }
             }
             catch
