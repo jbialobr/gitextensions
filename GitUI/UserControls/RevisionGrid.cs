@@ -19,6 +19,7 @@ using GitUI.CommandsDialogs.BrowseDialog;
 using GitUI.Editor; // For ColorHelper
 using GitUI.HelperDialogs;
 using GitUI.Hotkey;
+using GitUI.Properties;
 using GitUI.RevisionGridClasses;
 using GitUI.Script;
 using GitUI.UserControls;
@@ -125,6 +126,7 @@ namespace GitUI
             Translate();
 
             _avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+            _avatarCache.Invalidated += (s, e) => Revisions.Invalidate();
             _gravatarService = new GravatarService(_avatarCache);
 
             _revisionGridMenuCommands = new RevisionGridMenuCommands(this);
@@ -1691,11 +1693,18 @@ namespace GitUI
                         int gravatarTop = e.CellBounds.Top + textHeight + 6;
                         int gravatarLeft = e.CellBounds.Left + baseOffset + 2;
 
-                        var gravatar = await _gravatarService.GetAvatarAsync(revision.AuthorEmail, gravatarSize, DefaultImageType.MonsterId);
-                        if (gravatar != null)
+                        var gravatar = _avatarCache.GetImage($"{revision.AuthorEmail}.png", null);
+                        if (gravatar == null)
                         {
-                            e.Graphics.DrawImage(gravatar, gravatarLeft + 1, gravatarTop + 1, gravatarSize, gravatarSize);
+                            gravatar = Resources.User;
+                            // kick off download operation, will likely display the avatar during the next round of repaint
+                            await _gravatarService.GetAvatarAsync(revision.AuthorEmail, AppSettings.AuthorImageSize, AppSettings.GravatarDefaultImageType)
+                                .ContinueWith(t => this.InvokeAsync(() =>
+                                {
+                                    Revisions.InvalidateCell(e.ColumnIndex, e.RowIndex);
+                                }));
                         }
+                        e.Graphics.DrawImage(gravatar, gravatarLeft + 1, gravatarTop + 1, gravatarSize, gravatarSize);
                         e.Graphics.DrawRectangle(Pens.Black, gravatarLeft, gravatarTop, gravatarSize + 1, gravatarSize + 1);
 
                         string authorText;
@@ -2076,11 +2085,6 @@ namespace GitUI
 
             // return the new colour
             return Color.FromArgb(r, g, b);
-        }
-
-        private void RefreshGravatar(Image image)
-        {
-            this.InvokeAsync(Revisions.Refresh);
         }
 
         private void RevisionsDoubleClick(object sender, MouseEventArgs e)

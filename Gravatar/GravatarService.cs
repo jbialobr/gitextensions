@@ -11,12 +11,14 @@ namespace Gravatar
         /// <summary>
         /// Loads avatar either from the local cache or from the remote service.
         /// </summary>
-        Task<Image> GetAvatarAsync(string email, int imageSize, DefaultImageType defaultImageType);
+        Task<Image> GetAvatarAsync(string email, int imageSize, string defaultImageType);
 
         /// <summary>
         /// Removes the avatar from the local cache.
         /// </summary>
         Task DeleteAvatarAsync(string email);
+
+        DefaultImageType GetDefaultImageType(string imageType);
     }
 
     public class GravatarService : IAvatarService
@@ -33,13 +35,13 @@ namespace Gravatar
         /// <summary>
         /// Loads avatar either from the local cache or from the remote service.
         /// </summary>
-        public async Task<Image> GetAvatarAsync(string email, int imageSize, DefaultImageType defaultImageType)
+        public async Task<Image> GetAvatarAsync(string email, int imageSize, string defaultImageType)
         {
             var imageFileName = GetImageFileName(email);
             var image = await _cache.GetImageAsync(imageFileName, null);
             if (image == null)
             {
-                image = await LoadFromGravatarAsync(imageFileName, email, imageSize, defaultImageType);
+                image = await LoadFromGravatarAsync(imageFileName, email, imageSize, GetDefaultImageType(defaultImageType));
             }
             return image;
         }
@@ -51,6 +53,16 @@ namespace Gravatar
         {
             var imageFileName = GetImageFileName(email);
             await _cache.DeleteImageAsync(imageFileName);
+        }
+
+        public DefaultImageType GetDefaultImageType(string imageType)
+        {
+            DefaultImageType defaultImageType;
+            if (!Enum.TryParse(imageType, true, out defaultImageType))
+            {
+                defaultImageType = DefaultImageType.None;
+            }
+            return defaultImageType;
         }
 
 

@@ -28,7 +28,7 @@ namespace GravatarTests
             var avatar = Resources.User;
             _cache.GetImageAsync(Arg.Any<string>(), null).Returns(avatar);
 
-            var image = await _service.GetAvatarAsync(Email, 1, DefaultImageType.Identicon);
+            var image = await _service.GetAvatarAsync(Email, 1, DefaultImageType.Identicon.ToString());
 
             image.Should().Be(avatar);
             Received.InOrder(async () =>

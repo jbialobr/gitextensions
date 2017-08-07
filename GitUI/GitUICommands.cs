@@ -217,20 +217,9 @@ namespace GitUI
             return true;
         }
 
-        private DefaultImageType GetDefaultImageType()
-        {
-            DefaultImageType defaultImageType;
-            if (!Enum.TryParse(AppSettings.GravatarDefaultImageType, true, out defaultImageType))
-            {
-                AppSettings.GravatarDefaultImageType = DefaultImageType.None.ToString();
-                defaultImageType = DefaultImageType.None;
-            }
-            return defaultImageType;
-        }
-
         public void CacheAvatar(string email)
         {
-            _gravatarService.GetAvatarAsync(email, AppSettings.AuthorImageSize, GetDefaultImageType());
+            _gravatarService.GetAvatarAsync(email, AppSettings.AuthorImageSize, AppSettings.GravatarDefaultImageType);
         }
 
         public Icon FormIcon { get { return GitExtensionsForm.ApplicationIcon; } }

@@ -47,17 +47,6 @@ namespace GitUI
         }
 
 
-        private DefaultImageType GetDefaultImageType()
-        {
-            DefaultImageType defaultImageType;
-            if (!Enum.TryParse(AppSettings.GravatarDefaultImageType, true, out defaultImageType))
-            {
-                AppSettings.GravatarDefaultImageType = DefaultImageType.None.ToString();
-                defaultImageType = DefaultImageType.None;
-            }
-            return defaultImageType;
-        }
-
         private void RefreshImage(Image image)
         {
             _gravatarImg.Image = image ?? Resources.User;
@@ -76,7 +65,7 @@ namespace GitUI
                 return;
             }
 
-            var image = await _gravatarService.GetAvatarAsync(Email, AppSettings.AuthorImageSize, GetDefaultImageType());
+            var image = await _gravatarService.GetAvatarAsync(Email, AppSettings.AuthorImageSize, AppSettings.GravatarDefaultImageType);
             RefreshImage(image);
         }
 
@@ -119,7 +108,7 @@ namespace GitUI
 
         private void noImageGeneratorToolStripMenuItem_DropDownOpening(object sender, EventArgs e)
         {
-            var defaultImageType = GetDefaultImageType();
+            var defaultImageType = _gravatarService.GetDefaultImageType(AppSettings.GravatarDefaultImageType);
             ToolStripMenuItem selectedItem = null;
             foreach (ToolStripMenuItem menu in noImageGeneratorToolStripMenuItem.DropDownItems)
             {
@@ -132,6 +121,7 @@ namespace GitUI
 
             if (selectedItem == null)
             {
+                AppSettings.GravatarDefaultImageType = DefaultImageType.None.ToString();
                 selectedItem = noneToolStripMenuItem;
             }
             selectedItem.Checked = true;
