@@ -2,138 +2,91 @@
 using System;
 using System.IO;
 using System.Collections.Concurrent;
+using System.IO.Abstractions;
 
 namespace GitExtensions
 {
-
-    internal class DIObjectInstance<T> where T : class, new()
+    public interface IGitWorkingDirService
     {
-        private static object lockObj = new object();
-        private T _Inst;
-        public T Inst
-        {
-            get
-            {
-                if (_Inst == null)
-                {
-                    lock (lockObj)
-                    {
-                        if (_Inst == null)
-                        {
-                            _Inst = StaticDI.CreateInstance<T>(ClearInst);
-                        }
-                    }
-                }
+        string FindGitWorkingDir(string startDir);
+        bool IsValidGitWorkingDir(string dir);
+    }
 
-                return _Inst;
+    public class GitWorkingDirService : IGitWorkingDirService
+    {
+        IFileSystem fileSystem;
+
+        public GitWorkingDirService(IFileSystem fileSystem)
+        {
+            this.fileSystem = fileSystem;
+        }
+
+        public string FindGitWorkingDir(string startDir)
+        {
+            if (string.IsNullOrEmpty(startDir))
+                return "";
+
+            var dir = startDir.Trim();
+
+            do
+            {
+                if (IsValidGitWorkingDir(dir))
+                    return dir.EnsureTrailingPathSeparator();
+
+                dir = PathUtil.GetDirectoryName(dir);
             }
+            while (!string.IsNullOrEmpty(dir));
+            return startDir;
         }
 
-        private void ClearInst()
+        public bool IsValidGitWorkingDir(string dir)
         {
-            lock(lockObj)
-            {
-                _Inst = null;
-            }            
-        }
-    }
+            if (string.IsNullOrEmpty(dir))
+                return false;
 
-    public interface IInstanceFactory
-    {
-        T CreateInstance<T>() where T : class, new();
-    }
+            string dirPath = dir.EnsureTrailingPathSeparator();
+            string path = dirPath + ".git";
 
-    public class NewInstanceFactory : IInstanceFactory
-    {
-        public T CreateInstance<T>() where T : class, new()
-        {
-            return new T();
+            if (fileSystem.Directory.Exists(path) || fileSystem.File.Exists(path))
+                return true;
+
+            return fileSystem.Directory.Exists(dirPath + "info") &&
+                   fileSystem.Directory.Exists(dirPath + "objects") &&
+                   fileSystem.Directory.Exists(dirPath + "refs");
+
         }
     }
 
-    public class StaticDI
+    public interface IAppSettings
     {
-        private static ConcurrentBag<Action> clearActions = new ConcurrentBag<Action>();
-        private static ConcurrentDictionary<Type, object> fakeInstances = new ConcurrentDictionary<Type, object>();
-
-        public static T CreateInstance<T>(Action clearAction) where T : class, new()
-        {
-            clearActions.Add(clearAction);
-            object fakeObj;
-            if(fakeInstances.TryGetValue(typeof(T), out fakeObj))
-            {
-                return (T)fakeObj;
-            }
-
-            return InstanceFactory.CreateInstance<T>();
-        }
-
-        public static IInstanceFactory InstanceFactory = new NewInstanceFactory();
-        
-        public static void ClearInstances()
-        {
-            Action clearAction;
-            while (clearActions.TryTake(out clearAction))
-            {
-                clearAction();
-            }
-        }
-
-        public static void RegisterFakeInstance<T>(T instacne)
-        {
-            fakeInstances[typeof(T)] = instacne;
-        }
-
+        bool StartWithRecentWorkingDir { get; set; }
+        string RecentWorkingDir { get; set; }
     }
 
-    public class DirectoryGateway
+    public class GESettings : IAppSettings
     {
-        private static DIObjectInstance<DirectoryGateway> _diInst = new DIObjectInstance<DirectoryGateway>();
-        public static DirectoryGateway Inst => _diInst.Inst;
+        IFileSystem fileSystem;
 
-        public virtual bool DirectoryExists(string dirPath)
+        public GESettings(IFileSystem fileSystem)
         {
-            return Directory.Exists(dirPath);
+            this.fileSystem = fileSystem;
         }
 
-        public virtual string CurrentDirectory => Directory.GetCurrentDirectory();
+        public bool StartWithRecentWorkingDir { get; set; }
+        public string RecentWorkingDir { get; set; }
     }
 
-    public class GitModuleGateway
+    public class WorkingPathService
     {
-        private static DIObjectInstance<GitModuleGateway> _diInst = new DIObjectInstance<GitModuleGateway>();
-        public static GitModuleGateway Inst => _diInst.Inst;
+        private IGitWorkingDirService workingDirService;
+        private IAppSettings appSettings;
+        private IFileSystem fileSystem;
 
-        public virtual string FindGitWorkingDir(string dirPath)
+        public WorkingPathService(IGitWorkingDirService aWorkingDirService, IAppSettings appSettings, IFileSystem fileSystem)
         {
-            return GitModule.FindGitWorkingDir(dirPath);
-        }
-
-        public virtual bool IsValidGitWorkingDir(string dirPath)
-        {
-            return GitModule.IsValidGitWorkingDir(dirPath);
-        }
-    }
-
-    public class WorkingPathProvider
-    {
-        public class Exterior
-        {
-            //ad hoc variables (without a dedicated Gateway)
-            public bool StartWithRecentWorkingDir = AppSettings.StartWithRecentWorkingDir;
-            //There should be a global instance of AppSettings that could be mocked.
-            public string RecentWorkingDir = AppSettings.RecentWorkingDir;
-        }
-
-        private Exterior Ext;
-
-        public WorkingPathProvider()
-            : this(new Exterior())
-        { }
-
-        public WorkingPathProvider(Exterior anExt)
-        {
-            Ext = anExt;
+            workingDirService = aWorkingDirService;
+            this.appSettings = appSettings;
+            this.fileSystem = fileSystem;
         }
 
         public string GetWorkingDir(string[] args)
@@ -146,12 +99,12 @@ namespace GitExtensions
                 //https://github.com/gitextensions/gitextensions/issues/3489
                 string dirArg = args[2].TrimEnd('"');
                 //Get DirectoryGateway from the global injected instance, needs to call before each test StaticDI.ClearInstances();
-                if (DirectoryGateway.Inst.DirectoryExists(dirArg))
-                    workingDir = GitModuleGateway.Inst.FindGitWorkingDir(dirArg);
+                if (fileSystem.Directory.Exists(dirArg))
+                    workingDir = workingDirService.FindGitWorkingDir(dirArg);
                 else
                 {
                     workingDir = Path.GetDirectoryName(dirArg);
-                    workingDir = GitModuleGateway.Inst.FindGitWorkingDir(workingDir);
+                    workingDir = workingDirService.FindGitWorkingDir(workingDir);
                 }
 
                 //Do not add this working directory to the recent repositories. It is a nice feature, but it
@@ -160,17 +113,17 @@ namespace GitExtensions
                 //    Repositories.RepositoryHistory.AddMostRecentRepository(Module.WorkingDir);
             }
 
-            if (args.Length <= 1 && string.IsNullOrEmpty(workingDir) && Ext.StartWithRecentWorkingDir)
+            if (args.Length <= 1 && string.IsNullOrEmpty(workingDir) && appSettings.StartWithRecentWorkingDir)
             {
-                if (GitModuleGateway.Inst.IsValidGitWorkingDir(Ext.RecentWorkingDir))
-                    workingDir = Ext.RecentWorkingDir;
+                if (workingDirService.IsValidGitWorkingDir(appSettings.RecentWorkingDir))
+                    workingDir = appSettings.RecentWorkingDir;
             }
 
             if (string.IsNullOrEmpty(workingDir))
             {
                 //Get DirectoryGateway from Ext.Directory
-                string findWorkingDir = GitModuleGateway.Inst.FindGitWorkingDir(DirectoryGateway.Inst.CurrentDirectory);
-                if (GitModuleGateway.Inst.IsValidGitWorkingDir(findWorkingDir))
+                string findWorkingDir = workingDirService.FindGitWorkingDir(fileSystem.Directory.GetCurrentDirectory());
+                if (workingDirService.IsValidGitWorkingDir(findWorkingDir))
                     workingDir = findWorkingDir;
             }
 

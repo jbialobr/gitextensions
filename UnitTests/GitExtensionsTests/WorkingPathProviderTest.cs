@@ -5,47 +5,37 @@ using NSubstitute.Core;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 
 namespace GitExtensionsTest
 {
     [TestFixture]
     public class WorkingPathProviderTests
     {
-        private WorkingPathProvider.Exterior _ext;
-        private WorkingPathProvider _workingPathProvider;
+        private WorkingPathService _workingPathProvider;
+        private IGitWorkingDirService workingDirService;
+        private IAppSettings appSettings;
+        private IFileSystem fileSystem;
 
         [SetUp]
         public void Setup()
         {
-            NSubstituteHelper.RegisterAsInstanceFactory();
-            _ext = new WorkingPathProvider.Exterior();
-            _workingPathProvider = new WorkingPathProvider(_ext);
+            NSubstituteHelper.Substitute(ref workingDirService);
+            NSubstituteHelper.Substitute(ref appSettings);
+            NSubstituteHelper.SubstituteFileSystem(ref fileSystem);
+
+            _workingPathProvider = new WorkingPathService(workingDirService, appSettings, fileSystem);
         }
 
         [Test]
         public void ReturnsRecentDirectory_if_RecentDirectory_IsValidGitWorkingDir()
         {
             //arange
-            DirectoryGateway.Inst.CurrentDirectory.Returns(string.Empty);
-            _ext.StartWithRecentWorkingDir = true;
+            fileSystem.Directory.GetCurrentDirectory().Returns(string.Empty);
+            appSettings.StartWithRecentWorkingDir.Returns(true);
             string unitTestRecentWorkingDir = "unitTestRecentWorkingDir";
-            _ext.RecentWorkingDir = unitTestRecentWorkingDir;
-            GitModuleGateway.Inst.IsValidGitWorkingDir(unitTestRecentWorkingDir).Returns(true);
-            //act
-            string workingDir = _workingPathProvider.GetWorkingDir(new string[0]);
-            //assert
-            workingDir.Should().Be(unitTestRecentWorkingDir);
-        }
-
-        [Test]
-        public void ReturnsRecentDirectory_if_RecentDirectory_is_not_ValidGitWorkingDir()
-        {
-            //arange
-            DirectoryGateway.Inst.CurrentDirectory.Returns(string.Empty);
-            _ext.StartWithRecentWorkingDir = true;
-            string unitTestRecentWorkingDir = "unitTestRecentWorkingDir";
-            _ext.RecentWorkingDir = unitTestRecentWorkingDir;
-            GitModuleGateway.Inst.IsValidGitWorkingDir(unitTestRecentWorkingDir).Returns(true);
+            appSettings.RecentWorkingDir.Returns(unitTestRecentWorkingDir);
+            workingDirService.IsValidGitWorkingDir(unitTestRecentWorkingDir).Returns(true);
             //act
             string workingDir = _workingPathProvider.GetWorkingDir(new string[0]);
             //assert
@@ -58,15 +48,10 @@ namespace GitExtensionsTest
             Action act = () =>
             {
                 //arange
-                _ext.StartWithRecentWorkingDir = false;
-                string unitTestRecentWorkingDir = "unitTestRecentWorkingDir";
-                _ext.RecentWorkingDir = unitTestRecentWorkingDir;
-                GitModuleGateway.Inst.IsValidGitWorkingDir(unitTestRecentWorkingDir).Returns(true);
                 NSubstituteHelper.ThrowOnUnconfiguredCall();
                 //act
-                string workingDir = _workingPathProvider.GetWorkingDir(new string[0]);
+                fileSystem.Directory.GetCurrentDirectory();
                 //assert
-                workingDir.Should().Be(string.Empty);
             };
 
             act.ShouldThrow<UnconfiguredCallException>();
@@ -76,17 +61,11 @@ namespace GitExtensionsTest
         public void DontThrowOnUnconfiguredCall()
         {
             //arange
-            _ext.StartWithRecentWorkingDir = false;
-            string unitTestRecentWorkingDir = "unitTestRecentWorkingDir";
-            _ext.RecentWorkingDir = unitTestRecentWorkingDir;
-            GitModuleGateway.Inst.IsValidGitWorkingDir(unitTestRecentWorkingDir).Returns(true);
+            NSubstituteHelper.ThrowOnUnconfiguredCall();
             //act
-            string workingDir = _workingPathProvider.GetWorkingDir(new string[0]);
+            fileSystem.Directory.GetCurrentDirectory();
             //assert
-            workingDir.Should().Be(string.Empty);
         }
-
-
 
     }
 
@@ -105,36 +84,11 @@ namespace GitExtensionsTest
         }
     }
 
-    public class NSubstituteHelper : IInstanceFactory
+    public class NSubstituteHelper
     {
         private static List<object> substitutes = new List<object>();
         private static bool _ThrowOnUnconfiguredCall = false;
         private static CallHandlerFactory throwingFactory = s => new ThrowIfUnconfigured();
-
-        public static void RegisterAsInstanceFactory()
-        {
-            ClearStaticInstances();
-            StaticDI.InstanceFactory = new NSubstituteHelper();
-            _ThrowOnUnconfiguredCall = false;
-        }
-
-        public T CreateInstance<T>() where T : class, new()
-        {
-            T sut = Substitute.For<T>();
-            substitutes.Add(sut);
-            if (_ThrowOnUnconfiguredCall)
-            {
-                RegisterThrowingCallHandlerFactory(sut);
-            }
-
-            return sut;
-        }
-
-        private static void ClearStaticInstances()
-        {
-            substitutes.Clear();
-            StaticDI.ClearInstances();
-        }
 
         public static void ThrowOnUnconfiguredCall()
         {
@@ -150,6 +104,18 @@ namespace GitExtensionsTest
         {
             var sub = SubstitutionContext.Current.GetCallRouterFor(substitute);
             sub.RegisterCustomCallHandlerFactory(throwingFactory);
+        }
+
+        public static void Substitute<T>(ref T field) where T : class
+        {
+            field = NSubstitute.Substitute.For<T>();
+        }
+
+        public static void SubstituteFileSystem(ref IFileSystem fs)
+        {
+            fs = NSubstitute.Substitute.For<IFileSystem>();
+            fs.Directory.Returns(NSubstitute.Substitute.For<DirectoryBase>());
+            fs.File.Returns(NSubstitute.Substitute.For<FileBase>());
         }
 
     }

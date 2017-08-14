@@ -8,6 +8,7 @@ using GitUI;
 using GitUI.CommandsDialogs.SettingsDialog;
 using GitUI.CommandsDialogs.SettingsDialog.Pages;
 using System.Threading.Tasks;
+using System.IO.Abstractions;
 
 namespace GitExtensions
 {
@@ -52,6 +53,12 @@ namespace GitExtensions
                     }
                 }
             }
+
+
+            IFileSystem fileSystem = new FileSystem();
+            IAppSettings appSettings = new GESettings(fileSystem);
+            IGitWorkingDirService workingDirService = new GitWorkingDirService(fileSystem);
+            WorkingPathService workingPathService = new WorkingPathService(workingDirService, appSettings, fileSystem);
 
             string[] args = Environment.GetCommandLineArgs();
             FormSplash.ShowSplash();
@@ -120,7 +127,8 @@ namespace GitExtensions
             if (EnvUtils.RunningOnWindows())
                 MouseWheelRedirector.Active = true;
 
-            GitUICommands uCommands = new GitUICommands(GetWorkingDir(args));
+            string workingDir = workingPathService.GetWorkingDir(args);
+            GitUICommands uCommands = new GitUICommands(workingDir);
 
             if (args.Length <= 1)
             {
