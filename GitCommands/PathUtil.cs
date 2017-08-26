@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using GitCommands.Utils;
+using System.IO.Abstractions;
 
 namespace GitCommands
 {
     public static class PathUtil
     {
+        private static readonly PathService _pathService = new PathService(new FileSystem());
         /// <summary>Replaces native path separator with posix path separator.</summary>
         public static string ToPosixPath(this string path)
         {
@@ -181,16 +183,7 @@ namespace GitCommands
                 
         public static bool PathExists(string aPath)
         {
-            FileInfo fi = null;
-            try
-            {
-                fi = new FileInfo(aPath);
-            }
-            catch (ArgumentException) { }
-            catch (PathTooLongException) { }
-            catch (NotSupportedException) { }
-
-            return fi != null && fi.Exists;
+            return _pathService.PathExists(aPath);
         }
 
         public static bool DirectoryExists(string aPath)
@@ -240,6 +233,31 @@ namespace GitCommands
 
             shellPath = null;
             return false;
+        }
+
+    }
+
+    public class PathService
+    {
+        private IFileSystem _fileSystem;
+
+        public PathService(IFileSystem fs)
+        {
+            _fileSystem = fs;
+        }
+
+        public bool PathExists(string aPath)
+        {
+            FileInfoBase fi = null;
+            try
+            {
+                fi = _fileSystem.FileInfo.FromFileName(aPath);
+            }
+            catch (ArgumentException) { }
+            catch (PathTooLongException) { }
+            catch (NotSupportedException) { }
+
+            return fi != null && fi.Exists;
         }
 
     }

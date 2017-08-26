@@ -24,12 +24,14 @@ namespace GitCommands
     {
         private readonly IFileSystem _fileSystem;
         private readonly IGitModule _module;
+        private readonly PathService _pathService;
 
 
         public CommitTemplateManager(IGitModule module, IFileSystem fileSystem)
         {
             _module = module;
             _fileSystem = fileSystem;
+            _pathService = new PathService(_fileSystem);
         }
 
         public CommitTemplateManager(IGitModule module)
@@ -63,7 +65,7 @@ namespace GitCommands
                 fileName = uri.LocalPath;
             }
 
-            if (!_fileSystem.File.Exists(fileName))
+            if (!_pathService.PathExists(fileName))
             {
                 throw new FileNotFoundException("File not found", fileName);
             }
