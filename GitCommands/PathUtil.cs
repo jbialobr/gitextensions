@@ -260,5 +260,25 @@ namespace GitCommands
             return fi != null && fi.Exists;
         }
 
+        public string ResolveFullPath(string parentDir, string fileName)
+        {
+            if (!Path.IsPathRooted(fileName))
+            {
+                if (fileName.StartsWith("~/"))
+                {
+                    parentDir = GitCommandHelpers.GetHomeDir();
+                    fileName = fileName.Substring(2);
+                }
+                else if (parentDir.IsNullOrEmpty())
+                {
+                    parentDir = _fileSystem.Directory.GetCurrentDirectory();
+                }
+                var path = Path.GetFullPath(Path.Combine(parentDir, fileName));
+                var uri = new Uri(path);
+                fileName = uri.LocalPath;
+            }
+
+            return fileName;
+        }
     }
 }

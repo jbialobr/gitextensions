@@ -58,12 +58,7 @@ namespace GitCommands
                 return null;
             }
 
-            if (!Path.IsPathRooted(fileName))
-            {
-                var path = Path.GetFullPath(Path.Combine(_module.WorkingDir ?? "", fileName));
-                var uri = new Uri(path);
-                fileName = uri.LocalPath;
-            }
+            fileName = _pathService.ResolveFullPath(_module.WorkingDir, fileName);
 
             if (!_pathService.PathExists(fileName))
             {
