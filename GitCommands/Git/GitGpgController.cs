@@ -8,13 +8,29 @@ using System.Threading.Tasks;
 
 namespace GitCommands.Gpg
 {
+    public enum CommitStatus
+    {
+        GoodSignature = 0,
+        SignatureError = 1,
+        MissingPublicKey = 2,
+        NoSignature = 3
+    };
+
+    public enum TagStatus
+    {
+        OneGood = 0,
+        OneBad = 1,
+        Many = 2,
+        NoPubKey = 3
+    };
+
     public interface IGitGpgController
     {
         /// <summary>
         /// Obtain the commit signature status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate the gpg status for current git revision.</returns>
-        GitGpgController.CommitStatus CheckCommitSign();
+        CommitStatus CheckCommitSign();
 
         /// <summary>
         /// Obtain the commit verification message, coming from --pretty="format:%GG" 
@@ -26,7 +42,6 @@ namespace GitCommands.Gpg
         /// Obtain the tag status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
-        GitGpgController.TagStatus CheckTagSign();
 
         /// <summary>
         /// Accessor for Revision property.
@@ -37,6 +52,7 @@ namespace GitCommands.Gpg
         /// Accessor for Module property.
         /// </summary>
         IGitModule Module { get; set; }
+        TagStatus CheckTagSign();
 
         /// <summary>
         /// Obtain the number of tag on current git revision.
@@ -85,23 +101,6 @@ namespace GitCommands.Gpg
         /// </summary>
         /// <returns>Full concatenated string coming from GPG analysis on all tags on current git revision.</returns>
         public string TagVerifyMessage { get; private set; }
-
-
-        public enum CommitStatus
-        {
-            GoodSignature = 0,
-            SignatureError = 1,
-            MissingPublicKey = 2,
-            NoSignature = 3
-        };
-
-        public enum TagStatus
-        {
-            OneGood = 0,
-            OneBad = 1,
-            Many = 2,
-            NoPubKey = 3
-        };
 
 
         public GitGpgController()

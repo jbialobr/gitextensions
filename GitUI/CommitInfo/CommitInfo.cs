@@ -194,16 +194,16 @@ namespace GitUI.CommitInfo
                 this.InvokeAsync(() => {
                     switch (_gpgController.CheckCommitSign())
                     {
-                        case GitGpgController.CommitStatus.GoodSignature:
+                        case CommitStatus.GoodSignature:
                             commitSignPicture.Image = GitUI.Properties.Resources.commit_ok;
                             break;
-                        case GitGpgController.CommitStatus.MissingPublicKey:
+                        case CommitStatus.MissingPublicKey:
                             commitSignPicture.Image = GitUI.Properties.Resources.commit_warning;
                             break;
-                        case GitGpgController.CommitStatus.NoSignature:
+                        case CommitStatus.NoSignature:
                             commitSignPicture.Visible = false;
                             break;
-                        case GitGpgController.CommitStatus.SignatureError:
+                        case CommitStatus.SignatureError:
                             commitSignPicture.Image = GitUI.Properties.Resources.commit_error;
                             break;
                     }
@@ -220,16 +220,16 @@ namespace GitUI.CommitInfo
                     this.InvokeAsync(() => {
                         switch (_gpgController.CheckTagSign())
                         {
-                            case GitGpgController.TagStatus.OneGood:
+                            case TagStatus.OneGood:
                                 tagSignPicture.Image = GitUI.Properties.Resources.tag_ok;
                                 break;
-                            case GitGpgController.TagStatus.OneBad:
+                            case TagStatus.OneBad:
                                 tagSignPicture.Image = GitUI.Properties.Resources.tag_error;
                                 break;
-                            case GitGpgController.TagStatus.Many:
+                            case TagStatus.Many:
                                 tagSignPicture.Image = GitUI.Properties.Resources.tag_many;
                                 break;
-                            case GitGpgController.TagStatus.NoPubKey:
+                            case TagStatus.NoPubKey:
                                 tagSignPicture.Image = GitUI.Properties.Resources.tag_warning;
                                 break;
                         }
