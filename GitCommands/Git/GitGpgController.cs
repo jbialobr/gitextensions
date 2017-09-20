@@ -42,16 +42,6 @@ namespace GitCommands.Gpg
         /// Obtain the tag status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
-
-        /// <summary>
-        /// Accessor for Revision property.
-        /// </summary>
-        GitRevision Revision { get; set; }
-
-        /// <summary>
-        /// Accessor for Module property.
-        /// </summary>
-        IGitModule Module { get; set; }
         TagStatus CheckTagSign();
 
         /// <summary>
@@ -104,58 +94,14 @@ namespace GitCommands.Gpg
         /// <returns>Full concatenated string coming from GPG analysis on all tags on current git revision.</returns>
         public string TagVerifyMessage { get; private set; }
 
-
-        public GitGpgController()
+        public GitGpgController(IGitModule module, GitRevision revision)
         {
-            NumberOfTag = 0;
+            _module = module;
+            _revision = revision;
+
+            NumberOfTag = _revision.Refs.Count(x => x.IsTag && x.IsDereference);
+            TagVerifyMessage = "";
         }
-
-        /// <summary>
-        /// Accessor for Revision property.
-        /// </summary>
-        public GitRevision Revision
-        {
-            get
-            {
-                return _revision;
-            }
-
-            set
-            {
-                if (_revision == null)
-                {
-                    throw new ArgumentNullException("revision");
-                }
-
-                _revision = value;
-
-                NumberOfTag = _revision.Refs.Count(x => x.IsTag && x.IsDereference);
-
-                TagVerifyMessage = "";
-            }
-        }
-
-        /// <summary>
-        /// Accessor for Module property.
-        /// </summary>
-        public IGitModule Module
-        {
-            get
-            {
-                return _module;
-            }
-
-            set
-            {
-                if (_module == null)
-                {
-                    throw new ArgumentNullException("module");
-                }
-
-                _module = value;
-            }
-        }
-
 
         /// <summary>
         /// Obtain the commit signature status on current revision.
