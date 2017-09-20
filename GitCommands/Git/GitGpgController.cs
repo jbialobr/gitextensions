@@ -109,8 +109,6 @@ namespace GitCommands.Gpg
         /// <returns>Enum value that indicate the gpg status for current git revision.</returns>
         public CommitStatus CheckCommitSign()
         {
-            CheckVariable();
-
             CommitStatus _cmtStatus = CommitStatus.NoSignature;
             string _gpg = _module.RunGitCmd($"log --pretty=\"format:%G?\" -1 {_revision.Guid}");
 
@@ -145,8 +143,6 @@ namespace GitCommands.Gpg
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
         public TagStatus CheckTagSign()
         {
-            CheckVariable();
-
             TagStatus _tagStatus = TagStatus.OneBad;
 
             IEnumerable<IGitRef> _usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference);
@@ -207,29 +203,11 @@ namespace GitCommands.Gpg
         /// <returns>Full string coming from GPG analysis on current revision.</returns>
         public string GetCommitVerificationMessage()
         {
-            CheckVariable();
-
             return _module.RunGitCmd($"log --pretty=\"format:%GG\" -1 {_revision.Guid}");
-        }
-
-
-        private void CheckVariable()
-        {
-            if (_module == null)
-            {
-                throw new ArgumentNullException("module: Set Module property before.");
-            }
-
-            if (_revision == null)
-            {
-                throw new ArgumentNullException("revision: Set Revision property before.");
-            }
         }
 
         private string GetTagVerificationMessage(string tag, bool raw = true)
         {
-            CheckVariable();
-
             if (string.IsNullOrWhiteSpace(tag))
                 return null;
 
