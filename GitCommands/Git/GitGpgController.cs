@@ -89,6 +89,8 @@ namespace GitCommands.Gpg
         private const string _validTagSign = "VALIDSIG";
         private const string _noTagPubKey = "NO_PUBKEY";
 
+        private static Regex validSignatureTagRegex = new Regex(_validTagSign, RegexOptions.Compiled);
+        private static Regex goodSignatureTagRegex = new Regex(_goodSignature, RegexOptions.Compiled);
 
         /// <summary>
         /// Obtain the number of tag on current git revision.
@@ -203,10 +205,7 @@ namespace GitCommands.Gpg
 
             IEnumerable<IGitRef> _usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference);
 
-            Regex goodSignatureTagRegex = new Regex(_goodSignature);
             Match goodSignatureMatch = null;
-
-            Regex validSignatureTagRegex = new Regex(_validTagSign);
             Match validSignatureMatch = null;
 
             /* More than one tag on the revision */
