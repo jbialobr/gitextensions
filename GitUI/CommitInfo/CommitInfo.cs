@@ -30,7 +30,7 @@ namespace GitUI.CommitInfo
 
         private const int MaximumDisplayedRefs = 20;
         private LinkFactory _linkFactory = new LinkFactory();
-        private IGitGpgController _gpgController = new GitGpgController();
+        private IGitGpgController _gpgController;
 
         public CommitInfo()
         {
@@ -183,8 +183,7 @@ namespace GitUI.CommitInfo
             if (AppSettings.ShowGpgInformation)
             {
                 /* Setup GpgController */
-                _gpgController.Revision = _revision;
-                _gpgController.Module = Module;
+                _gpgController = new GitGpgController(Module, _revision);
 
                 /* COMMIT section */
                 
@@ -213,9 +212,8 @@ namespace GitUI.CommitInfo
 
 
                 /* TAG section */
-                int _howManyTag = _gpgController.NumberOfTag;
-                
-                if (_howManyTag > 0)
+                int howManyTag = _gpgController.NumberOfTag;
+                if (howManyTag > 0)
                 {
                     tagSignPicture.Visible = true;
 
@@ -669,7 +667,11 @@ namespace GitUI.CommitInfo
 
         private void commitSignPicture_Click(object sender, EventArgs e)
         {
-            using (FormSignatureInfo form = new FormSignatureInfo())
+            if (_gpgController == null)
+            {
+                return;
+            }
+            using (var form = new FormSignatureInfo())
             {
                 form.Text = trsGpgCommitInfo.Text;
                 form.ShowGpgMessage(_gpgController.GetCommitVerificationMessage());
@@ -679,7 +681,11 @@ namespace GitUI.CommitInfo
 
         private void tagSignPicture_Click(object sender, EventArgs e)
         {
-            using (FormSignatureInfo form = new FormSignatureInfo())
+            if (_gpgController == null)
+            {
+                return;
+            }
+            using (var form = new FormSignatureInfo())
             {
                 form.Text = trsGpgTagInfo.Text;
                 form.ShowGpgMessage(_gpgController.TagVerifyMessage);
