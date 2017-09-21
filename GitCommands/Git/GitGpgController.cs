@@ -110,31 +110,31 @@ namespace GitCommands.Gpg
         /// <returns>Enum value that indicate the gpg status for current git revision.</returns>
         public CommitStatus CheckCommitSign()
         {
-            CommitStatus _cmtStatus = CommitStatus.NoSignature;
-            string _gpg = _module.RunGitCmd($"log --pretty=\"format:%G?\" -1 {_revision.Guid}");
+            CommitStatus cmtStatus = CommitStatus.NoSignature;
+            string gpg = _module.RunGitCmd($"log --pretty=\"format:%G?\" -1 {_revision.Guid}");
 
-            switch (_gpg)
+            switch (gpg)
             {
                 case GOOD_SIGN:         // "G" for a good (valid) signature
-                    _cmtStatus = CommitStatus.GoodSignature;
+                    cmtStatus = CommitStatus.GoodSignature;
                     break;
                 case BAD_SIGN:          // "B" for a bad signature
                 case UNK_SIGN_VALIDITY: // "U" for a good signature with unknown validity 
                 case EXPIRED_SIGN:      // "X" for a good signature that has expired
                 case EXPIRED_SIGN_KEY:  // "Y" for a good signature made by an expired key
                 case REVOKED_KEY:       // "R" for a good signature made by a revoked key
-                    _cmtStatus = CommitStatus.SignatureError;
+                    cmtStatus = CommitStatus.SignatureError;
                     break;
                 case MISSING_PUB_KEY:   // "E" if the signature cannot be checked (e.g.missing key)
-                    _cmtStatus = CommitStatus.MissingPublicKey;
+                    cmtStatus = CommitStatus.MissingPublicKey;
                     break;
                 case NO_SIGN:           // "N" for no signature
                 default:
-                    _cmtStatus = CommitStatus.NoSignature;
+                    cmtStatus = CommitStatus.NoSignature;
                     break;
             }
 
-            return _cmtStatus;
+            return cmtStatus;
         }
 
 
@@ -144,20 +144,20 @@ namespace GitCommands.Gpg
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
         public TagStatus CheckTagSign()
         {
-            TagStatus _tagStatus = TagStatus.OneBad;
+            TagStatus tagStatus = TagStatus.OneBad;
 
-            IEnumerable<IGitRef> _usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference);
+            IEnumerable<IGitRef> usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference);
 
             Match goodSignatureMatch = null;
             Match validSignatureMatch = null;
 
             /* More than one tag on the revision */
-            if (_usefulRef.Count() > 1)
+            if (usefulRef.Count() > 1)
             {
-                _tagStatus = TagStatus.Many;
+                tagStatus = TagStatus.Many;
 
                 /* Only to populate TagVerifyMessage */
-                foreach (var gitRef in _usefulRef)
+                foreach (var gitRef in usefulRef)
                 {
                     /* String printed in dialog box */
                     TagVerifyMessage = $"{TagVerifyMessage}{gitRef.LocalName}\r\n{GetTagVerificationMessage(gitRef.LocalName, false)}\r\n\r\n";
@@ -166,35 +166,35 @@ namespace GitCommands.Gpg
             else
             {
                 /* Only one tag on the revision */
-                var singleTag = _usefulRef.ElementAt(0).LocalName;
+                var singleTag = usefulRef.ElementAt(0).LocalName;
 
                 /* Raw message to be checked */
-                string _rawGpgMessage = GetTagVerificationMessage(singleTag, true);
+                string rawGpgMessage = GetTagVerificationMessage(singleTag, true);
 
                 /* String printed in dialog box */
                 TagVerifyMessage = $"{GetTagVerificationMessage(singleTag, false)}";
 
                 /* Look for icon to be shown */
-                goodSignatureMatch = goodSignatureTagRegex.Match(_rawGpgMessage);
-                validSignatureMatch = validSignatureTagRegex.Match(_rawGpgMessage);
+                goodSignatureMatch = goodSignatureTagRegex.Match(rawGpgMessage);
+                validSignatureMatch = validSignatureTagRegex.Match(rawGpgMessage);
 
                 Regex noPubKeyTagRegex = new Regex(_noTagPubKey);
-                Match noPubKeyMatch = noPubKeyTagRegex.Match(_rawGpgMessage);
+                Match noPubKeyMatch = noPubKeyTagRegex.Match(rawGpgMessage);
 
                 if (goodSignatureMatch.Success && validSignatureMatch.Success)
                 {
-                    _tagStatus = TagStatus.OneGood;
+                    tagStatus = TagStatus.OneGood;
                 }
                 else
                 {
                     if (noPubKeyMatch.Success)
                     {
-                        _tagStatus = TagStatus.NoPubKey;
+                        tagStatus = TagStatus.NoPubKey;
                     }
                 }
             }
 
-            return _tagStatus;
+            return tagStatus;
         }
 
 
