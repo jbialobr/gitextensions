@@ -188,54 +188,60 @@ namespace GitUI.CommitInfo
                 _gpgController = new GitGpgController(Module, _revision);
 
                 /* COMMIT section */
-                this.InvokeAsync(() => {
-                    switch (_gpgController.GetRevisionCommitSignatureStatus())
+                AsyncLoader.DoAsync(
+                    () => _gpgController.GetRevisionCommitSignatureStatus(),
+                    (commitSignatureStatus) =>
                     {
-                        case CommitStatus.GoodSignature:
-                            commitSignPicture.Visible = true;
-                            commitSignPicture.Image = GitUI.Properties.Resources.commit_ok;
-                            break;
-                        case CommitStatus.MissingPublicKey:
-                            commitSignPicture.Visible = true;
-                            commitSignPicture.Image = GitUI.Properties.Resources.commit_warning;
-                            break;
-                        case CommitStatus.SignatureError:
-                            commitSignPicture.Visible = true;
-                            commitSignPicture.Image = GitUI.Properties.Resources.commit_error;
-                            break;
-                        case CommitStatus.NoSignature:
-                        default:
-                            commitSignPicture.Visible = false;
-                            break;
-                    }
-                });
+                        switch (commitSignatureStatus)
+                        {
+                            case CommitStatus.GoodSignature:
+                                commitSignPicture.Visible = true;
+                                commitSignPicture.Image = GitUI.Properties.Resources.commit_ok;
+                                break;
+                            case CommitStatus.MissingPublicKey:
+                                commitSignPicture.Visible = true;
+                                commitSignPicture.Image = GitUI.Properties.Resources.commit_warning;
+                                break;
+                            case CommitStatus.SignatureError:
+                                commitSignPicture.Visible = true;
+                                commitSignPicture.Image = GitUI.Properties.Resources.commit_error;
+                                break;
+                            case CommitStatus.NoSignature:
+                            default:
+                                commitSignPicture.Visible = false;
+                                break;
+                        }
+                    });
 
                 /* TAG section */
-                this.InvokeAsync(() => {
-                    switch (_gpgController.GetRevisionTagSignatureStatus())
+                AsyncLoader.DoAsync(
+                    () => _gpgController.GetRevisionTagSignatureStatus(),
+                    (tagSignatureStatus) =>
                     {
-                        case TagStatus.OneGood:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_ok;
-                            break;
-                        case TagStatus.OneBad:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_error;
-                            break;
-                        case TagStatus.Many:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_many;
-                            break;
-                        case TagStatus.NoPubKey:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_warning;
-                            break;
-                        case TagStatus.NoTag:
-                        default:
-                            tagSignPicture.Visible = false;
-                            break;
-                    }
-                });
+                        switch (tagSignatureStatus)
+                        {
+                            case TagStatus.OneGood:
+                                tagSignPicture.Visible = true;
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_ok;
+                                break;
+                            case TagStatus.OneBad:
+                                tagSignPicture.Visible = true;
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_error;
+                                break;
+                            case TagStatus.Many:
+                                tagSignPicture.Visible = true;
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_many;
+                                break;
+                            case TagStatus.NoPubKey:
+                                tagSignPicture.Visible = true;
+                                tagSignPicture.Image = GitUI.Properties.Resources.tag_warning;
+                                break;
+                            case TagStatus.NoTag:
+                            default:
+                                tagSignPicture.Visible = false;
+                                break;
+                        }
+                    });
             }
         }
 
