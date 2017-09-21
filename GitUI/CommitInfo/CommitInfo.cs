@@ -129,6 +129,8 @@ namespace GitUI.CommitInfo
 
         private void ReloadCommitInfo()
         {
+            _gpgController = null;
+
             _RevisionHeader.BackColor =
                 tlpnlRevisionHeader.BackColor = ColorHelper.MakeColorDarker(this.BackColor);
 
