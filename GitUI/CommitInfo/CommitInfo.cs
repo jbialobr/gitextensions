@@ -194,7 +194,7 @@ namespace GitUI.CommitInfo
 
 
                 this.InvokeAsync(() => {
-                    switch (_gpgController.CheckCommitSign())
+                    switch (_gpgController.GetRevisionCommitSignatureStatus())
                     {
                         case CommitStatus.GoodSignature:
                             commitSignPicture.Image = GitUI.Properties.Resources.commit_ok;
@@ -220,7 +220,7 @@ namespace GitUI.CommitInfo
                     tagSignPicture.Visible = true;
 
                     this.InvokeAsync(() => {
-                        switch (_gpgController.CheckTagSign())
+                        switch (_gpgController.GetRevisionTagSignatureStatus())
                         {
                             case TagStatus.OneGood:
                                 tagSignPicture.Image = GitUI.Properties.Resources.tag_ok;

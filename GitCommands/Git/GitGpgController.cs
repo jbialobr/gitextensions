@@ -31,7 +31,7 @@ namespace GitCommands.Gpg
         /// Obtain the commit signature status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate the gpg status for current git revision.</returns>
-        CommitStatus CheckCommitSign();
+        CommitStatus GetRevisionCommitSignatureStatus();
 
         /// <summary>
         /// Obtain the commit verification message, coming from --pretty="format:%GG" 
@@ -43,7 +43,7 @@ namespace GitCommands.Gpg
         /// Obtain the tag status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
-        TagStatus CheckTagSign();
+        TagStatus GetRevisionTagSignatureStatus();
 
         /// <summary>
         /// Obtain the number of tag on current git revision.
@@ -108,7 +108,7 @@ namespace GitCommands.Gpg
         /// Obtain the commit signature status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate the gpg status for current git revision.</returns>
-        public CommitStatus CheckCommitSign()
+        public CommitStatus GetRevisionCommitSignatureStatus()
         {
             CommitStatus cmtStatus = CommitStatus.NoSignature;
             string gpg = _module.RunGitCmd($"log --pretty=\"format:%G?\" -1 {_revision.Guid}");
@@ -142,7 +142,7 @@ namespace GitCommands.Gpg
         /// Obtain the tag status on current revision.
         /// </summary>
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
-        public TagStatus CheckTagSign()
+        public TagStatus GetRevisionTagSignatureStatus()
         {
             TagStatus tagStatus = TagStatus.OneBad;
 
