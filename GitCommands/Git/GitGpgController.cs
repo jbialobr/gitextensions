@@ -46,12 +46,6 @@ namespace GitCommands.Gpg
         TagStatus GetRevisionTagSignatureStatus();
 
         /// <summary>
-        /// Obtain the number of tag on current git revision.
-        /// </summary>
-        /// <returns>Returns the number of annotated or signed tag on current revision.</returns>
-        int NumberOfTag { get; }
-
-        /// <summary>
         /// Obtain the tag verification message for all the tag in current git revision 
         /// </summary>
         /// <returns>Full concatenated string coming from GPG analysis on all tags on current git revision.</returns>
@@ -84,12 +78,6 @@ namespace GitCommands.Gpg
         private static Regex goodSignatureTagRegex = new Regex(_goodSignature, RegexOptions.Compiled);
 
         /// <summary>
-        /// Obtain the number of tag on current git revision.
-        /// </summary>
-        /// <returns>Returns the number of annotated or signed tag on current revision.</returns>
-        public int NumberOfTag { get; private set; }
-
-        /// <summary>
         /// Obtain the tag verification message for all the tag in current git revision 
         /// </summary>
         /// <returns>Full concatenated string coming from GPG analysis on all tags on current git revision.</returns>
@@ -100,7 +88,6 @@ namespace GitCommands.Gpg
             _module = module;
             _revision = revision;
 
-            NumberOfTag = _revision.Refs.Count(x => x.IsTag && x.IsDereference);
             TagVerifyMessage = "";
         }
 
@@ -144,15 +131,21 @@ namespace GitCommands.Gpg
         /// <returns>Enum value that indicate if current git revision has one tag with good signature, one tag with bad signature or more than one tag.</returns>
         public TagStatus GetRevisionTagSignatureStatus()
         {
-            TagStatus tagStatus = TagStatus.OneBad;
+            TagStatus tagStatus = TagStatus.NoTag;
 
-            IEnumerable<IGitRef> usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference);
+            List<IGitRef> usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference).ToList<IGitRef>();
+
+            /* No Tag present, exit */
+            if (usefulRef.Count == 0)
+            {
+                return tagStatus;
+            }
 
             Match goodSignatureMatch = null;
             Match validSignatureMatch = null;
 
             /* More than one tag on the revision */
-            if (usefulRef.Count() > 1)
+            if (usefulRef.Count > 1)
             {
                 tagStatus = TagStatus.Many;
 
@@ -166,7 +159,7 @@ namespace GitCommands.Gpg
             else
             {
                 /* Only one tag on the revision */
-                var singleTag = usefulRef.ElementAt(0).LocalName;
+                var singleTag = usefulRef[0].LocalName;
 
                 /* Raw message to be checked */
                 string rawGpgMessage = GetTagVerificationMessage(singleTag, true);
