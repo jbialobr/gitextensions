@@ -10,18 +10,19 @@ namespace GitCommands.Gpg
 {
     public enum CommitStatus
     {
-        GoodSignature = 0,
-        SignatureError = 1,
-        MissingPublicKey = 2,
-        NoSignature = 3
+        NoSignature = 0,
+        GoodSignature = 1,
+        SignatureError = 2,
+        MissingPublicKey = 3,
     };
 
     public enum TagStatus
     {
-        OneGood = 0,
-        OneBad = 1,
-        Many = 2,
-        NoPubKey = 3
+        NoTag = 0,
+        OneGood = 1,
+        OneBad = 2,
+        Many = 3,
+        NoPubKey = 4
     };
 
     public interface IGitGpgController
