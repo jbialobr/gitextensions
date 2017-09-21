@@ -57,6 +57,7 @@ namespace GitCommands.Gpg
     {
         private IGitModule _module;
         private GitRevision _revision;
+        private List<IGitRef> _usefulRef;
 
         /* Commit GPG status */
         private const string GOOD_SIGN = "G";
@@ -89,6 +90,7 @@ namespace GitCommands.Gpg
             _revision = revision;
 
             TagVerifyMessage = "";
+            _usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference).ToList<IGitRef>();
         }
 
         /// <summary>
@@ -133,10 +135,8 @@ namespace GitCommands.Gpg
         {
             TagStatus tagStatus = TagStatus.NoTag;
 
-            List<IGitRef> usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference).ToList<IGitRef>();
-
             /* No Tag present, exit */
-            if (usefulRef.Count == 0)
+            if (_usefulRef.Count == 0)
             {
                 return tagStatus;
             }
@@ -145,12 +145,12 @@ namespace GitCommands.Gpg
             Match validSignatureMatch = null;
 
             /* More than one tag on the revision */
-            if (usefulRef.Count > 1)
+            if (_usefulRef.Count > 1)
             {
                 tagStatus = TagStatus.Many;
 
                 /* Only to populate TagVerifyMessage */
-                foreach (var gitRef in usefulRef)
+                foreach (var gitRef in _usefulRef)
                 {
                     /* String printed in dialog box */
                     TagVerifyMessage = $"{TagVerifyMessage}{gitRef.LocalName}\r\n{GetTagVerificationMessage(gitRef.LocalName, false)}\r\n\r\n";
@@ -159,7 +159,7 @@ namespace GitCommands.Gpg
             else
             {
                 /* Only one tag on the revision */
-                var singleTag = usefulRef[0].LocalName;
+                var singleTag = _usefulRef[0].LocalName;
 
                 /* Raw message to be checked */
                 string rawGpgMessage = GetTagVerificationMessage(singleTag, true);
