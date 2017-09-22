@@ -49,7 +49,7 @@ namespace GitCommands.Gpg
         /// Obtain the tag verification message for all the tag in current git revision 
         /// </summary>
         /// <returns>Full concatenated string coming from GPG analysis on all tags on current git revision.</returns>
-        string TagVerifyMessage { get; }
+        string GetTagVerifyMessage();
     }
 
 
@@ -57,7 +57,7 @@ namespace GitCommands.Gpg
     {
         private IGitModule _module;
         private GitRevision _revision;
-        private List<IGitRef> _usefulRef;
+        private List<IGitRef> _usefulTagRefs;
 
         /* Commit GPG status */
         private const string GOOD_SIGN = "G";
@@ -82,15 +82,15 @@ namespace GitCommands.Gpg
         /// Obtain the tag verification message for all the tag in current git revision 
         /// </summary>
         /// <returns>Full concatenated string coming from GPG analysis on all tags on current git revision.</returns>
-        public string TagVerifyMessage { get; private set; }
+        private Lazy<string> _tagVerifyMessage;
 
         public GitGpgController(IGitModule module, GitRevision revision)
         {
             _module = module;
             _revision = revision;
 
-            TagVerifyMessage = "";
-            _usefulRef = _revision.Refs.Where(x => x.IsTag && x.IsDereference).ToList<IGitRef>();
+            _usefulTagRefs = _revision.Refs.Where(x => x.IsTag && x.IsDereference).ToList<IGitRef>();
+            _tagVerifyMessage = new Lazy<string>(EvaluateTagVerifyMessage);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace GitCommands.Gpg
             TagStatus tagStatus = TagStatus.NoTag;
 
             /* No Tag present, exit */
-            if (_usefulRef.Count == 0)
+            if (_usefulTagRefs.Count == 0)
             {
                 return tagStatus;
             }
@@ -145,27 +145,14 @@ namespace GitCommands.Gpg
             Match validSignatureMatch = null;
 
             /* More than one tag on the revision */
-            if (_usefulRef.Count > 1)
+            if (_usefulTagRefs.Count > 1)
             {
                 tagStatus = TagStatus.Many;
-
-                /* Only to populate TagVerifyMessage */
-                foreach (var gitRef in _usefulRef)
-                {
-                    /* String printed in dialog box */
-                    TagVerifyMessage = $"{TagVerifyMessage}{gitRef.LocalName}\r\n{GetTagVerificationMessage(gitRef.LocalName, false)}\r\n\r\n";
-                }
             }
             else
             {
-                /* Only one tag on the revision */
-                var singleTag = _usefulRef[0].LocalName;
-
                 /* Raw message to be checked */
-                string rawGpgMessage = GetTagVerificationMessage(singleTag, true);
-
-                /* String printed in dialog box */
-                TagVerifyMessage = $"{GetTagVerificationMessage(singleTag, false)}";
+                string rawGpgMessage = GetTagVerificationMessage(_usefulTagRefs[0], true);
 
                 /* Look for icon to be shown */
                 goodSignatureMatch = goodSignatureTagRegex.Match(rawGpgMessage);
@@ -200,14 +187,44 @@ namespace GitCommands.Gpg
             return _module.RunGitCmd($"log --pretty=\"format:%GG\" -1 {_revision.Guid}");
         }
 
-        private string GetTagVerificationMessage(string tag, bool raw = true)
+        private string GetTagVerificationMessage(IGitRef tagRef, bool raw = true)
         {
-            if (string.IsNullOrWhiteSpace(tag))
+            string tagName = tagRef.LocalName;
+            if (string.IsNullOrWhiteSpace(tagName))
                 return null;
 
             string rawFlag = raw == true ? "--raw" : "";
 
-            return _module.RunGitCmd($"verify-tag {rawFlag} {tag}");
+            return _module.RunGitCmd($"verify-tag {rawFlag} {tagName}");
+        }
+
+        public string GetTagVerifyMessage()
+        {
+            return _tagVerifyMessage.Value;
+        }
+
+        private string EvaluateTagVerifyMessage()
+        {
+            if (_usefulTagRefs.Count == 0)
+            {
+                return "";
+            }
+            else if (_usefulTagRefs.Count == 1)
+            {
+                return GetTagVerificationMessage(_usefulTagRefs[0], false);
+            }
+            else
+            {
+                string tagVerifyMessage = "";
+
+                /* Only to populate TagVerifyMessage */
+                foreach (var tagRef in _usefulTagRefs)
+                {
+                    /* String printed in dialog box */
+                    tagVerifyMessage = $"{tagVerifyMessage}{tagRef.LocalName}\r\n{GetTagVerificationMessage(tagRef, false)}\r\n\r\n";
+                }
+                return tagVerifyMessage;
+            }
         }
     }
 }

@@ -684,7 +684,7 @@ namespace GitUI.CommitInfo
             using (var form = new FormSignatureInfo())
             {
                 form.Text = trsGpgTagInfo.Text;
-                form.ShowGpgMessage(_gpgController.TagVerifyMessage);
+                form.ShowGpgMessage(_gpgController.GetTagVerifyMessage());
                 form.ShowDialog();
             }
         }
