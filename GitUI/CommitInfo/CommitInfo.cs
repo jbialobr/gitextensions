@@ -184,6 +184,7 @@ namespace GitUI.CommitInfo
 
         private void LoadGpgInformation()
         {
+            commitSignPicture.Visible = tagSignPicture.Visible = false;
 
             if (AppSettings.ShowGpgInformation)
             {
@@ -191,10 +192,6 @@ namespace GitUI.CommitInfo
                 _gpgController = new GitGpgController(Module, _revision);
                 LoadCommitSignatureStatus();
                 LoadTagSignatureStatus();
-            }
-            else
-            {
-                commitSignPicture.Visible = tagSignPicture.Visible = AppSettings.ShowGpgInformation;
             }
         }
 
