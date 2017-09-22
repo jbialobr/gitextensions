@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -8,12 +8,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 using GitCommands;
+using GitCommands.Git;
 using GitCommands.Utils;
 using GitCommands.GitExtLinks;
 using GitUI.Editor.RichTextBoxExtension;
 using ResourceManager;
 using GitUI.Editor;
-using GitCommands.Gpg;
 
 
 namespace GitUI.CommitInfo
@@ -127,12 +127,12 @@ namespace GitUI.CommitInfo
         private IList<string> _sortedRefs;
         private System.Drawing.Rectangle _headerResize; // Cache desired size for commit header
 
-        private void ReloadCommitInfo()
+        private async void ReloadCommitInfo()
         {
             _gpgController = null;
 
             _RevisionHeader.BackColor =
-                tlpnlRevisionHeader.BackColor = ColorHelper.MakeColorDarker(this.BackColor);
+                tlpnlRevisionHeader.BackColor = ColorHelper.MakeColorDarker(BackColor);
 
             showContainedInBranchesToolStripMenuItem.Checked = AppSettings.CommitInfoShowContainedInBranchesLocal;
             showContainedInBranchesRemoteToolStripMenuItem.Checked = AppSettings.CommitInfoShowContainedInBranchesRemote;
@@ -188,54 +188,52 @@ namespace GitUI.CommitInfo
                 _gpgController = new GitGpgController(Module, _revision);
 
                 /* COMMIT section */
-                this.InvokeAsync(() => {
-                    switch (_gpgController.GetRevisionCommitSignatureStatus())
-                    {
-                        case CommitStatus.GoodSignature:
-                            commitSignPicture.Visible = true;
-                            commitSignPicture.Image = GitUI.Properties.Resources.commit_ok;
-                            break;
-                        case CommitStatus.MissingPublicKey:
-                            commitSignPicture.Visible = true;
-                            commitSignPicture.Image = GitUI.Properties.Resources.commit_warning;
-                            break;
-                        case CommitStatus.SignatureError:
-                            commitSignPicture.Visible = true;
-                            commitSignPicture.Image = GitUI.Properties.Resources.commit_error;
-                            break;
-                        case CommitStatus.NoSignature:
-                        default:
-                            commitSignPicture.Visible = false;
-                            break;
-                    }
-                });
+                var commitStatus = await _gpgController.GetRevisionCommitSignatureStatusAsync();
+                switch (commitStatus)
+                {
+                    case CommitStatus.GoodSignature:
+                        commitSignPicture.Visible = true;
+                        commitSignPicture.Image = Properties.Resources.commit_ok;
+                        break;
+                    case CommitStatus.MissingPublicKey:
+                        commitSignPicture.Visible = true;
+                        commitSignPicture.Image = Properties.Resources.commit_warning;
+                        break;
+                    case CommitStatus.SignatureError:
+                        commitSignPicture.Visible = true;
+                        commitSignPicture.Image = Properties.Resources.commit_error;
+                        break;
+                    case CommitStatus.NoSignature:
+                    default:
+                        commitSignPicture.Visible = false;
+                        break;
+                }
 
                 /* TAG section */
-                this.InvokeAsync(() => {
-                    switch (_gpgController.GetRevisionTagSignatureStatus())
-                    {
-                        case TagStatus.OneGood:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_ok;
-                            break;
-                        case TagStatus.OneBad:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_error;
-                            break;
-                        case TagStatus.Many:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_many;
-                            break;
-                        case TagStatus.NoPubKey:
-                            tagSignPicture.Visible = true;
-                            tagSignPicture.Image = GitUI.Properties.Resources.tag_warning;
-                            break;
-                        case TagStatus.NoTag:
-                        default:
-                            tagSignPicture.Visible = false;
-                            break;
-                    }
-                });
+                var tagStatus = await _gpgController.GetRevisionTagSignatureStatusAsync();
+                switch (tagStatus)
+                {
+                    case TagStatus.OneGood:
+                        tagSignPicture.Visible = true;
+                        tagSignPicture.Image = Properties.Resources.tag_ok;
+                        break;
+                    case TagStatus.OneBad:
+                        tagSignPicture.Visible = true;
+                        tagSignPicture.Image = Properties.Resources.tag_error;
+                        break;
+                    case TagStatus.Many:
+                        tagSignPicture.Visible = true;
+                        tagSignPicture.Image = Properties.Resources.tag_many;
+                        break;
+                    case TagStatus.NoPubKey:
+                        tagSignPicture.Visible = true;
+                        tagSignPicture.Image = Properties.Resources.tag_warning;
+                        break;
+                    case TagStatus.NoTag:
+                    default:
+                        tagSignPicture.Visible = false;
+                        break;
+                }
             }
         }
 
@@ -299,18 +297,18 @@ namespace GitUI.CommitInfo
             foreach (GitRef gitRef in revision.Refs)
             {
                 #region Note on annotated tags
-                // Notice that for the annotated tags, gitRef's come in pairs because they're produced 
-                // by the "show-ref --dereference" command. GitRef's in such pair have the same Name, 
+                // Notice that for the annotated tags, gitRef's come in pairs because they're produced
+                // by the "show-ref --dereference" command. GitRef's in such pair have the same Name,
                 // a bit different CompleteName's, and completely different checksums:
                 //      GitRef_1:
-                //      { 
+                //      {
                 //          Name: "some_tag"
                 //          CompleteName: "refs/tags/some_tag"
                 //          Guid: <some_tag_checksum>
                 //      },
-                //       
+                //
                 //      GitRef_2:
-                //      { 
+                //      {
                 //          Name: "some_tag"
                 //          CompleteName: "refs/tags/some_tag^{}"   <- by "^{}", IsDereference is true.
                 //          Guid: <target_object_checksum>
@@ -318,7 +316,7 @@ namespace GitUI.CommitInfo
                 //
                 // The 2nd one is a dereference: a link between the tag and the object which it references.
                 // GitRevions.Refs by design contains GitRef's where Guid's are equal to the GitRevision.Guid,
-                // so this collection contains only derefencing GitRef's - just because GitRef_2 has the same 
+                // so this collection contains only derefencing GitRef's - just because GitRef_2 has the same
                 // Guid as the GitRevision, while GitRef_1 doesn't. So annotated tag's GitRef would always be
                 // of 2nd type in GitRevision.Refs collection, i.e. the one that has IsDereference==true.
                 #endregion
@@ -393,9 +391,9 @@ namespace GitUI.CommitInfo
         public void DisplayAvatarOnRight()
         {
             tableLayout.SuspendLayout();
-            this.tableLayout.ColumnStyles.Clear();
-            this.tableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            tableLayout.ColumnStyles.Clear();
+            tableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tableLayout.ColumnStyles.Add(new ColumnStyle());
             tableLayout.SetColumn(gravatar1, 1);
             tableLayout.SetColumn(_RevisionHeader, 0);
             tableLayout.SetColumn(RevisionInfo, 0);
