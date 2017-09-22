@@ -180,9 +180,9 @@ namespace GitUI.CommitInfo
                 ThreadPool.QueueUserWorkItem(_ => loadTagInfo(_revision.Guid));
 
 
-            commitSignPicture.Visible = tagSignPicture.Visible = AppSettings.ShowGpgInformation;
+            commitSignPicture.Visible = tagSignPicture.Visible = AppSettings.ShowGpgInformation.ValueOrDefault;
 
-            if (AppSettings.ShowGpgInformation)
+            if (AppSettings.ShowGpgInformation.ValueOrDefault)
             {
                 /* Setup GpgController */
                 _gpgController = new GitGpgController(Module, _revision);

@@ -318,6 +318,7 @@ namespace GitCommands
         public static readonly StringSetting ConEmuTerminal = new StringSetting("ConEmuTerminal", DetailedSettingsPath, "bash");
         public static readonly StringSetting ConEmuFontSize = new StringSetting("ConEmuFontSize", DetailedSettingsPath, "12");
         public static readonly BoolNullableSetting ShowRevisionInfoNextToRevisionGrid = new BoolNullableSetting("ShowRevisionInfoNextToRevisionGrid", DetailedSettingsPath, false);
+        public static readonly BoolNullableSetting ShowGpgInformation = new BoolNullableSetting("ShowGpgInformation", DetailedSettingsPath, false);
 
         public static bool ProvideAutocompletion
         {
@@ -792,12 +793,6 @@ namespace GitCommands
         {
             get { return GetBool("relativedate", true); }
             set { SetBool("relativedate", value); }
-        }
-
-        public static bool ShowGpgInformation
-        {
-            get { return GetBool("gpginformation", false); }
-            set { SetBool("gpginformation", value); }
         }
 
         public static bool UseFastChecks

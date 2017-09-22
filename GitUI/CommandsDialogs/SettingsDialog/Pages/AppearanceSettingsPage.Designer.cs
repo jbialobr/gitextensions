@@ -45,7 +45,6 @@
             this.groupBox14 = new System.Windows.Forms.GroupBox();
             this.chkShowRelativeDate = new System.Windows.Forms.CheckBox();
             this.chkShowCurrentBranchInVisualStudio = new System.Windows.Forms.CheckBox();
-            this.chkShowGpgInformation = new System.Windows.Forms.CheckBox();
             this.chkEnableAutoScale = new System.Windows.Forms.CheckBox();
             this.truncateLongFilenames = new System.Windows.Forms.Label();
             this.truncatePathMethod = new System.Windows.Forms.ComboBox();
@@ -77,9 +76,9 @@
             this.groupBox13.Controls.Add(this.downloadDictionary);
             this.groupBox13.Controls.Add(this.Language);
             this.groupBox13.Controls.Add(this.helpTranslate);
-            this.groupBox13.Location = new System.Drawing.Point(3, 460);
+            this.groupBox13.Location = new System.Drawing.Point(3, 409);
             this.groupBox13.Name = "groupBox13";
-            this.groupBox13.Size = new System.Drawing.Size(1781, 84);
+            this.groupBox13.Size = new System.Drawing.Size(1274, 84);
             this.groupBox13.TabIndex = 60;
             this.groupBox13.TabStop = false;
             this.groupBox13.Text = "Language";
@@ -155,9 +154,9 @@
             this.groupBox15.Controls.Add(this.applicationFontChangeButton);
             this.groupBox15.Controls.Add(this.label26);
             this.groupBox15.Controls.Add(this.label56);
-            this.groupBox15.Location = new System.Drawing.Point(3, 340);
+            this.groupBox15.Location = new System.Drawing.Point(3, 288);
             this.groupBox15.Name = "groupBox15";
-            this.groupBox15.Size = new System.Drawing.Size(1777, 115);
+            this.groupBox15.Size = new System.Drawing.Size(1200, 115);
             this.groupBox15.TabIndex = 59;
             this.groupBox15.TabStop = false;
             this.groupBox15.Text = "Fonts";
@@ -232,12 +231,11 @@
             this.groupBox14.Controls.Add(this.chkShowRelativeDate);
             this.groupBox14.Controls.Add(this.chkShowCurrentBranchInVisualStudio);
             this.groupBox14.Controls.Add(this.chkEnableAutoScale);
-            this.groupBox14.Controls.Add(this.chkShowGpgInformation);
             this.groupBox14.Controls.Add(this.truncateLongFilenames);
             this.groupBox14.Controls.Add(this.truncatePathMethod);
             this.groupBox14.Location = new System.Drawing.Point(3, 3);
             this.groupBox14.Name = "groupBox14";
-            this.groupBox14.Size = new System.Drawing.Size(1777, 160);
+            this.groupBox14.Size = new System.Drawing.Size(1200, 136);
             this.groupBox14.TabIndex = 57;
             this.groupBox14.TabStop = false;
             this.groupBox14.Text = "General";
@@ -262,31 +260,21 @@
             this.chkShowCurrentBranchInVisualStudio.Text = "Show current branch in Visual Studio";
             this.chkShowCurrentBranchInVisualStudio.UseVisualStyleBackColor = true;
             // 
-            // chkShowGpgInformation
-            // 
-            this.chkShowGpgInformation.AutoSize = true;
-            this.chkShowGpgInformation.Location = new System.Drawing.Point(10, 75);
-            this.chkShowGpgInformation.Name = "chkShowGpgInformation";
-            this.chkShowGpgInformation.Size = new System.Drawing.Size(200, 17);
-            this.chkShowGpgInformation.TabIndex = 3;
-            this.chkShowGpgInformation.Text = "Show GPG information";
-            this.chkShowGpgInformation.UseVisualStyleBackColor = true;
-            // 
             // chkEnableAutoScale
             // 
             this.chkEnableAutoScale.AutoSize = true;
-            this.chkEnableAutoScale.Location = new System.Drawing.Point(10, 104);
-            this.chkEnableAutoScale.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkEnableAutoScale.Location = new System.Drawing.Point(10, 75);
+            this.chkEnableAutoScale.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableAutoScale.Name = "chkEnableAutoScale";
             this.chkEnableAutoScale.Size = new System.Drawing.Size(254, 17);
-            this.chkEnableAutoScale.TabIndex = 4;
+            this.chkEnableAutoScale.TabIndex = 3;
             this.chkEnableAutoScale.Text = "Auto scale user interface when high DPI is used";
             this.chkEnableAutoScale.UseVisualStyleBackColor = true;
             // 
             // truncateLongFilenames
             // 
             this.truncateLongFilenames.AutoSize = true;
-            this.truncateLongFilenames.Location = new System.Drawing.Point(10, 130);
+            this.truncateLongFilenames.Location = new System.Drawing.Point(10, 104);
             this.truncateLongFilenames.Name = "truncateLongFilenames";
             this.truncateLongFilenames.Size = new System.Drawing.Size(121, 13);
             this.truncateLongFilenames.TabIndex = 5;
@@ -300,7 +288,7 @@
             "Compact",
             "Trim start",
             "Filename only"});
-            this.truncatePathMethod.Location = new System.Drawing.Point(221, 130);
+            this.truncatePathMethod.Location = new System.Drawing.Point(221, 101);
             this.truncatePathMethod.Name = "truncatePathMethod";
             this.truncatePathMethod.Size = new System.Drawing.Size(242, 21);
             this.truncatePathMethod.TabIndex = 6;
@@ -316,9 +304,9 @@
             this.groupBox6.Controls.Add(this.label46);
             this.groupBox6.Controls.Add(this.ClearImageCache);
             this.groupBox6.Controls.Add(this.ShowAuthorGravatar);
-            this.groupBox6.Location = new System.Drawing.Point(3, 165);
+            this.groupBox6.Location = new System.Drawing.Point(3, 145);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(1777, 171);
+            this.groupBox6.Size = new System.Drawing.Size(1200, 137);
             this.groupBox6.TabIndex = 58;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "Author images";
@@ -327,7 +315,7 @@
             // 
             this.NoImageService.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.NoImageService.FormattingEnabled = true;
-            this.NoImageService.Location = new System.Drawing.Point(221, 100);
+            this.NoImageService.Location = new System.Drawing.Point(221, 71);
             this.NoImageService.Name = "NoImageService";
             this.NoImageService.Size = new System.Drawing.Size(142, 21);
             this.NoImageService.TabIndex = 17;
@@ -335,7 +323,7 @@
             // label53
             // 
             this.label53.AutoSize = true;
-            this.label53.Location = new System.Drawing.Point(10, 103);
+            this.label53.Location = new System.Drawing.Point(10, 74);
             this.label53.Name = "label53";
             this.label53.Size = new System.Drawing.Size(88, 13);
             this.label53.TabIndex = 16;
@@ -344,7 +332,7 @@
             // label47
             // 
             this.label47.AutoSize = true;
-            this.label47.Location = new System.Drawing.Point(304, 74);
+            this.label47.Location = new System.Drawing.Point(304, 45);
             this.label47.Name = "label47";
             this.label47.Size = new System.Drawing.Size(30, 13);
             this.label47.TabIndex = 15;
@@ -352,7 +340,7 @@
             // 
             // _NO_TRANSLATE_DaysToCacheImages
             // 
-            this._NO_TRANSLATE_DaysToCacheImages.Location = new System.Drawing.Point(221, 73);
+            this._NO_TRANSLATE_DaysToCacheImages.Location = new System.Drawing.Point(221, 44);
             this._NO_TRANSLATE_DaysToCacheImages.Maximum = new decimal(new int[] {
             400,
             0,
@@ -365,7 +353,7 @@
             // label46
             // 
             this.label46.AutoSize = true;
-            this.label46.Location = new System.Drawing.Point(10, 75);
+            this.label46.Location = new System.Drawing.Point(10, 46);
             this.label46.Name = "label46";
             this.label46.Size = new System.Drawing.Size(73, 13);
             this.label46.TabIndex = 13;
@@ -373,7 +361,7 @@
             // 
             // ClearImageCache
             // 
-            this.ClearImageCache.Location = new System.Drawing.Point(10, 131);
+            this.ClearImageCache.Location = new System.Drawing.Point(10, 102);
             this.ClearImageCache.Name = "ClearImageCache";
             this.ClearImageCache.Size = new System.Drawing.Size(142, 25);
             this.ClearImageCache.TabIndex = 18;
@@ -448,7 +436,6 @@
         private System.Windows.Forms.GroupBox groupBox14;
         private System.Windows.Forms.CheckBox chkShowRelativeDate;
         private System.Windows.Forms.CheckBox chkShowCurrentBranchInVisualStudio;
-        private System.Windows.Forms.CheckBox chkShowGpgInformation;
         private System.Windows.Forms.CheckBox chkEnableAutoScale;
         private System.Windows.Forms.Label truncateLongFilenames;
         private System.Windows.Forms.ComboBox truncatePathMethod;

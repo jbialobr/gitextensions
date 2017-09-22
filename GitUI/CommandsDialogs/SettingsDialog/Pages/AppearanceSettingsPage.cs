@@ -93,8 +93,6 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
             chkShowRelativeDate.Checked = AppSettings.RelativeDate;
 
-            chkShowGpgInformation.Checked = AppSettings.ShowGpgInformation;
-
             SetCurrentApplicationFont(AppSettings.Font);
             SetCurrentDiffFont(AppSettings.DiffFont);
             SetCurrentCommitFont(AppSettings.CommitFont);
@@ -115,8 +113,6 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             AppSettings.GravatarDefaultImageType = NoImageService.Text;
 
             AppSettings.RelativeDate = chkShowRelativeDate.Checked;
-
-            AppSettings.ShowGpgInformation = chkShowGpgInformation.Checked;
 
             AppSettings.Dictionary = Dictionary.SelectedIndex == 0 ? "none" : Dictionary.Text;
 
