@@ -127,7 +127,7 @@ namespace GitUI.CommitInfo
         private IList<string> _sortedRefs;
         private System.Drawing.Rectangle _headerResize; // Cache desired size for commit header
 
-        private async void ReloadCommitInfo()
+        private void ReloadCommitInfo()
         {
             _gpgController = null;
 
@@ -179,61 +179,76 @@ namespace GitUI.CommitInfo
             if (AppSettings.CommitInfoShowContainedInTags)
                 ThreadPool.QueueUserWorkItem(_ => loadTagInfo(_revision.Guid));
 
+            LoadGpgInformation();
+        }
 
-            commitSignPicture.Visible = tagSignPicture.Visible = AppSettings.ShowGpgInformation;
+        private void LoadGpgInformation()
+        {
 
             if (AppSettings.ShowGpgInformation)
             {
                 /* Setup GpgController */
                 _gpgController = new GitGpgController(Module, _revision);
+                LoadCommitSignatureStatus();
+                LoadTagSignatureStatus();
+            }
+            else
+            {
+                commitSignPicture.Visible = tagSignPicture.Visible = AppSettings.ShowGpgInformation;
+            }
+        }
 
-                /* COMMIT section */
-                var commitStatus = await _gpgController.GetRevisionCommitSignatureStatusAsync();
-                switch (commitStatus)
-                {
-                    case CommitStatus.GoodSignature:
-                        commitSignPicture.Visible = true;
-                        commitSignPicture.Image = Properties.Resources.commit_ok;
-                        break;
-                    case CommitStatus.MissingPublicKey:
-                        commitSignPicture.Visible = true;
-                        commitSignPicture.Image = Properties.Resources.commit_warning;
-                        break;
-                    case CommitStatus.SignatureError:
-                        commitSignPicture.Visible = true;
-                        commitSignPicture.Image = Properties.Resources.commit_error;
-                        break;
-                    case CommitStatus.NoSignature:
-                    default:
-                        commitSignPicture.Visible = false;
-                        break;
-                }
+        private async void LoadTagSignatureStatus()
+        {
+            /* TAG section */
+            var tagStatus = await _gpgController.GetRevisionTagSignatureStatusAsync();
+            switch (tagStatus)
+            {
+                case TagStatus.OneGood:
+                    tagSignPicture.Visible = true;
+                    tagSignPicture.Image = Properties.Resources.tag_ok;
+                    break;
+                case TagStatus.OneBad:
+                    tagSignPicture.Visible = true;
+                    tagSignPicture.Image = Properties.Resources.tag_error;
+                    break;
+                case TagStatus.Many:
+                    tagSignPicture.Visible = true;
+                    tagSignPicture.Image = Properties.Resources.tag_many;
+                    break;
+                case TagStatus.NoPubKey:
+                    tagSignPicture.Visible = true;
+                    tagSignPicture.Image = Properties.Resources.tag_warning;
+                    break;
+                case TagStatus.NoTag:
+                default:
+                    tagSignPicture.Visible = false;
+                    break;
+            }
+        }
 
-                /* TAG section */
-                var tagStatus = await _gpgController.GetRevisionTagSignatureStatusAsync();
-                switch (tagStatus)
-                {
-                    case TagStatus.OneGood:
-                        tagSignPicture.Visible = true;
-                        tagSignPicture.Image = Properties.Resources.tag_ok;
-                        break;
-                    case TagStatus.OneBad:
-                        tagSignPicture.Visible = true;
-                        tagSignPicture.Image = Properties.Resources.tag_error;
-                        break;
-                    case TagStatus.Many:
-                        tagSignPicture.Visible = true;
-                        tagSignPicture.Image = Properties.Resources.tag_many;
-                        break;
-                    case TagStatus.NoPubKey:
-                        tagSignPicture.Visible = true;
-                        tagSignPicture.Image = Properties.Resources.tag_warning;
-                        break;
-                    case TagStatus.NoTag:
-                    default:
-                        tagSignPicture.Visible = false;
-                        break;
-                }
+        private async void LoadCommitSignatureStatus()
+        {
+            /* COMMIT section */
+            var commitStatus = await _gpgController.GetRevisionCommitSignatureStatusAsync();
+            switch (commitStatus)
+            {
+                case CommitStatus.GoodSignature:
+                    commitSignPicture.Visible = true;
+                    commitSignPicture.Image = Properties.Resources.commit_ok;
+                    break;
+                case CommitStatus.MissingPublicKey:
+                    commitSignPicture.Visible = true;
+                    commitSignPicture.Image = Properties.Resources.commit_warning;
+                    break;
+                case CommitStatus.SignatureError:
+                    commitSignPicture.Visible = true;
+                    commitSignPicture.Image = Properties.Resources.commit_error;
+                    break;
+                case CommitStatus.NoSignature:
+                default:
+                    commitSignPicture.Visible = false;
+                    break;
             }
         }
 
