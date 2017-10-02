@@ -737,7 +737,7 @@ namespace GitCommands
 
         public void EditNotes(string revision)
         {
-            string editor = GetEffectivePathSetting("core.editor").ToLower();
+            string editor = GetEffectiveSetting("core.editor").ToLower();
             if (editor.Contains("gitextensions") || editor.Contains("notepad") ||
                 editor.Contains("notepad++"))
             {
@@ -1508,13 +1508,6 @@ namespace GitCommands
             return result;
         }
 
-        public string Tag(string tagName, string revision, bool annotation, bool force)
-        {
-            if (annotation)
-                return RunGitCmd(string.Format("tag \"{0}\" -a {1} -F \"{2}\\TAGMESSAGE\" -- \"{3}\"", tagName.Trim(), (force ? "-f" : ""), GetGitDirectory(), revision));
-            return RunGitCmd(string.Format("tag {0} \"{1}\" \"{2}\"", (force ? "-f" : ""), tagName.Trim(), revision));
-        }
-
         public string CheckoutFiles(IEnumerable<string> fileList, string revision, bool force)
         {
             string files = fileList.Select(s => s.Quote()).Join(" ");
@@ -1566,7 +1559,7 @@ namespace GitCommands
                 !GitCommandHelpers.Plink())
                 return "";
 
-            return GetPathSetting(string.Format("remote.{0}.puttykeyfile", remote));
+            return GetSetting(string.Format("remote.{0}.puttykeyfile", remote));
         }
 
         public static bool PathIsUrl(string path)
@@ -1586,7 +1579,7 @@ namespace GitCommands
             return "fetch " + progressOption + GetFetchArgs(remote, remoteBranch, localBranch, fetchTags, isUnshallow, prune);
         }
 
-        public string PullCmd(string remote, string remoteBranch, string localBranch, bool rebase, bool? fetchTags = false, bool isUnshallow = false, bool prune = false)
+        public string PullCmd(string remote, string remoteBranch, bool rebase, bool? fetchTags = false, bool isUnshallow = false, bool prune = false)
         {
             var pullArgs = "";
             if (GitCommandHelpers.VersionInUse.FetchCanAskForProgress)
@@ -1595,7 +1588,7 @@ namespace GitCommands
             if (rebase)
                 pullArgs = "--rebase".Combine(" ", pullArgs);
 
-            return "pull " + pullArgs + GetFetchArgs(remote, remoteBranch, localBranch, fetchTags, isUnshallow, prune && !rebase);
+            return "pull " + pullArgs + GetFetchArgs(remote, remoteBranch, null, fetchTags, isUnshallow, prune && !rebase);
         }
 
         private string GetFetchArgs(string remote, string remoteBranch, string localBranch, bool? fetchTags, bool isUnshallow, bool prune)
@@ -1608,26 +1601,19 @@ namespace GitCommands
             if (localBranch != null)
                 localBranch = localBranch.Replace(" ", "");
 
-            string remoteBranchArguments;
+            string branchArguments = "";
 
-            if (string.IsNullOrEmpty(remoteBranch))
-                remoteBranchArguments = "";
-            else
+            if (!string.IsNullOrEmpty(remoteBranch))
             {
                 if (remoteBranch.StartsWith("+"))
                     remoteBranch = remoteBranch.Remove(0, 1);
-                remoteBranchArguments = "+" + FormatBranchName(remoteBranch);
+                branchArguments = " +" + FormatBranchName(remoteBranch);
+
+                var remoteUrl = GetSetting(string.Format(SettingKeyString.RemoteUrl, remote));
+
+                if (!string.IsNullOrEmpty(localBranch))
+                    branchArguments += ":" + GitCommandHelpers.GetFullBranchName(localBranch);
             }
-
-            string localBranchArguments;
-            var remoteUrl = GetPathSetting(string.Format(SettingKeyString.RemoteUrl, remote));
-
-            if (PathIsUrl(remote) && !string.IsNullOrEmpty(localBranch) && string.IsNullOrEmpty(remoteUrl))
-                localBranchArguments = ":" + GitCommandHelpers.GetFullBranchName(localBranch);
-            else if (string.IsNullOrEmpty(localBranch) || PathIsUrl(remote) || string.IsNullOrEmpty(remoteUrl))
-                localBranchArguments = "";
-            else
-                localBranchArguments = ":" + "refs/remotes/" + remote.Trim() + "/" + localBranch;
 
             string arguments = fetchTags == true ? " --tags" : fetchTags == false ? " --no-tags" : "";
 
@@ -1636,7 +1622,7 @@ namespace GitCommands
             if (isUnshallow)
                 arguments += " --unshallow";
 
-            return "\"" + remote.Trim() + "\" " + remoteBranchArguments + localBranchArguments + arguments + pruneArguments;
+            return "\"" + remote.Trim() + "\"" + branchArguments + arguments + pruneArguments;
         }
 
         public string GetRebaseDir()
@@ -2137,19 +2123,9 @@ namespace GitCommands
             return LocalConfigFile.GetValue(setting);
         }
 
-        public string GetPathSetting(string setting)
-        {
-            return GetSetting(setting);
-        }
-
         public string GetEffectiveSetting(string setting)
         {
             return EffectiveConfigFile.GetValue(setting);
-        }
-
-        public string GetEffectivePathSetting(string setting)
-        {
-            return GetEffectiveSetting(setting);
         }
 
         public void UnsetSetting(string setting)

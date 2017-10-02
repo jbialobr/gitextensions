@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Settings;
 using GitUI.CommandsDialogs;
+using GitUI.CommandsDialogs.CommitDialog;
 using GitUI.CommandsDialogs.RepoHosting;
 using GitUI.CommandsDialogs.SettingsDialog;
 using GitUIPluginInterfaces;
@@ -241,7 +242,7 @@ namespace GitUI
             return StartBatchFileProcessDialog(null, batchFile);
         }
 
-        public bool StartCommandLineProcessDialog(GitCommand cmd, IWin32Window parentForm)
+        public bool StartCommandLineProcessDialog(IGitCommand cmd, IWin32Window parentForm)
         {
             bool executed;
 
@@ -914,6 +915,17 @@ namespace GitUI
             };
 
             return DoActionOnRepo(owner, true, false, PreSparseWorkingCopy, PostSparseWorkingCopy, action);
+        }
+
+        private readonly CommitTemplateManager commitTemplateManager = new CommitTemplateManager();
+        public void AddCommitTemplate(string key, Func<string> addingText)
+        {
+            commitTemplateManager.Register(key, addingText);
+        }
+
+        public void RemoveCommitTemplate(string key)
+        {
+            commitTemplateManager.Unregister(key);
         }
 
         public bool StartFormatPatchDialog(IWin32Window owner)

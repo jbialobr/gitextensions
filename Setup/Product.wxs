@@ -76,6 +76,9 @@
       <Component Id="Gravatar.dll" Guid="*">
         <File Source="..\Gravatar\bin\Release\Gravatar.dll" />
       </Component>
+      <Component Id="System.IO.Abstractions.dll" Guid="*">
+        <File Source="..\Gravatar\bin\Release\System.IO.Abstractions.dll" />
+      </Component>
       <Component Id="GitCommands.dll" Guid="*">
         <File Source="..\GitCommands\bin\Release\GitCommands.dll" />
       </Component>
@@ -232,6 +235,18 @@
       </Component>
       <Component Id="Newtonsoft.Json.dll" Guid="*">
         <File Source="..\packages\Newtonsoft.Json.10.0.3\lib\net40\Newtonsoft.Json.dll" />
+      </Component>
+      <Component Id="JiraCommitHintPlugin.dll" Guid="*">
+        <File Source="..\Plugins\JiraCommitHintPlugin\bin\Release\JiraCommitHintPlugin.dll" />
+      </Component>
+      <Component Id="Atlassian.Jira.dll" Guid="*">
+        <File Source="..\Plugins\JiraCommitHintPlugin\bin\Release\Atlassian.Jira.dll" />
+      </Component>
+      <Component Id="NString.dll" Guid="*">
+        <File Source="..\Plugins\JiraCommitHintPlugin\bin\Release\NString.dll" />
+      </Component>
+      <Component Id="System.Collections.Immutable.dll" Guid="*">
+        <File Source="..\Plugins\JiraCommitHintPlugin\bin\Release\System.Collections.Immutable.dll" />
       </Component>
       <!--Remove unused dll, installed in versions <= 2.31-->
       <Component Id="Github.dll" Guid="0DA13691-140A-4490-8B4C-8AF537DAEB67">
@@ -633,6 +648,7 @@
       <ComponentRef Id="PSTaskDialog.dll" />
       <ComponentRef Id="Microsoft.WindowsAPICodePack.dll" />
       <ComponentRef Id="Microsoft.WindowsAPICodePack.Shell.dll" />
+      <ComponentRef Id="System.IO.Abstractions.dll" />
       <ComponentRef Id="System.Reactive.Core.dll" />
       <ComponentRef Id="System.Reactive.Interfaces.dll" />
       <ComponentRef Id="System.Reactive.Linq.dll" />
@@ -735,6 +751,14 @@
           <ComponentRef Id="Microsoft.VisualStudio.Services.WebApi.dll" />
           <ComponentRef Id="System.Net.Http.Formatting.dll" />
           <ComponentRef Id="Newtonsoft.Json.dll" />
+        </Feature>
+        <Feature Id="JiraCommitHintPlugin" Title="Jira Commit Hint Plugin" Level="1">
+          <ComponentRef Id="JiraCommitHintPlugin.dll" />
+          <ComponentRef Id="Atlassian.Jira.dll" />
+          <ComponentRef Id="RestSharp.dll" />
+          <ComponentRef Id="Newtonsoft.Json.dll" />
+          <ComponentRef Id="NString.dll" />
+          <ComponentRef Id="System.Collections.Immutable.dll" />
         </Feature>
       </Feature>
       <Feature Id="GitExtensions.desktop" Title="Desktop shortcut" Level="1">

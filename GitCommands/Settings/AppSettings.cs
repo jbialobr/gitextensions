@@ -878,24 +878,6 @@ namespace GitCommands
             set { SetBool("showfirstparent", value); }
         }
 
-        public static int CommitDialogDeviceDpi
-        {
-            get { return GetInt("commitdialogdevicedpi", 96); }
-            set { SetInt("commitdialogdevicedpi", value); }
-        }
-
-        public static int CommitDialogSplitter
-        {
-            get { return GetInt("commitdialogsplitter", -1); }
-            set { SetInt("commitdialogsplitter", value); }
-        }
-
-        public static int CommitDialogRightSplitter
-        {
-            get { return GetInt("commitdialogrightsplitter", -1); }
-            set { SetInt("commitdialogrightsplitter", value); }
-        }
-
         public static bool CommitDialogSelectionFilter
         {
             get { return GetBool("commitdialogselectionfilter", false); }
@@ -1262,6 +1244,12 @@ namespace GitCommands
             set { SetInt("MaxMostRecentRepositories", value); }
         }
 
+        public static int RecentRepositoriesHistorySize
+        {
+            get { return GetInt("history size", 30); }
+            set { SetInt("history size", value); }
+        }
+
         public static int RecentReposComboMinWidth
         {
             get { return GetInt("RecentReposComboMinWidth", 0); }
@@ -1584,7 +1572,7 @@ namespace GitCommands
 
     }
 
-    internal class AppSettingsPath : SettingsPath
+    public class AppSettingsPath : SettingsPath
     {
         public AppSettingsPath(string aPathName) : base(null, aPathName)
         {

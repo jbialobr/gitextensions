@@ -234,6 +234,7 @@ namespace GitUI.SpellChecker
 
             _customUnderlines = new SpellCheckEditControl(TextBox);
             TextBox.SelectionChanged += TextBox_SelectionChanged;
+            TextBox.TextChanged += TextBoxTextChanged;
 
             EnabledChanged += EditNetSpellEnabledChanged;
 
@@ -1046,7 +1047,10 @@ namespace GitUI.SpellChecker
                 CancelAutoComplete();
                 SpellCheckTimer.Stop();
                 _autoCompleteCancellationTokenSource.Dispose();
-                _customUnderlines.Dispose();
+                if (_customUnderlines != null)
+                {
+                    _customUnderlines.Dispose();
+                }
                 if (components != null)
                     components.Dispose();
                 if (_autoCompleteListTask != null && _autoCompleteListTask.Status == TaskStatus.Canceled)
