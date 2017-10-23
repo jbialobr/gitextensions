@@ -23,7 +23,7 @@ set projectShellEx=..\GitExtensionsShellEx\GitExtensionsShellEx.vcxproj
 set projectSshAskPass=..\GitExtSshAskPass\SshAskPass.vcxproj
 set SkipShellExtRegistration=1
 set EnableNuGetPackageRestore=true
-..\.nuget\nuget.exe restore %project%
+
 set msbuildparams=/p:Configuration=Release /t:restore /t:Rebuild /nologo /v:m
 
 %msbuild% %project% /p:Platform="Any CPU" %msbuildparams%

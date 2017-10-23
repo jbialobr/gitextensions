@@ -1,6 +1,6 @@
 version: 2.50.02.{build}
 
-os: Visual Studio 2015
+image: Visual Studio 2017
 
 branches:
   except:
@@ -9,7 +9,7 @@ branches:
 
 environment:
   matrix:
-  - IdeVersion: VS2015
+  - IdeVersion: VS2017
   #- IdeVersion: Mono
   SKIP_PAUSE: TRUE
   ARCHIVE_WITH_PDB: TRUE
