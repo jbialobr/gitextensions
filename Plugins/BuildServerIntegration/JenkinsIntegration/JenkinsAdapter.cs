@@ -46,7 +46,8 @@ namespace JenkinsIntegration
 
         private HttpClient _httpClient;
 
-        private IList<Task<IEnumerable<string>>> _getBuildUrls;
+        private IList<string> _projectsUrls = new List<string>();
+        private IEnumerable<Task<IEnumerable<string>>> _getBuildUrls;
 
         public void Initialize(IBuildServerWatcher buildServerWatcher, ISettingsSource config, Func<string, bool> isCommitInRevisionGrid)
         {
@@ -72,8 +73,6 @@ namespace JenkinsIntegration
 
                 UpdateHttpClientOptions(buildServerCredentials);
 
-                _getBuildUrls = new List<Task<IEnumerable<string>>>();
-
                 string[] projectUrls = projectName.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var projectUrl in projectUrls.Select(s => baseAdress + "job/" + s.Trim() + "/"))
                 {
@@ -84,14 +83,24 @@ namespace JenkinsIntegration
 
         private void AddGetBuildUrl(string projectUrl)
         {
-            _getBuildUrls.Add(GetResponseAsync(FormatToGetJson(projectUrl), CancellationToken.None)
-                .ContinueWith(
-                    task =>
-                    {
-                        JObject jobDescription = JObject.Parse(task.Result);
-                        return jobDescription["builds"].Select(b => b["url"].ToObject<string>());
-                    },
-                    TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.AttachedToParent));
+            _projectsUrls.Add(projectUrl);
+        }
+
+        private IEnumerable<Task<IEnumerable<string>>> getBuildUrls(bool forceUpdate)
+        {
+            if (_getBuildUrls == null || forceUpdate)
+            {
+                _getBuildUrls = _projectsUrls.Select(
+                    projectUrl => GetResponseAsync(FormatToGetJson(projectUrl), CancellationToken.None)
+                    .ContinueWith(
+                        task =>
+                        {
+                            JObject jobDescription = JObject.Parse(task.Result);
+                            return jobDescription["builds"].Select(b => b["url"].ToObject<string>());
+                        },
+                        TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.AttachedToParent));
+            }
+            return _getBuildUrls;
         }
 
         /// <summary>
@@ -114,27 +123,25 @@ namespace JenkinsIntegration
 
         public IObservable<BuildInfo> GetBuilds(IScheduler scheduler, DateTime? sinceDate = null, bool? running = null)
         {
-            if (_getBuildUrls == null || _getBuildUrls.Count() == 0)
-            {
-                return Observable.Empty<BuildInfo>(scheduler);
-            }
-
             return Observable.Create<BuildInfo>((observer, cancellationToken) =>
                 Task<IDisposable>.Factory.StartNew(
                     () => scheduler.Schedule(() => ObserveBuilds(sinceDate, running, observer, cancellationToken))));
         }
 
+        private static Dictionary<string, BuildInfo> _finishedBuilds = new Dictionary<string, BuildInfo>();
+
         private void ObserveBuilds(DateTime? sinceDate, bool? running, IObserver<BuildInfo> observer, CancellationToken cancellationToken)
         {
             try
             {
-                if (_getBuildUrls.All(t => t.IsCanceled))
+                var buildUrls = getBuildUrls(running ?? false);
+                if (buildUrls.All(t => t.IsCanceled))
                 {
                     observer.OnCompleted();
                     return;
                 }
 
-                foreach (var currentGetBuildUrls in _getBuildUrls)
+                foreach (var currentGetBuildUrls in buildUrls)
                 {
                     if (currentGetBuildUrls.IsFaulted)
                     {
@@ -144,27 +151,32 @@ namespace JenkinsIntegration
                         continue;
                     }
 
-                    var buildContents = currentGetBuildUrls.Result
+                    if (!running.Value)
+                    {
+                        var knownBuilds = currentGetBuildUrls.Result.Where(buildUrl => _finishedBuilds.ContainsKey(buildUrl));
+                        foreach (var buildInfo in knownBuilds.Select(url => _finishedBuilds[url]))
+                        {
+                            if (sinceDate.HasValue && (sinceDate.Value - buildInfo.StartDate).TotalMilliseconds <= buildInfo.Duration)
+                                continue;
+                            observer.OnNext(buildInfo);
+                        }
+                    }
+
+                    var unknownBuilds = currentGetBuildUrls.Result.Where(buildUrl => !_finishedBuilds.ContainsKey(buildUrl));
+                    var buildContents = unknownBuilds
                         .Select(buildUrl => GetResponseAsync(FormatToGetJson(buildUrl), cancellationToken).Result)
                         .Where(s => !string.IsNullOrEmpty(s)).ToArray();
 
                     foreach (var buildDetails in buildContents)
                     {
                         JObject buildDescription = JObject.Parse(buildDetails);
-                        var startDate = TimestampToDateTime(buildDescription["timestamp"].ToObject<long>());
-                        var isRunning = buildDescription["building"].ToObject<bool>();
-
-                        if (sinceDate.HasValue && sinceDate.Value > startDate)
-                            continue;
-
-                        if (running.HasValue && running.Value != isRunning)
-                            continue;
 
                         var buildInfo = CreateBuildInfo(buildDescription);
-                        if (buildInfo.CommitHashList.Any())
+                        if (buildInfo.Status != BuildInfo.BuildStatus.InProgress)
                         {
-                            observer.OnNext(buildInfo);
+                            _finishedBuilds[buildInfo.Url] = buildInfo;
                         }
+                        observer.OnNext(buildInfo);
                     }
                 }
                 observer.OnCompleted();
@@ -184,6 +196,7 @@ namespace JenkinsIntegration
             var idValue = buildDescription["number"].ToObject<string>();
             var statusValue = buildDescription["result"].ToObject<string>();
             var startDateTicks = buildDescription["timestamp"].ToObject<long>();
+            var buildDuration = buildDescription["duration"].ToObject<long>();
             var displayName = buildDescription["fullDisplayName"].ToObject<string>();
             var webUrl = buildDescription["url"].ToObject<string>();
             var action = buildDescription["actions"];
@@ -217,6 +230,7 @@ namespace JenkinsIntegration
                 {
                     Id = idValue,
                     StartDate = TimestampToDateTime(startDateTicks),
+                    Duration = buildDuration,
                     Status = isRunning ? BuildInfo.BuildStatus.InProgress : status,
                     Description = displayName + " " + statusText + testResults,
                     CommitHashList = commitHashList.ToArray(),
