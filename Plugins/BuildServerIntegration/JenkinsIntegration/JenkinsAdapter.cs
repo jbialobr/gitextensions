@@ -196,7 +196,6 @@ namespace JenkinsIntegration
             var idValue = buildDescription["number"].ToObject<string>();
             var statusValue = buildDescription["result"].ToObject<string>();
             var startDateTicks = buildDescription["timestamp"].ToObject<long>();
-            var buildDuration = buildDescription["duration"].ToObject<long>();
             var displayName = buildDescription["fullDisplayName"].ToObject<string>();
             var webUrl = buildDescription["url"].ToObject<string>();
             var action = buildDescription["actions"];
@@ -223,6 +222,15 @@ namespace JenkinsIntegration
             }
 
             var isRunning = buildDescription["building"].ToObject<bool>();
+            long? buildDuration;
+            if (isRunning)
+            {
+                buildDuration = null;
+            }
+            else
+            {
+                buildDuration = buildDescription["duration"].ToObject<long>();
+            }
 
             var status = ParseBuildStatus(statusValue);
             var statusText = isRunning ? string.Empty : status.ToString("G");
@@ -236,6 +244,7 @@ namespace JenkinsIntegration
                     CommitHashList = commitHashList.ToArray(),
                     Url = webUrl
                 };
+            buildInfo.AddDurationToDescription();
             return buildInfo;
         }
 

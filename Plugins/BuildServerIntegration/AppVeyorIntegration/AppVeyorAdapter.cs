@@ -238,7 +238,7 @@ namespace AppVeyorIntegration
 
                                 var version = b["version"].ToObject<string>();
                                 var status = ParseBuildStatus(b["status"].ToObject<string>());
-                                string duration = string.Empty;
+                                long? duration = null;
                                 if (status == BuildInfo.BuildStatus.Success || status == BuildInfo.BuildStatus.Failure)
                                     duration = GetBuildDuration(b);
 
@@ -381,10 +381,7 @@ namespace AppVeyorIntegration
             buildDetails.Status = ParseBuildStatus(status);
 
             buildDetails.ChangeProgressCounter();
-            if (!buildDetails.IsRunning)
-            {
-                buildDetails.Duration = GetBuildDuration(buildData);
-            }
+            buildDetails.Duration = GetBuildDuration(buildData);
 
             string testResults = string.Empty;
             int nbTests = buildDescription["testsCount"].ToObject<int>();
@@ -399,11 +396,11 @@ namespace AppVeyorIntegration
             }
         }
 
-        private static string GetBuildDuration(JToken buildData)
+        private static long GetBuildDuration(JToken buildData)
         {
             var startTime = buildData["started"].ToObject<DateTime>();
             var updateTime = buildData["updated"].ToObject<DateTime>();
-            return " (" + (updateTime - startTime).ToString(@"mm\:ss") + ")";
+            return (long)(updateTime - startTime).TotalMilliseconds;
         }
 
         private JObject FetchBuildDetailsManagingVersionUpdate(BuildDetails buildDetails, CancellationToken cancellationToken)
@@ -530,22 +527,12 @@ namespace AppVeyorIntegration
 
         public void UpdateDescription()
         {
-            Description = Id + PullRequestText + " " + DisplayStatus + " " + Duration + TestsResultText;
+            Description = Id + PullRequestText + " " + DisplayStatus() + TestsResultText;
         }
 
-        private string DisplayStatus
+        private string DisplayStatus()
         {
-            get
-            {
-
-                if (Status != BuildStatus.InProgress)
-                {
-                    return Status.ToString("G");
-                }
-                return Status.ToString("G") + new string('.', _buildProgressCount) + new string(' ', 3 - _buildProgressCount);
-            }
+            return Status.ToString("G") + " " + DurationText();
         }
-
-        public string Duration { get; set; }
     }
 }
