@@ -14,7 +14,6 @@ namespace GitCommands.Repository
         private static Task<RepositoryHistory> _repositoryHistory;
         private static RepositoryHistory _remoteRepositoryHistory;
         private static BindingList<RepositoryCategory> _repositoryCategories;
-        private const int DefaultRepositoriesCount = 30;
 
         public static Task<RepositoryHistory> LoadRepositoryHistoryAsync()
         {
@@ -26,7 +25,7 @@ namespace GitCommands.Repository
 
         private static RepositoryHistory LoadRepositoryHistory()
         {
-            int size = AppSettings.GetInt("history size", DefaultRepositoriesCount);
+            int size = AppSettings.RecentRepositoriesHistorySize;
             object setting = AppSettings.GetString("history", null);
             if (setting == null)
             {
@@ -77,17 +76,19 @@ namespace GitCommands.Repository
             {
                 if (_repositoryHistory != null && _repositoryHistory.Status == TaskStatus.Running)
                     _repositoryHistory.Wait();
+
+                int size = AppSettings.RecentRepositoriesHistorySize;
                 if (_remoteRepositoryHistory == null)
                 {
                     object setting = AppSettings.GetString("history remote", null);
                     if (setting != null)
                     {
                         _remoteRepositoryHistory = DeserializeHistoryFromXml(setting.ToString());
-                        _remoteRepositoryHistory.MaxCount = DefaultRepositoriesCount;
+                        _remoteRepositoryHistory.MaxCount = size;
                     }
                 }
 
-                return _remoteRepositoryHistory ?? (_remoteRepositoryHistory = new RepositoryHistory(DefaultRepositoriesCount));
+                return _remoteRepositoryHistory ?? (_remoteRepositoryHistory = new RepositoryHistory(size));
             }
         }
 
@@ -154,35 +155,35 @@ namespace GitCommands.Repository
         private static BindingList<RepositoryCategory> DeserializeRepositories(string xml)
         {
             BindingList<RepositoryCategory> repositories = null;
+            StringReader stringReader = null;
             try
             {
                 var serializer = new XmlSerializer(typeof(BindingList<RepositoryCategory>));
-                StringReader stringReader = null;
-                try
+                stringReader = new StringReader(xml);
+                using (var xmlReader = new XmlTextReader(stringReader))
                 {
-                    stringReader = new StringReader(xml);
-                    using (var xmlReader = new XmlTextReader(stringReader))
+                    var repos = serializer.Deserialize(xmlReader) as BindingList<RepositoryCategory>;
+                    if (repos != null)
                     {
-                        stringReader = null;
-                        repositories = serializer.Deserialize(xmlReader) as BindingList<RepositoryCategory>;
-                        if (repositories != null)
+                        repositories = new BindingList<RepositoryCategory>();
+                        foreach (var repositoryCategory in repos.Where(r => r.CategoryType == RepositoryCategoryType.Repositories))
                         {
-                            foreach (var repositoryCategory in repositories)
-                            {
-                                repositoryCategory.SetIcon();
-                            }
+                            repositoryCategory.SetIcon();
+                            repositories.Add(repositoryCategory);
                         }
                     }
-                }
-                finally
-                {
-                    if (stringReader != null)
-                        stringReader.Dispose();
                 }
             }
             catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
+            }
+            finally
+            {
+                if (stringReader != null)
+                {
+                    stringReader.Dispose();
+                }
             }
             return repositories;
         }

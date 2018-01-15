@@ -2,11 +2,12 @@
 _UpgradeReport_Files/
 [Dd]ebug*/
 [Rr]elease*/
-!ReleaseNotesGenerator
+!ReleaseNotesGenerator*
 ipch/
 .vs/
 _ReSharper*/
 TestResults/
+*.DS_Store*
 
 */obj
 Plugins/*/obj

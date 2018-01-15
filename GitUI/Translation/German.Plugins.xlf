@@ -1,4 +1,18 @@
-<?xml version="1.0" ?><xliff GitExVersion="2.49a1" version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<?xml version="1.0" ?><xliff GitExVersion="2.51.RC1" version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <file datatype="plaintext" original="AppVeyorSettingsUserControl" source-language="en" target-language="de">
+    <body>
+      <trans-unit id="cbGitHubPullRequest.Text">
+        <source>display github pull requests builds. GithubToken:</source>
+        <target>Zeige die Builds der Pull Request auf GitHub. GitHub Token:</target>
+        
+      </trans-unit>
+      <trans-unit id="cbLoadTestResults.Text">
+        <source>display tests results in build status summary for each build result (network intensive!)</source>
+        <target>Zeige Testergebnisse in der Buildstatus Übersicht für jedes Buildergebnis (viel Netzwerkverkehr!)</target>
+        
+      </trans-unit>
+    </body>
+  </file>
   <file datatype="plaintext" original="AutoCompileSubModulesPlugin" source-language="en" target-language="de">
     <body>
       <trans-unit id="Description.Text">
@@ -62,6 +76,211 @@
       <trans-unit id="GitCommand.Caption">
         <source>Arguments of git command to run</source>
         <target>Parameter des Git Befehls zum Ausführen</target>
+        
+      </trans-unit>
+    </body>
+  </file>
+  <file datatype="plaintext" original="BitbucketPlugin" source-language="en" target-language="de">
+    <body>
+      <trans-unit id="BitbucketBaseUrl.Caption">
+        <source>Specify the base URL to Bitbucket</source>
+        <target>Geben Sie die Bitbucket Basis-URL an</target>
+        
+      </trans-unit>
+      <trans-unit id="BitbucketDisableSsl.Caption">
+        <source>Disable SSL verification</source>
+        <target>SSL Verifikation abschalten</target>
+        
+      </trans-unit>
+      <trans-unit id="BitbucketPassword.Caption">
+        <source>Bitbucket Password</source>
+        <target>Bitbucket Passwort</target>
+        
+      </trans-unit>
+      <trans-unit id="BitbucketUsername.Caption">
+        <source>Bitbucket Username</source>
+        <target>Bitbucket Benutzername</target>
+        
+      </trans-unit>
+      <trans-unit id="Description.Text">
+        <source>Bitbucket Server</source>
+        <target>Bitbucket Server</target>
+        
+      </trans-unit>
+    </body>
+  </file>
+  <file datatype="plaintext" original="BitbucketPullRequestForm" source-language="en" target-language="de">
+    <body>
+      <trans-unit id="$this.Text">
+        <source>Create Pull Request</source>
+        <target>Pull Request erzeugen</target>
+        
+      </trans-unit>
+      <trans-unit id="GridColumnName.HeaderText">
+        <source>Name</source>
+        <target>Name</target>
+        
+      </trans-unit>
+      <trans-unit id="_commited.Text">
+        <source>{0} committed
+{1}</source>
+        <target>{0} committed
+{1}</target>
+        
+      </trans-unit>
+      <trans-unit id="_error.Text">
+        <source>Error</source>
+        <target>Fehler</target>
+        
+      </trans-unit>
+      <trans-unit id="_success.Text">
+        <source>Success</source>
+        <target>Erfolg</target>
+        
+      </trans-unit>
+      <trans-unit id="_yourRepositoryIsNotInBitbucket.Text">
+        <source>Your repository is not hosted in Bitbucket.</source>
+        <target>Ihr Repository ist nicht auf Bitbucket gehostet.</target>
+        
+      </trans-unit>
+      <trans-unit id="btnApprove.Text">
+        <source>Approve</source>
+        <target>Genehmigen</target>
+        
+      </trans-unit>
+      <trans-unit id="btnCreate.Text">
+        <source>Create</source>
+        <target>Erzeugen</target>
+        
+      </trans-unit>
+      <trans-unit id="btnMerge.Text">
+        <source>Merge</source>
+        <target>Mergen</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox1.Text">
+        <source>Source</source>
+        <target>Quelle</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox2.Text">
+        <source>Target</source>
+        <target>Ziel</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox3.Text">
+        <source>Pull Request Info</source>
+        <target>Pull Request Information</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox4.Text">
+        <source>Source</source>
+        <target>Quelle</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox5.Text">
+        <source>Target</source>
+        <target>Ziel</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox6.Text">
+        <source>Pull Request Info</source>
+        <target>Pull Request Information</target>
+        
+      </trans-unit>
+      <trans-unit id="groupBox9.Text">
+        <source>Information</source>
+        <target>Information</target>
+        
+      </trans-unit>
+      <trans-unit id="label1.Text">
+        <source>Branch</source>
+        <target>Branch</target>
+        
+      </trans-unit>
+      <trans-unit id="label10.Text">
+        <source>Reviewer (approved)</source>
+        <target>Reviewer (genehmigt)</target>
+        
+      </trans-unit>
+      <trans-unit id="label12.Text">
+        <source>Author</source>
+        <target>Autor</target>
+        
+      </trans-unit>
+      <trans-unit id="label13.Text">
+        <source>Description</source>
+        <target>Beschreibung</target>
+        
+      </trans-unit>
+      <trans-unit id="label14.Text">
+        <source>Title</source>
+        <target>Titel</target>
+        
+      </trans-unit>
+      <trans-unit id="label16.Text">
+        <source>State</source>
+        <target>Status</target>
+        
+      </trans-unit>
+      <trans-unit id="label17.Text">
+        <source>Repository</source>
+        <target>Repository</target>
+        
+      </trans-unit>
+      <trans-unit id="label18.Text">
+        <source>Branch</source>
+        <target>Branch</target>
+        
+      </trans-unit>
+      <trans-unit id="label2.Text">
+        <source>Branch</source>
+        <target>Branch</target>
+        
+      </trans-unit>
+      <trans-unit id="label3.Text">
+        <source>Description</source>
+        <target>Beschreibung</target>
+        
+      </trans-unit>
+      <trans-unit id="label4.Text">
+        <source>Title</source>
+        <target>Titel</target>
+        
+      </trans-unit>
+      <trans-unit id="label5.Text">
+        <source>Repository</source>
+        <target>Repository</target>
+        
+      </trans-unit>
+      <trans-unit id="label6.Text">
+        <source>Repository</source>
+        <target>Repository</target>
+        
+      </trans-unit>
+      <trans-unit id="label8.Text">
+        <source>Repository</source>
+        <target>Repository</target>
+        
+      </trans-unit>
+      <trans-unit id="label9.Text">
+        <source>Branch</source>
+        <target>Branch</target>
+        
+      </trans-unit>
+      <trans-unit id="lblReviewers.Text">
+        <source>Reviewer(s)</source>
+        <target>Reviewer</target>
+        
+      </trans-unit>
+      <trans-unit id="tabCreate.Text">
+        <source>Create Pull Request</source>
+        <target>Pull Request erzeugen</target>
+        
+      </trans-unit>
+      <trans-unit id="tabView.Text">
+        <source>View Pull Requests</source>
+        <target>Pull Requests anzeigen</target>
         
       </trans-unit>
     </body>
@@ -960,6 +1179,11 @@ Benützen Sie den Verweis unten für mehr Informationen zur .gitreview Datei und
         <target>Github</target>
         
       </trans-unit>
+      <trans-unit id="OAuthToken.Caption">
+        <source>OAuth Token</source>
+        <target>OAuth Token</target>
+        
+      </trans-unit>
     </body>
   </file>
   <file datatype="plaintext" original="GitImpactPlugin" source-language="en" target-language="de">
@@ -1126,14 +1350,58 @@ Wollen Sie den konfigurierten Pfad zurücksetzen?</target>
   </file>
   <file datatype="plaintext" original="JenkinsSettingsUserControl" source-language="en" target-language="de">
     <body>
-      <trans-unit id="label1.Text">
+      <trans-unit id="lblJenkinsServerUrl.Text">
+        <source>Jenkins server URL</source>
+        <target>Jenkins Server-URL</target>
+        
+      </trans-unit>
+      <trans-unit id="lblProjectName.Text">
         <source>Project name</source>
         <target>Projektname</target>
         
       </trans-unit>
-      <trans-unit id="label13.Text">
-        <source>Jenkins server URL</source>
-        <target>Jenkins Server-URL</target>
+    </body>
+  </file>
+  <file datatype="plaintext" original="JiraCommitHintPlugin" source-language="en" target-language="de">
+    <body>
+      <trans-unit id="Description.Text">
+        <source>Jira Commit Hint</source>
+        <target>JIRA Commit Hinweis</target>
+        
+      </trans-unit>
+      <trans-unit id="enabledSettings.Caption">
+        <source>Jira hint plugin enabled</source>
+        <target>JIRA HInweis Plugin aktiviert</target>
+        
+      </trans-unit>
+      <trans-unit id="jdlQuerySettings.Caption">
+        <source>JDL Query</source>
+        <target>JQL Query</target>
+        
+      </trans-unit>
+      <trans-unit id="jiraFields.Caption">
+        <source>Jira fields</source>
+        <target>JIRA Felder</target>
+        
+      </trans-unit>
+      <trans-unit id="passwordSettings.Caption">
+        <source>Jira password</source>
+        <target>JIRA Passwort</target>
+        
+      </trans-unit>
+      <trans-unit id="stringTemplateSetting.Caption">
+        <source>Message Template</source>
+        <target>Vorlage für Commit Nachricht</target>
+        
+      </trans-unit>
+      <trans-unit id="urlSettings.Caption">
+        <source>Jira URL</source>
+        <target>JIRA URL</target>
+        
+      </trans-unit>
+      <trans-unit id="userSettings.Caption">
+        <source>Jira user</source>
+        <target>JIRA Benutzer</target>
         
       </trans-unit>
     </body>
@@ -1189,6 +1457,26 @@ Wollen Sie den konfigurierten Pfad zurücksetzen?</target>
         <target>Proxy Wechsler</target>
         
       </trans-unit>
+      <trans-unit id="HttpProxy.Caption">
+        <source>HTTP proxy</source>
+        <target>HTTP Proxy</target>
+        
+      </trans-unit>
+      <trans-unit id="HttpProxyPort.Caption">
+        <source>HTTP proxy port</source>
+        <target>HTTP Proxy Port</target>
+        
+      </trans-unit>
+      <trans-unit id="Password.Caption">
+        <source>Password</source>
+        <target>Passwort</target>
+        
+      </trans-unit>
+      <trans-unit id="Username.Caption">
+        <source>Username</source>
+        <target>Benutzername</target>
+        
+      </trans-unit>
     </body>
   </file>
   <file datatype="plaintext" original="ReleaseNotesGeneratorForm" source-language="en" target-language="de">
@@ -1198,9 +1486,22 @@ Wollen Sie den konfigurierten Pfad zurücksetzen?</target>
         <target>Release Notes Generator</target>
         
       </trans-unit>
+      <trans-unit id="_caption.Text">
+        <source>Invalid input</source>
+        <target>Ungültige Eingabe</target>
+        
+      </trans-unit>
       <trans-unit id="_commitLogFrom.Text">
         <source>Commit log from '{0}' to '{1}' ({2}):</source>
         <target>Commit-Log von '{0}' bis '{1}' ({2}):</target>
+        
+      </trans-unit>
+      <trans-unit id="_fromCommitNotSpecified.Text">
+        <source>'From' commit must be specified</source>
+        
+      </trans-unit>
+      <trans-unit id="_toCommitNotSpecified.Text">
+        <source>'To' commit must be specified</source>
         
       </trans-unit>
       <trans-unit id="buttonCopyAsHtml.Text">
@@ -1316,8 +1617,28 @@ Branchnamen oder Tag-Namen sein.)</target>
   <file datatype="plaintext" original="StashPlugin" source-language="en" target-language="de">
     <body>
       <trans-unit id="Description.Text">
-        <source>Create Stash Pull Request</source>
-        <target>Stash Pull Request erzeugen</target>
+        <source>Create Bitbucket Pull Request</source>
+        <target>Erzeuge einen Pull Request auf Bitbucket</target>
+        
+      </trans-unit>
+      <trans-unit id="StashBaseUrl.Caption">
+        <source>Specify the base URL to Bitbucket</source>
+        <target>Geben Sie die Bitbucket Basis-URL an</target>
+        
+      </trans-unit>
+      <trans-unit id="StashDisableSsl.Caption">
+        <source>Disable SSL verification</source>
+        <target>SSL Verifikation abschalten</target>
+        
+      </trans-unit>
+      <trans-unit id="StashPassword.Caption">
+        <source>Bitbucket Password</source>
+        <target>Bitbucket Passwort</target>
+        
+      </trans-unit>
+      <trans-unit id="StashUsername.Caption">
+        <source>Bitbucket Username</source>
+        <target>Bitbucket Benutzername</target>
         
       </trans-unit>
     </body>
@@ -1352,8 +1673,8 @@ Branchnamen oder Tag-Namen sein.)</target>
         
       </trans-unit>
       <trans-unit id="_yourRepositoryIsNotInStash.Text">
-        <source>Your repository is not hosted in Stash.</source>
-        <target>Ihr Repository ist nicht bei Stash gehostet.</target>
+        <source>Your repository is not hosted in Bitbucket.</source>
+        <target>Ihr Repository ist nicht auf Bitbucket gehostet.</target>
         
       </trans-unit>
       <trans-unit id="btnApprove.Text">
@@ -1505,9 +1826,42 @@ Branchnamen oder Tag-Namen sein.)</target>
         <target>Logge als Gast um den Build Report anzuzeigen</target>
         
       </trans-unit>
+      <trans-unit id="_failToExtractDataFromClipboardCaption.Text">
+        <source>Build url not valid</source>
+        <target>Build URL ist ungültig</target>
+        
+      </trans-unit>
+      <trans-unit id="_failToExtractDataFromClipboardMessage.Text">
+        <source>The clipboard doesn't contain a valid build url.
+
+Please copy in the clipboard the url of the build before retrying.
+(Should contain at least the &quot;buildTypeId&quot; parameter)</source>
+        <target>Die Zwischenablage enthält keine gültige Build-URL. 
+
+Bitte kopieren Sie die URL des Builds in die Zwischenablage bevor Sie es erneut versuchen.
+(Sollte mindestens den Parameter &quot;buildTypeId&quot; enthalten)</target>
+        
+      </trans-unit>
+      <trans-unit id="_failToLoadProjectCaption.Text">
+        <source>Error when loading the projects and build list</source>
+        <target>Fehler beim Laden der Projekte und der Liste der Builds</target>
+        
+      </trans-unit>
+      <trans-unit id="_failToLoadProjectMessage.Text">
+        <source>Failed to load the projects and build list.
+Please verify the server url.</source>
+        <target>Fehler beim Laden der Build- und  Projekt-Listen.
+Bitte die Server-URL überprüfen.</target>
+        
+      </trans-unit>
       <trans-unit id="labelRegexError.Text">
         <source>The &quot;Build Id Filter&quot; regular expression is not valid and won't be saved!</source>
         <target>Der reguläre Ausdruck &quot;Build Id Filter&quot; validiert nicht und wird nicht gespeichert!</target>
+        
+      </trans-unit>
+      <trans-unit id="lnkExtractDataFromBuildUrlCopiedInTheClipboard.Text">
+        <source>Extract the data from the build url copied in the clipboard</source>
+        <target>Extrahiere die Daten aus der Build URL die sich in der Zwischenablage befindet</target>
         
       </trans-unit>
     </body>

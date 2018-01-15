@@ -109,6 +109,7 @@ namespace GitUI.BuildServerIntegration
             lock (buildServerCredentialsLock)
             {
                 IBuildServerCredentials buildServerCredentials = new BuildServerCredentials { UseGuestAccess = true };
+                var foundInConfig = false;
 
                 const string CredentialsConfigName = "Credentials";
                 const string UseGuestAccessKey = "UseGuestAccess";
@@ -142,6 +143,7 @@ namespace GitUI.BuildServerIntegration
                                         true);
                                     buildServerCredentials.Username = section.GetValue(UsernameKey);
                                     buildServerCredentials.Password = section.GetValue(PasswordKey);
+                                    foundInConfig = true;
 
                                     if (useStoredCredentialsIfExisting)
                                     {
@@ -162,7 +164,7 @@ namespace GitUI.BuildServerIntegration
                     }
                 }
 
-                if (!useStoredCredentialsIfExisting)
+                if (!useStoredCredentialsIfExisting || !foundInConfig)
                 {
                     buildServerCredentials = ShowBuildServerCredentialsForm(buildServerAdapter.UniqueKey, buildServerCredentials);
 
@@ -262,13 +264,15 @@ namespace GitUI.BuildServerIntegration
                         buildInfo.StartDate >= rowData.BuildStatus.StartDate)
                     {
                         rowData.BuildStatus = buildInfo;
-
-                        if (BuildStatusImageColumnIndex != -1 &&
-                            revisions.Rows[index.Value].Cells[BuildStatusImageColumnIndex].Displayed)
-                            revisions.UpdateCellValue(BuildStatusImageColumnIndex, index.Value);
-                        if (BuildStatusMessageColumnIndex != -1 &&
-                            revisions.Rows[index.Value].Cells[BuildStatusImageColumnIndex].Displayed)
-                            revisions.UpdateCellValue(BuildStatusMessageColumnIndex, index.Value);
+                        if (index.Value < revisions.RowCount)
+                        {
+                            if (BuildStatusImageColumnIndex != -1 &&
+                                revisions.Rows[index.Value].Cells[BuildStatusImageColumnIndex].Displayed)
+                                revisions.UpdateCellValue(BuildStatusImageColumnIndex, index.Value);
+                            if (BuildStatusMessageColumnIndex != -1 &&
+                                revisions.Rows[index.Value].Cells[BuildStatusMessageColumnIndex].Displayed)
+                                revisions.UpdateCellValue(BuildStatusMessageColumnIndex, index.Value);
+                        }
                     }
                 }
             }

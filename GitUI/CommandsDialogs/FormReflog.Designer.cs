@@ -41,7 +41,6 @@ namespace GitUI.CommandsDialogs
             this.Sha = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Ref = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Action = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Message = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.contextMenuStripReflog = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.copySha1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.createABranchOnThisCommitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -172,8 +171,7 @@ namespace GitUI.CommandsDialogs
             this.gridReflog.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Sha,
             this.Ref,
-            this.Action,
-            this.Message});
+            this.Action});
             this.tableLayoutPanel1.SetColumnSpan(this.gridReflog, 2);
             this.gridReflog.ContextMenuStrip = this.contextMenuStripReflog;
             this.gridReflog.Location = new System.Drawing.Point(3, 77);
@@ -190,7 +188,7 @@ namespace GitUI.CommandsDialogs
             // Sha
             // 
             this.Sha.DataPropertyName = "Sha";
-            this.Sha.HeaderText = "Sha-1";
+            this.Sha.HeaderText = "SHA-1";
             this.Sha.Name = "Sha";
             this.Sha.ReadOnly = true;
             this.Sha.Width = 5;
@@ -211,14 +209,6 @@ namespace GitUI.CommandsDialogs
             this.Action.ReadOnly = true;
             this.Action.Width = 5;
             // 
-            // Message
-            // 
-            this.Message.DataPropertyName = "Message";
-            this.Message.HeaderText = "Message";
-            this.Message.Name = "Message";
-            this.Message.ReadOnly = true;
-            this.Message.Width = 5;
-            // 
             // contextMenuStripReflog
             // 
             this.contextMenuStripReflog.ImageScalingSize = new System.Drawing.Size(20, 20);
@@ -233,7 +223,7 @@ namespace GitUI.CommandsDialogs
             // 
             this.copySha1ToolStripMenuItem.Name = "copySha1ToolStripMenuItem";
             this.copySha1ToolStripMenuItem.Size = new System.Drawing.Size(322, 26);
-            this.copySha1ToolStripMenuItem.Text = "Copy Sha1";
+            this.copySha1ToolStripMenuItem.Text = "Copy SHA-1";
             this.copySha1ToolStripMenuItem.Click += new System.EventHandler(this.copySha1ToolStripMenuItem_Click);
             // 
             // createABranchOnThisCommitToolStripMenuItem
@@ -263,7 +253,7 @@ namespace GitUI.CommandsDialogs
             this.lblDirtyWorkingDirectory.TabIndex = 34;
             this.lblDirtyWorkingDirectory.Text = "Warning: you\'ve got changes in your working directory that could be lost if you w" +
     "ant to reset the current branch to another commit.\r\nStash them before if you don" +
-    "\'t want to lost them.";
+    "\'t want to lose them.";
             this.lblDirtyWorkingDirectory.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // FormReflog
@@ -301,7 +291,6 @@ namespace GitUI.CommandsDialogs
         private System.Windows.Forms.DataGridViewTextBoxColumn Sha;
         private System.Windows.Forms.DataGridViewTextBoxColumn Ref;
         private System.Windows.Forms.DataGridViewTextBoxColumn Action;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Message;
         private System.Windows.Forms.ContextMenuStrip contextMenuStripReflog;
         private System.Windows.Forms.ToolStripMenuItem createABranchOnThisCommitToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem resetCurrentBranchOnThisCommitToolStripMenuItem;

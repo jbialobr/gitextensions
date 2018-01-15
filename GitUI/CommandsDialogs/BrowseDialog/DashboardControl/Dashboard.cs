@@ -231,7 +231,6 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
 
             RepositoryCategory filteredRecentRepositoryHistory = new RepositoryCategory();
             filteredRecentRepositoryHistory.Description = Repositories.RepositoryHistory.Description;
-            filteredRecentRepositoryHistory.CategoryType = Repositories.RepositoryHistory.CategoryType;
 
             foreach (Repository repository in Repositories.RepositoryHistory.Repositories)
             {
@@ -265,7 +264,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
 
         private void TranslateItem_Click(object sender, EventArgs e)
         {
-            Process.Start(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "TranslationApp.exe"));
+            Process.Start("https://www.transifex.com/git-extensions/git-extensions/translate/");
         }
 
         private static void GitHubItem_Click(object sender, EventArgs e)
@@ -345,8 +344,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
 
         private static void DonateItem_Click(object sender, EventArgs e)
         {
-            Process.Start(
-                @"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WAL2SSDV8ND54&lc=US&item_name=GitExtensions&no_note=1&no_shipping=1&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted");
+            Process.Start(FormDonate.DonationUrl);
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)

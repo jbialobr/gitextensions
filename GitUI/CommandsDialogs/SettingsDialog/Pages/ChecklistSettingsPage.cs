@@ -9,6 +9,7 @@ using GitCommands.Config;
 using GitCommands.Utils;
 using Microsoft.Win32;
 using ResourceManager;
+using System.Linq;
 
 namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
@@ -116,7 +117,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             new TranslationString("There is a difftool configured: {0}");
 
         private readonly TranslationString _configureMergeTool =
-            new TranslationString("You need to configure merge tool in order to solve mergeconflicts (kdiff3 for example).");
+            new TranslationString("You need to configure merge tool in order to solve merge conflicts (kdiff3 for example).");
 
         private readonly TranslationString _kdiffAsMergeConfiguredButNotFound =
             new TranslationString("KDiff3 is configured as mergetool, but the path to kdiff.exe is not configured.");
@@ -156,6 +157,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
         #endregion
 
         private const string _putty = "PuTTY";
+        private readonly ISshPathLocator _sshPathLocator = new SshPathLocator();
 
         /// <summary>
         /// TODO: remove this direct dependency to another SettingsPage later when possible
@@ -265,32 +267,39 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             }
             if (File.Exists(path))
             {
-                var pi = new ProcessStartInfo
+                try
                 {
-                    FileName = "regsvr32",
-                    Arguments = string.Format("\"{0}\"", path),
-                    Verb = "RunAs",
-                    UseShellExecute = true
-                };
-
-                var process = Process.Start(pi);
-                process.WaitForExit();
-
-                if (IntPtr.Size == 8)
-                {
-                    path = path.Replace(CommonLogic.GitExtensionsShellEx32Name, CommonLogic.GitExtensionsShellEx64Name);
-                    if (File.Exists(path))
+                    var pi = new ProcessStartInfo
                     {
-                        pi.Arguments = string.Format("\"{0}\"", path);
+                        FileName = "regsvr32",
+                        Arguments = string.Format("\"{0}\"", path),
+                        Verb = "RunAs",
+                        UseShellExecute = true
+                    };
 
-                        var process64 = Process.Start(pi);
-                        process64.WaitForExit();
-                    }
-                    else
+                    var process = Process.Start(pi);
+                    process.WaitForExit();
+
+                    if (IntPtr.Size == 8)
                     {
-                        MessageBox.Show(this, string.Format(_cantRegisterShellExtension.Text, CommonLogic.GitExtensionsShellEx64Name));
+                        path = path.Replace(CommonLogic.GitExtensionsShellEx32Name, CommonLogic.GitExtensionsShellEx64Name);
+                        if (File.Exists(path))
+                        {
+                            pi.Arguments = string.Format("\"{0}\"", path);
+
+                            var process64 = Process.Start(pi);
+                            process64.WaitForExit();
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, string.Format(_cantRegisterShellExtension.Text, CommonLogic.GitExtensionsShellEx64Name));
+                        }
                     }
                 }
+                catch(System.ComponentModel.Win32Exception)
+                {
+                    // User cancel operation, continue;
+                }               
             }
             else
             {
@@ -333,6 +342,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             SaveAndRescan_Click(null, null);
         }
 
+        private readonly string[] AutoConfigMergeTools = new[] { "p4merge", "TortoiseMerge", "meld", "beyondcompare3", "beyondcompare4", "diffmerge", "semanticmerge", "vscode", "vsdiffmerge" };
         private void MergeToolFix_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(CommonLogic.GetGlobalMergeTool()))
@@ -355,7 +365,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             {
                 CheckSettingsLogic.SolveMergeToolPathForKDiff();
             }
-            else if (CommonLogic.IsMergeTool("p4merge") || CommonLogic.IsMergeTool("TortoiseMerge") || CommonLogic.IsMergeTool("meld"))
+            else if (AutoConfigMergeTools.Any(tool => CommonLogic.IsMergeTool(tool)))
             {
                 CheckSettingsLogic.AutoConfigMergeToolCmd();
 
@@ -483,7 +493,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
                                         _puttyConfigured.Text);
             }
 
-            var ssh = GitCommandHelpers.GetSsh();
+            var ssh = _sshPathLocator.Find(AppSettings.GitBinDir);
             RenderSettingSet(SshConfig, SshConfig_Fix, string.IsNullOrEmpty(ssh) ? _opensshUsed.Text : string.Format(_unknownSshClient.Text, ssh));
             return true;
         }

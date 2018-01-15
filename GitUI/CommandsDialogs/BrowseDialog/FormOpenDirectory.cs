@@ -41,7 +41,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 directories.Add(PathUtil.EnsureTrailingPathSeparator(AppSettings.DefaultCloneDestinationPath));
             }
 
-            if (currentModule != null)
+            if (currentModule != null && !string.IsNullOrWhiteSpace(currentModule.WorkingDir))
             {
                 DirectoryInfo di = new DirectoryInfo(currentModule.WorkingDir);
                 if (di.Parent != null)
@@ -52,6 +52,20 @@ namespace GitUI.CommandsDialogs.BrowseDialog
 
             directories.AddRange(Repositories.RepositoryHistory.Repositories.Select(r => r.Path));
 
+            if (directories.Count == 0)
+            {
+                if (AppSettings.RecentWorkingDir.IsNotNullOrWhitespace())
+                {
+                    directories.Add(PathUtil.EnsureTrailingPathSeparator(AppSettings.RecentWorkingDir));
+                }
+
+                string homeDir = GitCommandHelpers.GetHomeDir();
+                if (homeDir.IsNotNullOrWhitespace())
+                {
+                    directories.Add(PathUtil.EnsureTrailingPathSeparator(homeDir));
+                }
+            }
+            
             return directories.Distinct().ToList();
         }
 
@@ -84,6 +98,37 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             if (e.KeyChar == (char)Keys.Enter)
             {
                 LoadClick(null, null);
+            }
+        }
+
+        private void folderGoUpbutton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DirectoryInfo currentDirectory = new DirectoryInfo(_NO_TRANSLATE_Directory.Text);
+                if (currentDirectory.Parent == null)
+                    return;
+                string parentPath = currentDirectory.Parent.FullName.TrimEnd('\\');
+                _NO_TRANSLATE_Directory.Text = parentPath;
+                _NO_TRANSLATE_Directory.Focus();
+                _NO_TRANSLATE_Directory.Select(_NO_TRANSLATE_Directory.Text.Length, 0);
+                SendKeys.Send(@"\");
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void _NO_TRANSLATE_Directory_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                DirectoryInfo currentDirectory = new DirectoryInfo(_NO_TRANSLATE_Directory.Text);
+                folderGoUpbutton.Enabled = currentDirectory.Exists && currentDirectory.Parent != null;
+            }
+            catch (Exception)
+            {
+                folderGoUpbutton.Enabled = false;
             }
         }
     }

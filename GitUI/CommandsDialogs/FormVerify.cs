@@ -5,6 +5,8 @@ using System.Windows.Forms;
 using GitCommands;
 using GitUI.HelperDialogs;
 using ResourceManager;
+using GitCommands.Git;
+using GitCommands.Git.Tag;
 
 namespace GitUI.CommandsDialogs
 {
@@ -24,9 +26,10 @@ namespace GitUI.CommandsDialogs
         private readonly TranslationString selectLostObjectsToRestoreMessage = new TranslationString("Select objects to restore.");
         private readonly TranslationString selectLostObjectsToRestoreCaption = new TranslationString("Restore lost objects");
 
-        private readonly List<LostObject> lostObjects = new List<LostObject>();
-        private readonly SortableLostObjectsList filteredLostObjects = new SortableLostObjectsList();
-        private readonly DataGridViewCheckBoxHeaderCell selectedItemsHeader = new DataGridViewCheckBoxHeaderCell();
+        private readonly List<LostObject> _lostObjects = new List<LostObject>();
+        private readonly SortableLostObjectsList _filteredLostObjects = new SortableLostObjectsList();
+        private readonly DataGridViewCheckBoxHeaderCell _selectedItemsHeader = new DataGridViewCheckBoxHeaderCell();
+        private readonly IGitTagController _gitTagController;
 
         private FormVerify()
             : this(null)
@@ -37,15 +40,20 @@ namespace GitUI.CommandsDialogs
             : base(aCommands)
         {
             InitializeComponent();
-            selectedItemsHeader.AttachTo(columnIsLostObjectSelected);
+            _selectedItemsHeader.AttachTo(columnIsLostObjectSelected);
 
             Translate();
             Warnings.AutoGenerateColumns = false;
+
+            if (aCommands != null)
+            {
+                _gitTagController = new GitTagController(() => aCommands.Module.WorkingDir);
+            }
         }
 
         private LostObject CurrentItem
         {
-            get { return Warnings.SelectedRows.Count == 0 ? null : filteredLostObjects[Warnings.SelectedRows[0].Index]; }
+            get { return Warnings.SelectedRows.Count == 0 ? null : _filteredLostObjects[Warnings.SelectedRows[0].Index]; }
         }
 
         #region Event Handlers
@@ -53,7 +61,7 @@ namespace GitUI.CommandsDialogs
         private void FormVerifyShown(object sender, EventArgs e)
         {
             UpdateLostObjects();
-            Warnings.DataSource = filteredLostObjects;
+            Warnings.DataSource = _filteredLostObjects;
         }
 
         private void SaveObjectsClick(object sender, EventArgs e)
@@ -183,8 +191,8 @@ namespace GitUI.CommandsDialogs
                 return;
             }
 
-            lostObjects.Clear();
-            lostObjects.AddRange(dialogResult
+            _lostObjects.Clear();
+            _lostObjects.AddRange(dialogResult
                 .Split('\r', '\n')
                 .Where(s => !string.IsNullOrEmpty(s))
                 .Select<string, LostObject>((s) => LostObject.TryParse(Module, s))
@@ -197,8 +205,8 @@ namespace GitUI.CommandsDialogs
         private void UpdateFilteredLostObjects()
         {
             SuspendLayout();
-            filteredLostObjects.Clear();
-            filteredLostObjects.AddRange(lostObjects.Where(IsMatchToFilter));
+            _filteredLostObjects.Clear();
+            _filteredLostObjects.AddRange(_lostObjects.Where(IsMatchToFilter));
             //Warnings.DataSource = filteredLostObjects;
             ResumeLayout();
         }
@@ -240,7 +248,7 @@ namespace GitUI.CommandsDialogs
                 .Cast<DataGridViewRow>()
                 .Select(row => row.Cells[columnIsLostObjectSelected.Index])
                 .Where(cell => (bool?)cell.Value == true)
-                .Select(cell => filteredLostObjects[cell.RowIndex])
+                .Select(cell => _filteredLostObjects[cell.RowIndex])
                 .ToList();
 
             if (selectedLostObjects.Count == 0)
@@ -252,7 +260,9 @@ namespace GitUI.CommandsDialogs
             foreach (var lostObject in selectedLostObjects)
             {
                 currentTag++;
-                Module.Tag(RestoredObjectsTagPrefix + currentTag, lostObject.Hash, false, false);
+                var createTagArgs = new GitCreateTagArgs($"{RestoredObjectsTagPrefix}{currentTag}", lostObject.Hash);
+                var cmd = _gitTagController.GetCreateTagCommand(createTagArgs);
+                UICommands.StartCommandLineProcessDialog(cmd, this);
             }
 
             return currentTag;
@@ -284,8 +294,8 @@ namespace GitUI.CommandsDialogs
         {
             if (disposing)
             {
-                selectedItemsHeader.Detach();
-                selectedItemsHeader.Dispose();
+                _selectedItemsHeader.Detach();
+                _selectedItemsHeader.Dispose();
 
                 if (components != null)
                     components.Dispose();

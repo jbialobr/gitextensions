@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
+using GitCommands.Git;
+using GitUI.UserControls;
 using PatchApply;
 using ResourceManager;
 
@@ -20,6 +22,8 @@ namespace GitUI.CommandsDialogs
         readonly TranslationString cannotBeUndone = new TranslationString("This action cannot be undone.");
         readonly TranslationString areYouSure = new TranslationString("Are you sure you want to drop the stash? This action cannot be undone.");
         readonly TranslationString dontShowAgain = new TranslationString("Don't show me this message again.");
+
+        private AsyncLoader _asyncLoader = new AsyncLoader();
 
         private FormStash()
             : this(null)
@@ -50,7 +54,7 @@ namespace GitUI.CommandsDialogs
             StashKeepIndex.Checked = AppSettings.StashKeepIndex;
             chkIncludeUntrackedFiles.Checked = AppSettings.IncludeUntrackedFilesInManualStash;
 
-            splitContainer2_SplitterMoved(null, null);
+            ResizeStashesWidth();
         }
 
         GitStash currentWorkingDirStashItem;
@@ -88,7 +92,7 @@ namespace GitUI.CommandsDialogs
 
             Loading.Visible = true;
             Stashes.Enabled = false;
-            toolStripButton1.Enabled = false;
+            refreshToolStripButton.Enabled = false;
             toolStripButton_customMessage.Enabled = false;
             if (gitStash == null)
             {
@@ -97,17 +101,13 @@ namespace GitUI.CommandsDialogs
             else if(gitStash == currentWorkingDirStashItem)
             {
                 toolStripButton_customMessage.Enabled = true;
-                Task.Factory.StartNew(() => Module.GetAllChangedFiles())
-                    .ContinueWith((task) => LoadGitItemStatuses(task.Result),
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                _asyncLoader.Load(() => Module.GetAllChangedFiles(), LoadGitItemStatuses);
                 Clear.Enabled = false; // disallow Drop  (of current working directory)
                 Apply.Enabled = false; // disallow Apply (of current working directory)
             }
             else
             {
-                Task.Factory.StartNew(() => Module.GetStashDiffFiles(gitStash.Name)) 
-                    .ContinueWith((task) => LoadGitItemStatuses(task.Result),
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                _asyncLoader.Load(() => Module.GetStashDiffFiles(gitStash.Name), LoadGitItemStatuses);
                 Clear.Enabled = true; // allow Drop
                 Apply.Enabled = true; // allow Apply
             }
@@ -118,7 +118,12 @@ namespace GitUI.CommandsDialogs
             Stashed.GitItemStatuses = gitItemStatuses;
             Loading.Visible = false;
             Stashes.Enabled = true;
-            toolStripButton1.Enabled = true;
+            refreshToolStripButton.Enabled = true;
+        }
+
+        private void ResizeStashesWidth()
+        {
+            Stashes.Size = new Size(toolStrip1.Width - 15 - refreshToolStripButton.Width - showToolStripLabel.Width - toolStripButton_customMessage.Width, Stashes.Size.Height);
         }
 
         private void StashedSelectedIndexChanged(object sender, EventArgs e)
@@ -241,6 +246,11 @@ namespace GitUI.CommandsDialogs
             Cursor.Current = Cursors.Default;
         }
 
+        private void Stashes_DropDown(object sender, EventArgs e)
+        {
+            Stashes.ResizeComboBoxDropDownWidth(Stashes.Size.Width, splitContainer1.Width - 2 * showToolStripLabel.Width);
+        }
+
         private void RefreshClick(object sender, EventArgs e)
         {
             RefreshAll();
@@ -259,14 +269,14 @@ namespace GitUI.CommandsDialogs
             RefreshAll();
         }
 
-        private void splitContainer2_SplitterMoved(object sender, SplitterEventArgs e)
+        private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
         {
-            Stashes.Size = new Size(Math.Min(200, toolStrip1.Width - 25 - toolStripButton1.Width - toolStripLabel1.Width - toolStripButton_customMessage.Width), Stashes.Size.Height);
+            ResizeStashesWidth();
         }
 
         private void FormStash_Resize(object sender, EventArgs e)
         {
-            splitContainer2_SplitterMoved(null, null);
+            ResizeStashesWidth();
         }
 
         private void toolStripButton_customMessage_Click(object sender, EventArgs e)
@@ -309,6 +319,5 @@ namespace GitUI.CommandsDialogs
                 StashMessage.ReadOnly = false;
             }
         }
-
     }
 }

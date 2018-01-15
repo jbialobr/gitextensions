@@ -105,7 +105,7 @@ namespace GitUI.CommandsDialogs
 
             if (!SaveToDir.Checked)
             {
-                savePatchesToDir = Path.Combine(Module.GetGitDirectory(), "PatchesToMail");
+                savePatchesToDir = Path.Combine(Module.WorkingDirGitDir, "PatchesToMail");
                 if (Directory.Exists(savePatchesToDir))
                 {
                     foreach (string file in Directory.GetFiles(savePatchesToDir, "*.patch"))
@@ -138,7 +138,7 @@ namespace GitUI.CommandsDialogs
                     rev2 = revisions[1].Guid;
                     result = Module.FormatPatch(rev1, rev2, savePatchesToDir);
                 }
-                else if (revisions.Count > 2)
+                else
                 {
                     int n = 0;
                     foreach (GitRevision revision in revisions)
@@ -179,6 +179,7 @@ namespace GitUI.CommandsDialogs
             Close();
         }
 
+#pragma warning disable 618 // Mono marked SmtpClient obsolete
         private bool SendMail(string dir)
         {
             try
@@ -221,6 +222,7 @@ namespace GitUI.CommandsDialogs
             }
             return true;
         }
+#pragma warning restore 618 // Mono marked SmtpClient obsolete
 
         private void SaveToDir_CheckedChanged(object sender, EventArgs e)
         {

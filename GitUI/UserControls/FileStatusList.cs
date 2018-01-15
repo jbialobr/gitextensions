@@ -20,12 +20,14 @@ namespace GitUI
 {
     using GitItemsWithParents = IDictionary<string, IList<GitItemStatus>>;
 
+    public delegate string DescribeRevisionDelegate(string sha1);
+
     public sealed partial class FileStatusList : GitModuleControl
     {
         private readonly TranslationString _UnsupportedMultiselectAction =
             new TranslationString("Operation not supported");
         private readonly TranslationString _DiffWithParent =
-            new TranslationString("Diff with parent");
+            new TranslationString("Diff with:");
         public readonly TranslationString CombinedDiff =
             new TranslationString("Combined Diff");
 
@@ -36,6 +38,8 @@ namespace GitUI
 
         private bool _filterVisible;
         private ToolStripItem _openSubmoduleMenuItem;
+
+        public DescribeRevisionDelegate DescribeRevision;
 
         public FileStatusList()
         {
@@ -86,7 +90,7 @@ namespace GitUI
                 Name = "openSubmoduleMenuItem",
                 Tag = "1",
                 Text = "Open with Git Extensions",
-                Image = Resources.IconFolderSubmodule
+                Image = Resources.gitex
             };
             _openSubmoduleMenuItem.Click += (s, ea) => { OpenSubmodule(); };
         }
@@ -217,12 +221,22 @@ namespace GitUI
             GitItemStatus gitItemStatus = (GitItemStatus)e.Item.Tag;
 
             string text = GetItemText(e.Graphics, gitItemStatus);
-
-            if (gitItemStatus.IsSubmodule && gitItemStatus.SubmoduleStatus != null && gitItemStatus.SubmoduleStatus.IsCompleted)
-                text += gitItemStatus.SubmoduleStatus.Result.AddedAndRemovedString();
+            text = AppendItemSubmoduleStatus(text, gitItemStatus);
 
             e.Graphics.DrawString(text, e.Item.ListView.Font,
                                   new SolidBrush(color), e.Bounds.Left + ImageSize, e.Bounds.Top);
+        }
+
+        private string AppendItemSubmoduleStatus(string text, GitItemStatus item)
+        {
+            if (item.IsSubmodule &&
+                item.SubmoduleStatus != null &&
+                item.SubmoduleStatus.IsCompleted &&
+                item.SubmoduleStatus.Result != null)
+            {
+                text += item.SubmoduleStatus.Result.AddedAndRemovedString();
+            }
+            return text;
         }
 
 #if !__MonoCS__ // TODO Drag'n'Drop doesnt work on Mono/Linux
@@ -370,7 +384,7 @@ namespace GitUI
             }
             else
             {
-                return _itemsDictionary.Select(pair => pair.Value).Unwrap().Count();
+                return _itemsDictionary.SelectMany(pair => pair.Value).Count();
             }
         }
 
@@ -479,13 +493,12 @@ namespace GitUI
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
-        public IEnumerable<Tuple<GitItemStatus, string>> SelectedItemsWithParent
+        public IEnumerable<GitItemStatusWithParent> SelectedItemsWithParent
         {
             get
             {
                 return FileStatusListView.SelectedItems.Cast<ListViewItem>()
-                    .Where(i => i.Group != null) // Or maybe return null parents?
-                    .Select(i => new Tuple<GitItemStatus, string>((GitItemStatus)i.Tag, (string)i.Group.Tag));
+                    .Select(i => new GitItemStatusWithParent((GitItemStatus)i.Tag, (string)i.Group?.Tag));
             }
         }
 
@@ -589,8 +602,8 @@ namespace GitUI
 
             if (isSubmoduleSelected)
             {
-                _openSubmoduleMenuItem.Font = AppSettings.OpenSubmoduleDiffInSeparateWindow ? 
-                    new Font(_openSubmoduleMenuItem.Font,  FontStyle.Bold) : 
+                _openSubmoduleMenuItem.Font = AppSettings.OpenSubmoduleDiffInSeparateWindow ?
+                    new Font(_openSubmoduleMenuItem.Font,  FontStyle.Bold) :
                     new Font(_openSubmoduleMenuItem.Font, FontStyle.Regular);
             }
         }
@@ -744,6 +757,9 @@ namespace GitUI
             FileStatusListView.Items.Clear();
             if (_itemsDictionary != null)
             {
+                var clientSizeWidth = AppSettings.TruncatePathMethod == "compact" || AppSettings.TruncatePathMethod == "trimstart";
+                var fileNameOnlyMode = AppSettings.TruncatePathMethod == "fileNameOnly";
+
                 var list = new List<ListViewItem>();
                 foreach (var pair in _itemsDictionary)
                 {
@@ -757,8 +773,7 @@ namespace GitUI
                         }
                         else
                         {
-                            string shortHash = pair.Key.Length > 8 ? pair.Key.Substring(0, 8) : pair.Key;
-                            groupName = _DiffWithParent.Text + " " + shortHash;
+                            groupName = _DiffWithParent.Text + " " + GetDescriptionForRevision(pair.Key);
                         }
 
                         group = new ListViewGroup(groupName);
@@ -769,7 +784,21 @@ namespace GitUI
                     {
                         if (_filter.IsMatch(item.Name))
                         {
-                            var listItem = new ListViewItem(item.Name, group);
+                            var text = item.Name;
+                            if (clientSizeWidth)
+                            {
+                                // list-item has client width, so we don't need horizontal scrollbar (which is determined by this text width)
+                                text = string.Empty;
+                            }
+                            else if (fileNameOnlyMode)
+                            {
+                                // we need to put filename in list-item text -> then horizontal scrollbar
+                                // will have proper width (by the longest filename, and not all path)
+                                text = PathFormatter.FormatTextForFileNameOnly(item.Name, item.OldName);
+                                text = AppendItemSubmoduleStatus(text, item);
+                            }
+
+                            var listItem = new ListViewItem(text, group);
                             listItem.ImageIndex = GetItemImageIndex(item);
                             if (item.SubmoduleStatus != null && !item.SubmoduleStatus.IsCompleted)
                             {
@@ -803,6 +832,16 @@ namespace GitUI
             FileStatusListView.EndUpdate();
         }
 
+        private string GetDescriptionForRevision(string sha1)
+        {
+            if (DescribeRevision != null)
+            {
+                return DescribeRevision(sha1);
+            }
+
+            return sha1.ShortenTo(8);
+        }
+
         [DefaultValue(true)]
         public bool SelectFirstItemOnSetItems { get; set; }
 
@@ -819,7 +858,7 @@ namespace GitUI
                 if (sortedFirstGroupItem != null)
                     sortedFirstGroupItem.Selected = true;
             }
-            else if (FileStatusListView.Items.Count > 0)
+            else
                 FileStatusListView.Items[0].Selected = true;
         }
 
@@ -941,14 +980,7 @@ namespace GitUI
 
                 case 2: // diff "first clicked revision" --> "second clicked revision"
                     NoFiles.Text = _noDiffFilesChangesDefaultText;
-                    bool artificialRevSelected = revisions[0].IsArtificial() || revisions[1].IsArtificial();
-                    if (artificialRevSelected)
-                    {
-                        NoFiles.Text = _UnsupportedMultiselectAction.Text;
-                        GitItemStatuses = null;
-                    }
-                    else
-                        SetGitItemStatuses(revisions[1].Guid, Module.GetDiffFilesWithSubmodulesStatus(revisions[0].Guid, revisions[1].Guid));
+                    SetGitItemStatuses(revisions[1].Guid, Module.GetDiffFilesWithSubmodulesStatus(revisions[1].Guid, revisions[0].Guid));
                     break;
 
                 default: // more than 2 revisions selected => no diff
@@ -986,7 +1018,7 @@ namespace GitUI
 
             if (revision == null)
                 GitItemStatuses = null;
-            else if (revision.ParentGuids == null || revision.ParentGuids.Length == 0)
+            else if (!revision.HasParent)
                 GitItemStatuses = Module.GetTreeFiles(revision.TreeGuid, true);
             else
             {
@@ -999,7 +1031,7 @@ namespace GitUI
                     GitItemsWithParents dictionary = new Dictionary<string, IList<GitItemStatus>>();
                     foreach (var parentRev in revision.ParentGuids)
                     {
-                        dictionary.Add(parentRev, Module.GetDiffFilesWithSubmodulesStatus(revision.Guid, parentRev));
+                        dictionary.Add(parentRev, Module.GetDiffFilesWithSubmodulesStatus(parentRev, revision.Guid));
 
                         //Only add the first parent to the dictionary if the setting to show diffs
                         //for app parents is disabled
@@ -1137,6 +1169,18 @@ namespace GitUI
         private Regex _filter;
 
         #endregion Filtering
+    }
+
+    public class GitItemStatusWithParent
+    {
+        public readonly GitItemStatus Item;
+        public readonly string ParentGuid;
+
+        public GitItemStatusWithParent(GitItemStatus anItem, string aParentGuid)
+        {
+            Item = anItem;
+            ParentGuid = aParentGuid;
+        }
     }
 
 }

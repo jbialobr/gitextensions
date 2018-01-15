@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.IO.Abstractions;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
@@ -12,6 +13,7 @@ using GitCommands.Repository;
 using GitCommands.Settings;
 using Microsoft.Win32;
 using System.Linq;
+using GitCommands.Utils;
 
 namespace GitCommands
 {
@@ -30,6 +32,7 @@ namespace GitCommands
         public static Version AppVersion { get { return Assembly.GetCallingAssembly().GetName().Version; } }
         public static string ProductVersion { get { return Application.ProductVersion; } }
         public static readonly string SettingsFileName = "GitExtensions.settings";
+        private static readonly ISshPathLocator SshPathLocatorInstance = new SshPathLocator();
 
         public static readonly Lazy<string> ApplicationDataPath;
         public static string SettingsFilePath { get { return Path.Combine(ApplicationDataPath.Value, SettingsFileName); } }
@@ -134,11 +137,14 @@ namespace GitCommands
             string gitExtDir = GetGitExtensionsDirectory().TrimEnd('\\').TrimEnd('/');
             string debugPath = @"GitExtensions\bin\Debug";
             int len = debugPath.Length;
-            var path = gitExtDir.Substring(gitExtDir.Length - len);
-            if (debugPath.ToPosixPath().Equals(path.ToPosixPath()))
+            if (gitExtDir.Length > len)
             {
-                string projectPath = gitExtDir.Substring(0, gitExtDir.Length - len);
-                return Path.Combine(projectPath, "Bin");
+                var path = gitExtDir.Substring(gitExtDir.Length - len);
+                if (debugPath.ToPosixPath().Equals(path.ToPosixPath()))
+                {
+                    string projectPath = gitExtDir.Substring(0, gitExtDir.Length - len);
+                    return Path.Combine(projectPath, "Bin");
+                }
             }
 #endif
             return GetInstallDir();
@@ -317,8 +323,13 @@ namespace GitCommands
         public static readonly StringSetting ConEmuStyle = new StringSetting("ConEmuStyle", DetailedSettingsPath, "<Solarized Light>");
         public static readonly StringSetting ConEmuTerminal = new StringSetting("ConEmuTerminal", DetailedSettingsPath, "bash");
         public static readonly StringSetting ConEmuFontSize = new StringSetting("ConEmuFontSize", DetailedSettingsPath, "12");
-        public static readonly BoolNullableSetting ShowRevisionInfoNextToRevisionGrid = new BoolNullableSetting("ShowRevisionInfoNextToRevisionGrid", DetailedSettingsPath, false);
+        public static readonly BoolNullableSetting ShowGpgInformation = new BoolNullableSetting("ShowGpgInformation", DetailedSettingsPath, false);
         public static readonly BoolNullableSetting EnableFluentDiffScroll = new BoolNullableSetting("EnableFluentDiffScroll", DetailedSettingsPath, true);
+        public static bool ShowRevisionInfoNextToRevisionGrid
+        {
+            get { return !EnvUtils.IsMonoRuntime() && DetailedSettingsPath.GetBool("ShowRevisionInfoNextToRevisionGrid", false); }
+            set { DetailedSettingsPath.SetBool("ShowRevisionInfoNextToRevisionGrid", !EnvUtils.IsMonoRuntime() && value); }
+        }
 
         public static bool ProvideAutocompletion
         {
@@ -364,6 +375,12 @@ namespace GitCommands
         {
             get { return GetBool("AlwaysShowCheckoutBranchDlg", false); }
             set { SetBool("AlwaysShowCheckoutBranchDlg", value); }
+        }
+
+        public static bool CommitAndPushForcedWhenAmend
+        {
+            get { return GetBool("CommitAndPushForcedWhenAmend", false); }
+            set { SetBool("CommitAndPushForcedWhenAmend", value); }
         }
 
         public static bool CommitInfoShowContainedInBranchesRemote
@@ -483,11 +500,11 @@ namespace GitCommands
             set { SetString("iconstyle", value); }
         }
 
-        public static int AuthorImageSize
-        {
-            get { return GetInt("authorimagesize", 80); }
-            set { SetInt("authorimagesize", value); }
-        }
+        /// <summary>
+        /// Gets the size of the commit author avatar. Set to 80px.
+        /// </summary>
+        /// <remarks>The value should be scaled with DPI.</remarks>
+        public static int AuthorImageSize => 80;
 
         public static int AuthorImageCacheDays
         {
@@ -571,6 +588,12 @@ namespace GitCommands
         {
             get { return GetBool("revisiongraphshowworkingdirchanges", false); }
             set { SetBool("revisiongraphshowworkingdirchanges", value); }
+        }
+
+        public static bool RevisionGraphDrawAlternateBackColor
+        {
+            get { return GetBool("RevisionGraphDrawAlternateBackColor", true); }
+            set { SetBool("RevisionGraphDrawAlternateBackColor", value); }
         }
 
         public static bool RevisionGraphDrawNonRelativesGray
@@ -747,6 +770,12 @@ namespace GitCommands
             set { SetBool("showRemoteBranches", value); }
         }
 
+        public static bool ShowReflogReferences
+        {
+            get { return GetBool("showReflogReferences", false); }
+            set { SetBool("showReflogReferences", value); }
+        }
+
         public static bool ShowSuperprojectTags
         {
             get { return GetBool("showSuperprojectTags", false); }
@@ -897,7 +926,7 @@ namespace GitCommands
             set { SetInt("revisiongridquicksearchtimeout", value); }
         }
 
-        public static string GravatarFallbackService
+        public static string GravatarDefaultImageType
         {
             get { return GetString("gravatarfallbackservice", "Identicon"); }
             set { SetString("gravatarfallbackservice", value); }
@@ -932,6 +961,12 @@ namespace GitCommands
         {
             get { return GetBool("showdiffforallparents", true); }
             set { SetBool("showdiffforallparents", value); }
+        }
+
+        public static int DiffVerticalRulerPosition
+        {
+            get { return GetInt( "diffverticalrulerposition", 80 ); }
+            set { SetInt( "diffverticalrulerposition", value ); }
         }
 
         public static string RecentWorkingDir
@@ -1111,6 +1146,21 @@ namespace GitCommands
             }
         }
 
+        public static bool IgnoreAllWhitespaceChanges
+        {
+            get
+            {
+                return RememberIgnoreWhiteSpacePreference && GetBool("IgnoreAllWhitespaceChanges", false);
+            }
+            set
+            {
+                if (RememberIgnoreWhiteSpacePreference)
+                {
+                    SetBool("IgnoreAllWhitespaceChanges", value);
+                }
+            }
+        }
+
         public static bool RememberIgnoreWhiteSpacePreference
         {
             get { return GetBool("rememberIgnoreWhiteSpacePreference", true); }
@@ -1193,7 +1243,7 @@ namespace GitCommands
             {
                 SettingsContainer.LockedAction(() =>
                 {
-                    SshPath = GitCommandHelpers.GetSsh();
+                    SshPath = SshPathLocatorInstance.Find(GitBinDir);
                     Repositories.SaveSettings();
 
                     SettingsContainer.Save();
@@ -1245,10 +1295,22 @@ namespace GitCommands
             set { SetInt("MaxMostRecentRepositories", value); }
         }
 
+        public static int RecentRepositoriesHistorySize
+        {
+            get { return GetInt("history size", 30); }
+            set { SetInt("history size", value); }
+        }
+
         public static int RecentReposComboMinWidth
         {
             get { return GetInt("RecentReposComboMinWidth", 0); }
             set { SetInt("RecentReposComboMinWidth", value); }
+        }
+
+        public static string SerializedHotkeys
+        {
+            get { return GetString("SerializedHotkeys", null); }
+            set { SetString("SerializedHotkeys", value); }
         }
 
         public static bool SortMostRecentRepos
@@ -1357,6 +1419,12 @@ namespace GitCommands
         {
             get { return GetBool("UseConsoleEmulatorForCommands", true); }
             set { SetBool("UseConsoleEmulatorForCommands", value); }
+        }
+
+        public static BranchOrdering BranchOrderingCriteria
+        {
+            get { return GetEnum("BranchOrderingCriteria", BranchOrdering.ByLastAccessDate); }
+            set { SetEnum("BranchOrderingCriteria", value); }
         }
 
         public static string GetGitExtensionsFullPath()
@@ -1525,7 +1593,14 @@ namespace GitCommands
                 addEncoding(new UnicodeEncoding());
                 addEncoding(new UTF7Encoding());
                 addEncoding(new UTF8Encoding(false));
-                addEncoding(Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage));
+                try
+                {
+                    addEncoding(Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage));
+                }
+                catch
+                {
+                    //there are CultureInfos without a code page
+                }
             }
             else
             {

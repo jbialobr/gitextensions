@@ -8,6 +8,7 @@ using System.Xml.Serialization;
 using GitUI.CommandsDialogs;
 using GitUI.Editor;
 using ResourceManager;
+using GitCommands;
 
 namespace GitUI.Hotkey
 {
@@ -111,8 +112,7 @@ namespace GitUI.Hotkey
                 using (StringWriter writer = new StringWriter(strBuilder))
                 {
                     Serializer.Serialize(writer, settings);
-                    Properties.Settings.Default.Hotkeys = strBuilder.ToString();
-                    Properties.Settings.Default.Save();
+                    AppSettings.SerializedHotkeys = strBuilder.ToString();
                 }
             }
             catch { }
@@ -127,20 +127,26 @@ namespace GitUI.Hotkey
 
             Dictionary<string, HotkeyCommand> defaultCommands = new Dictionary<string, HotkeyCommand>();
             FillDictionaryWithCommands(defaultCommands, defaultSettings);
-            AssignKotkeysFromLoaded(defaultCommands, loadedSettings);
+            AssignHotkeysFromLoaded(defaultCommands, loadedSettings);
         }
 
-        private static void AssignKotkeysFromLoaded(Dictionary<string, HotkeyCommand> defaultCommands, HotkeySettings[] loadedSettings)
+        private static void AssignHotkeysFromLoaded(Dictionary<string, HotkeyCommand> defaultCommands, HotkeySettings[] loadedSettings)
         {
             foreach (HotkeySettings setting in loadedSettings)
             {
-                foreach (HotkeyCommand command in setting.Commands)
+                if (setting != null)
                 {
-                    string dictKey = CalcDictionaryKey(setting.Name, command.CommandCode);
-                    HotkeyCommand defaultCommand;
-                    if (defaultCommands.TryGetValue(dictKey, out defaultCommand))
+                    foreach (HotkeyCommand command in setting.Commands)
                     {
-                        defaultCommand.KeyData = command.KeyData;
+                        if (command != null)
+                        {
+                            string dictKey = CalcDictionaryKey(setting.Name, command.CommandCode);
+                            HotkeyCommand defaultCommand;
+                            if (defaultCommands.TryGetValue(dictKey, out defaultCommand))
+                            {
+                                defaultCommand.KeyData = command.KeyData;
+                            }
+                        }
                     }
                 }
             }
@@ -152,8 +158,11 @@ namespace GitUI.Hotkey
             {
                 foreach (HotkeyCommand command in setting.Commands)
                 {
-                    string dictKey = CalcDictionaryKey(setting.Name, command.CommandCode);
-                    dict.Add(dictKey, command);
+                    if (command != null)
+                    {
+                        string dictKey = CalcDictionaryKey(setting.Name, command.CommandCode);
+                        dict.Add(dictKey, command);
+                    }
                 }
             }
         }
@@ -167,17 +176,52 @@ namespace GitUI.Hotkey
         {
             HotkeySettings[] settings = null;
 
+            MigrateSettings();
+
+            if (!string.IsNullOrWhiteSpace(AppSettings.SerializedHotkeys))
+                settings = LoadSerializedSettings(AppSettings.SerializedHotkeys);
+
+            return settings;
+        }
+
+        private static HotkeySettings[] LoadSerializedSettings(string serializedHotkeys)
+        {
+            HotkeySettings[] settings = null;
+
             try
             {
-                if (!string.IsNullOrEmpty(Properties.Settings.Default.Hotkeys))
-                    using (StringReader reader = new StringReader(Properties.Settings.Default.Hotkeys))
-                    {
-                        settings = Serializer.Deserialize(reader) as HotkeySettings[];
-                    }
+                using (StringReader reader = new StringReader(serializedHotkeys))
+                {
+                    settings = Serializer.Deserialize(reader) as HotkeySettings[];
+                }
             }
             catch { }
 
             return settings;
+        }
+
+        private static void MigrateSettings()
+        {
+            if (AppSettings.SerializedHotkeys == null)
+            {
+                Properties.Settings.Default.Upgrade();
+                if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Hotkeys))
+                {
+                    HotkeySettings[] settings = LoadSerializedSettings(Properties.Settings.Default.Hotkeys);
+                    if (settings == null)
+                    {
+                        AppSettings.SerializedHotkeys = " ";//mark settings as migrated
+                    }
+                    else
+                    {
+                        SaveSettings(settings);
+                    }
+                }
+                else
+                {
+                    AppSettings.SerializedHotkeys = " ";//mark settings as migrated
+                }
+            }
         }
 
         /// <summary>Asks the IHotkeyables to create their default hotkey settings</summary>
@@ -203,7 +247,8 @@ namespace GitUI.Hotkey
                     hk(FormCommit.Commands.StageSelectedFile, Keys.S),
                     hk(FormCommit.Commands.UnStageSelectedFile, Keys.U),
                     hk(FormCommit.Commands.ShowHistory, Keys.H),
-                    hk(FormCommit.Commands.ToggleSelectionFilter, Keys.Control | Keys.F)),
+                    hk(FormCommit.Commands.ToggleSelectionFilter, Keys.Control | Keys.F),
+                    hk(FormCommit.Commands.StageAll, Keys.Control | Keys.S)),
                 new HotkeySettings(FormBrowse.HotkeySettingsName,
                     hk(FormBrowse.Commands.GitBash, Keys.Control | Keys.G),
                     hk(FormBrowse.Commands.GitGui, Keys.None),
@@ -219,7 +264,9 @@ namespace GitUI.Hotkey
                     hk(FormBrowse.Commands.QuickFetch, Keys.Control | Keys.Shift | Keys.Down),
                     hk(FormBrowse.Commands.QuickPull, Keys.Control | Keys.Shift | Keys.P),
                     hk(FormBrowse.Commands.QuickPush, Keys.Control | Keys.Shift | Keys.Up),
-                    hk(FormBrowse.Commands.CloseRepositry, Keys.Control | Keys.W),
+                    hk(FormBrowse.Commands.Stash, Keys.Control | Keys.Alt | Keys.Up),
+                    hk(FormBrowse.Commands.StashPop, Keys.Control | Keys.Alt | Keys.Down),
+                    hk(FormBrowse.Commands.CloseRepository, Keys.Control | Keys.W),
                     hk(FormBrowse.Commands.RotateApplicationIcon, Keys.Control | Keys.Shift | Keys.I)),
                 new HotkeySettings(RevisionGrid.HotkeySettingsName,
                     hk(RevisionGrid.Commands.RevisionFilter, Keys.Control | Keys.F),
@@ -261,6 +308,8 @@ namespace GitUI.Hotkey
                     hk(FormResolveConflicts.Commands.ChooseRemote, Keys.R),
                     hk(FormResolveConflicts.Commands.Merge, Keys.M),
                     hk(FormResolveConflicts.Commands.Rescan, Keys.F5)),
+                new HotkeySettings(RevisionDiff.HotkeySettingsName,
+                    hk(RevisionDiff.Commands.DeleteSelectedFiles, Keys.Delete)),
                 new HotkeySettings(FormSettings.HotkeySettingsName,
                     scriptsHotkeys)
               };
@@ -277,16 +326,10 @@ namespace GitUI.Hotkey
              * therefore execute the 'default' action
              */
 
-            int i=0;
-            foreach (GitUI.Script.ScriptInfo s in curScripts)
-            {
-                if (!string.IsNullOrEmpty(s.Name))
-                {
-                    scriptKeys[i] = new HotkeyCommand((int)s.HotkeyCommandIdentifier, s.Name) { KeyData = (Keys.None) };
-                    i++;
-                }
-            }
-            return scriptKeys;
+            return curScripts.
+                Where(s => !s.Name.IsNullOrEmpty()).
+                Select(s => new HotkeyCommand((int)s.HotkeyCommandIdentifier, s.Name) { KeyData = (Keys.None) }
+            ).ToArray();
         }
 
     }

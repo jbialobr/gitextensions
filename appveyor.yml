@@ -1,6 +1,11 @@
-version: 2.49.03.{build}
+version: 2.50.90.{build}
 
 os: Visual Studio 2015
+
+branches:
+  except:
+    - configdata
+    - gh-pages
 
 environment:
   matrix:
@@ -14,11 +19,15 @@ build:
 
 cache:
   #- packages -> **\packages.config      # preserve "packages" directory in the root of build folder but will reset it if packages.config is modified
-  - packages\WiX.3.10.3 -> Setup\packages.config
+  - packages\WiX.3.11.0 -> Setup\packages.config
   - Setup\cache -> Setup\DownloadExternals.cmd
 
 install:
 - cmd: git submodule update --init --recursive
+- cmd: |-
+    cd Setup
+    python set_version_to.py -v %APPVEYOR_BUILD_VERSION% -t %APPVEYOR_BUILD_VERSION%Dev@%APPVEYOR_REPO_COMMIT:~0,5%
+    cd ..
 
 build_script:
 - ps: |
