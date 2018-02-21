@@ -33,7 +33,7 @@ namespace GitUI.HelperDialogs
                 string guid = Module.RevParse(preselectCommit);
                 if (!String.IsNullOrEmpty(guid))
                 {
-                    revisionGrid.SetInitialRevision(new GitRevision(Module, guid));
+                    revisionGrid.SetInitialRevision(new GitRevision(guid));
                 }
             }
 
@@ -77,7 +77,7 @@ namespace GitUI.HelperDialogs
 
         private void linkLabelParent_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            revisionGrid.SetSelectedRevision(new GitRevision(revisionGrid.Module, _parents[((LinkLabel)sender).Text]));
+            revisionGrid.SetSelectedRevision(new GitRevision(_parents[((LinkLabel)sender).Text]));
         }
 
         private void revisionGrid_SelectionChanged(object sender, EventArgs e)
@@ -93,7 +93,7 @@ namespace GitUI.HelperDialogs
 
             if(!flowLayoutPanelParents.Visible)
                 return;
-            _parents = SelectedRevision.ParentGuids.ToDictionary(p=> p.Substring(0, 10), p=> p);
+            _parents = SelectedRevision.ParentGuids.ToDictionary(p=> GitRevision.ToShortSha(p), p=> p);
             linkLabelParent.Text = _parents.Keys.ElementAt(0);
 
             linkLabelParent2.Visible = _parents.Count > 1;

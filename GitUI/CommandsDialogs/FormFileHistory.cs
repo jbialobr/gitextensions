@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using GitCommands;
+using GitCommands.Git;
 using GitCommands.Utils;
 using ResourceManager;
-using System.ComponentModel;
 
 namespace GitUI.CommandsDialogs
 {
@@ -19,6 +20,7 @@ namespace GitUI.CommandsDialogs
         private readonly AsyncLoader _asyncLoader;
         private readonly FormBrowseMenus _formBrowseMenus;
         private readonly IFullPathResolver _fullPathResolver;
+        private readonly IGitRevisionProvider _gitRevisionProvider;
 
         private readonly TranslationString _buildReportTabCaption =
             new TranslationString("Build Report");
@@ -37,9 +39,9 @@ namespace GitUI.CommandsDialogs
                 var imageList = new ImageList();
                 tabControl1.ImageList = imageList;
                 imageList.ColorDepth = ColorDepth.Depth8Bit;
-                imageList.Images.Add(global::GitUI.Properties.Resources.IconViewFile);
-                imageList.Images.Add(global::GitUI.Properties.Resources.IconDiff);
-                imageList.Images.Add(global::GitUI.Properties.Resources.IconBlame);
+                imageList.Images.Add(Properties.Resources.IconViewFile);
+                imageList.Images.Add(Properties.Resources.IconDiff);
+                imageList.Images.Add(Properties.Resources.IconBlame);
                 tabControl1.TabPages[0].ImageIndex = 0;
                 tabControl1.TabPages[1].ImageIndex = 1;
                 tabControl1.TabPages[2].ImageIndex = 2;
@@ -56,6 +58,7 @@ namespace GitUI.CommandsDialogs
 
             _commitDataManager = new CommitDataManager(() => Module);
             _fullPathResolver = new FullPathResolver(() => Module.WorkingDir);
+            _gitRevisionProvider = new GitRevisionProvider(() => Module);
         }
 
         public FormFileHistory(GitUICommands aCommands, string fileName, GitRevision revision, bool filterByRevision)
@@ -71,18 +74,28 @@ namespace GitUI.CommandsDialogs
 
             Diff.ExtraDiffArgumentsChanged += DiffExtraDiffArgumentsChanged;
 
-            bool isSubmodule = GitModule.IsValidGitWorkingDir(Path.Combine(Module.WorkingDir, FileName));
+            bool isSubmodule = GitModule.IsValidGitWorkingDir(_fullPathResolver.Resolve(FileName));
             if (isSubmodule)
                 tabControl1.RemoveIfExists(BlameTab);
             FileChanges.SelectionChanged += FileChangesSelectionChanged;
             FileChanges.DisableContextMenu();
 
+            bool blameTabExists = tabControl1.Contains(BlameTab);
+
             UpdateFollowHistoryMenuItems();
             fullHistoryToolStripMenuItem.Checked = AppSettings.FullHistoryInFileHistory;
             ShowFullHistory.Checked = AppSettings.FullHistoryInFileHistory;
             loadHistoryOnShowToolStripMenuItem.Checked = AppSettings.LoadFileHistoryOnShow;
-            loadBlameOnShowToolStripMenuItem.Checked = AppSettings.LoadBlameOnShow && tabControl1.Contains(BlameTab);
+            loadBlameOnShowToolStripMenuItem.Checked = AppSettings.LoadBlameOnShow && blameTabExists;
             saveAsToolStripMenuItem.Visible = !isSubmodule;
+
+            toolStripBlameOptions.Visible = blameTabExists;
+            if (blameTabExists)
+            {
+                ignoreWhitespaceToolStripMenuItem.Checked = AppSettings.IgnoreWhitespaceOnBlame;
+                detectMoveAndCopyInAllFilesToolStripMenuItem.Checked = AppSettings.DetectCopyInFileOnBlame;
+                detectMoveAndCopyInThisFileToolStripMenuItem.Checked = AppSettings.DetectCopyInAllOnBlame;
+            }
 
             if (filterByRevision && revision != null && revision.Guid != null)
                 _filterBranchHelper.SetBranchFilter(revision.Guid, false);
@@ -150,7 +163,7 @@ namespace GitUI.CommandsDialogs
             fileName = fileName.ToPosixPath();
 
             // we will need this later to look up proper casing for the file
-            var fullFilePath = Path.Combine(Module.WorkingDir, fileName);
+            var fullFilePath = _fullPathResolver.Resolve(fileName);
 
             //The section below contains native windows (kernel32) calls
             //and breaks on Linux. Only use it on Windows. Casing is only
@@ -187,7 +200,7 @@ namespace GitUI.CommandsDialogs
                 // note: This implementation is quite a quick hack (by someone who does not speak C# fluently).
                 //
 
-                string arg = "log --format=\"%n\" --name-only --follow "+
+                string arg = "log --format=\"%n\" --name-only --follow " +
                     GitCommandHelpers.FindRenamesAndCopiesOpts()
                     + " -- \"" + fileName + "\"";
                 Process p = Module.RunGitCmdDetached(arg, GitModule.LosslessEncoding);
@@ -258,7 +271,7 @@ namespace GitUI.CommandsDialogs
             Text += " - " + Module.WorkingDir;
         }
 
-        private void UpdateSelectedFileViewers()
+        private void UpdateSelectedFileViewers(bool force = false)
         {
             var selectedRows = FileChanges.GetSelectedRevisions();
 
@@ -275,7 +288,7 @@ namespace GitUI.CommandsDialogs
             SetTitle(fileName);
 
             if (tabControl1.SelectedTab == BlameTab)
-                Blame.LoadBlame(revision, children, fileName, FileChanges, BlameTab, Diff.Encoding);
+                Blame.LoadBlame(revision, children, fileName, FileChanges, BlameTab, Diff.Encoding, force: force);
             else if (tabControl1.SelectedTab == ViewTab)
             {
                 var scrollpos = View.ScrollPos;
@@ -289,17 +302,14 @@ namespace GitUI.CommandsDialogs
                 GitItemStatus file = new GitItemStatus();
                 file.IsTracked = true;
                 file.Name = fileName;
-                file.IsSubmodule = GitModule.IsValidGitWorkingDir(Path.Combine(Module.WorkingDir, fileName));
+                file.IsSubmodule = GitModule.IsValidGitWorkingDir(_fullPathResolver.Resolve(fileName));
                 Diff.ViewChanges(FileChanges.GetSelectedRevisions(), file, "You need to select at least one revision to view diff.");
             }
 
-            if (!EnvUtils.IsMonoRuntime())
-            {
-                if (_buildReportTabPageExtension == null)
-                    _buildReportTabPageExtension = new BuildReportTabPageExtension(tabControl1, _buildReportTabCaption.Text);
+            if (_buildReportTabPageExtension == null)
+                _buildReportTabPageExtension = new BuildReportTabPageExtension(tabControl1, _buildReportTabCaption.Text);
 
-                _buildReportTabPageExtension.FillBuildReport(selectedRows.Count == 1 ? revision : null);
-            }
+            _buildReportTabPageExtension.FillBuildReport(selectedRows.Count == 1 ? revision : null);
         }
 
         private BuildReportTabPageExtension _buildReportTabPageExtension;
@@ -323,7 +333,7 @@ namespace GitUI.CommandsDialogs
             {
                 orgFileName = selectedRows[0].Name;
             }
-            FileChanges.OpenWithDifftool(FileName, orgFileName, GitUI.RevisionDiffKind.DiffAB);
+            FileChanges.OpenWithDifftool(FileName, orgFileName, RevisionDiffKind.DiffAB);
         }
 
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -337,7 +347,7 @@ namespace GitUI.CommandsDialogs
                 if (string.IsNullOrEmpty(orgFileName))
                     orgFileName = FileName;
 
-                string fullName = Module.WorkingDir + orgFileName.ToNativePath();
+                string fullName = _fullPathResolver.Resolve(orgFileName.ToNativePath());
 
                 using (var fileDialog = new SaveFileDialog
                 {
@@ -449,7 +459,7 @@ namespace GitUI.CommandsDialogs
 
         private void diffToolremotelocalStripMenuItem_Click(object sender, EventArgs e)
         {
-            FileChanges.OpenWithDifftool(FileName, string.Empty, GitUI.RevisionDiffKind.DiffBLocal);
+            FileChanges.OpenWithDifftool(FileName, string.Empty, RevisionDiffKind.DiffBLocal);
         }
 
         private void toolStripSplitLoad_ButtonClick(object sender, EventArgs e)
@@ -473,14 +483,14 @@ namespace GitUI.CommandsDialogs
         {
             if (e.Command == "gotocommit")
             {
-                FileChanges.SetSelectedRevision(GitRevision.CreateForShortSha1(Module, e.Data));
+                FileChanges.SetSelectedRevision(_gitRevisionProvider.Get(e.Data));
             }
             else if (e.Command == "gotobranch" || e.Command == "gototag")
             {
                 string error = "";
                 CommitData commit = _commitDataManager.GetCommitData(e.Data, ref error);
                 if (commit != null)
-                    FileChanges.SetSelectedRevision(new GitRevision(Module, commit.Guid));
+                    FileChanges.SetSelectedRevision(new GitRevision(commit.Guid));
             }
             else if (e.Command == "navigatebackward")
             {
@@ -522,6 +532,27 @@ namespace GitUI.CommandsDialogs
         private void toolStripBranchFilterComboBox_Click(object sender, EventArgs e)
         {
             toolStripBranchFilterComboBox.DroppedDown = true;
+        }
+
+        private void ignoreWhitespaceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AppSettings.IgnoreWhitespaceOnBlame = !AppSettings.IgnoreWhitespaceOnBlame;
+            ignoreWhitespaceToolStripMenuItem.Checked = AppSettings.IgnoreWhitespaceOnBlame;
+            UpdateSelectedFileViewers(true);
+        }
+
+        private void detectMoveAndCopyInAllFilesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AppSettings.DetectCopyInFileOnBlame = !AppSettings.DetectCopyInFileOnBlame;
+            detectMoveAndCopyInAllFilesToolStripMenuItem.Checked = AppSettings.DetectCopyInFileOnBlame;
+            UpdateSelectedFileViewers(true);
+        }
+
+        private void detectMoveAndCopyInThisFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AppSettings.DetectCopyInAllOnBlame = !AppSettings.DetectCopyInAllOnBlame;
+            detectMoveAndCopyInThisFileToolStripMenuItem.Checked = AppSettings.DetectCopyInAllOnBlame;
+            UpdateSelectedFileViewers(true);
         }
     }
 }

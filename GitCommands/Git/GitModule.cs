@@ -1154,7 +1154,7 @@ namespace GitCommands
             string cmd = "log -n1 --format=format:" + formatString + (shortFormat ? "%e%n%s" : messageFormat) + " " + commit;
             var revInfo = RunCacheableCmd(AppSettings.GitCommand, cmd, LosslessEncoding);
             string[] lines = revInfo.Split('\n');
-            var revision = new GitRevision(this, lines[0])
+            var revision = new GitRevision(lines[0])
             {
                 TreeGuid = lines[1],
                 ParentGuids = lines[2].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries),
@@ -2085,7 +2085,7 @@ namespace GitCommands
             return patchFiles;
         }
 
-        public string CommitCmd(bool amend, bool signOff = false, string author = "", bool useExplicitCommitMessage = true, bool noVerify = false)
+        public string CommitCmd(bool amend, bool signOff = false, string author = "", bool useExplicitCommitMessage = true, bool noVerify = false, bool gpgSign = false, string gpgKeyId = "")
         {
             string command = "commit";
             if (amend)
@@ -2098,7 +2098,18 @@ namespace GitCommands
                 command += " --signoff";
 
             if (!string.IsNullOrEmpty(author))
+            {
+                author = author.Trim().Trim('"');
                 command += " --author=\"" + author + "\"";
+            }                
+
+            if (gpgSign)
+            {
+                command += " -S";
+
+                if (!string.IsNullOrWhiteSpace(gpgKeyId))
+                    command += gpgKeyId;
+            }
 
             if (useExplicitCommitMessage)
             {
@@ -2225,8 +2236,8 @@ namespace GitCommands
             }
 
             //fix refs slashes
-            firstRevision = firstRevision == null ? "" : firstRevision.ToPosixPath();
-            secondRevision = secondRevision == null ? "" : secondRevision.ToPosixPath();
+            firstRevision = firstRevision?.ToPosixPath();
+            secondRevision = secondRevision?.ToPosixPath();
             string diffOptions = _revisionDiffProvider.Get(firstRevision, secondRevision, fileName, oldFileName, isTracked);
             if (AppSettings.UsePatienceDiffAlgorithm)
                 extraDiffArguments = string.Concat(extraDiffArguments, " --patience");
@@ -2334,6 +2345,7 @@ namespace GitCommands
             var list = tree
                 .Select(file => new GitItemStatus
                 {
+                    IsTracked = true,
                     IsNew = true,
                     IsChanged = false,
                     IsDeleted = false,
@@ -2685,7 +2697,7 @@ namespace GitCommands
             {
                 sortedList = list.OrderBy(head =>
                 {
-                    var r = new GitRevision(this, head.Guid);
+                    var r = new GitRevision(head.Guid);
                     return r.CommitDate;
                 }).ToList();
             }
@@ -2693,7 +2705,7 @@ namespace GitCommands
             {
                 sortedList = list.OrderByDescending(head =>
                 {
-                    var r = new GitRevision(this, head.Guid);
+                    var r = new GitRevision(head.Guid);
                     return r.CommitDate;
                 }).ToList();
             }
@@ -2935,7 +2947,13 @@ namespace GitCommands
         {
             from = from.ToPosixPath();
             filename = filename.ToPosixPath();
-            string blameCommand = string.Format("blame --porcelain -M -w -l{0} \"{1}\" -- \"{2}\"", lines != null ? " -L " + lines : "", from, filename);
+
+            string detectCopyInFileOpt = AppSettings.DetectCopyInFileOnBlame ? " -M" : string.Empty;
+            string detectCopyInAllOpt = AppSettings.DetectCopyInAllOnBlame ? " -C" : string.Empty;
+            string ignoreWhitespaceOpt = AppSettings.IgnoreWhitespaceOnBlame ? " -w" : string.Empty;
+            string linesOpt = lines != null ? " -L " + lines : string.Empty;
+
+            string blameCommand = $"blame --porcelain{detectCopyInFileOpt}{detectCopyInAllOpt}{ignoreWhitespaceOpt} -l{linesOpt} \"{from}\" -- \"{filename}\"";
             var itemsStrings =
                 RunCacheableCmd(
                     AppSettings.GitCommand,
@@ -3100,7 +3118,7 @@ namespace GitCommands
                 });
         }
 
-        public string OpenWithDifftool(string filename, string oldFileName = "", string firstRevision = null, string secondRevision = null, string extraDiffArguments = "", bool isTracked=true)
+        public string OpenWithDifftool(string filename, string oldFileName = "", string firstRevision = GitRevision.IndexGuid, string secondRevision = GitRevision.UnstagedGuid, string extraDiffArguments = "", bool isTracked=true)
         {
             var output = "";
 

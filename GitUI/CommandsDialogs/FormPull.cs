@@ -101,6 +101,7 @@ namespace GitUI.CommandsDialogs
         private bool _bInternalUpdate;
         private const string AllRemotes = "[ All ]";
         private readonly IGitRemoteManager _remoteManager;
+        private readonly IFullPathResolver _fullPathResolver;
 
         private FormPull()
             : this(null, null, null)
@@ -120,7 +121,7 @@ namespace GitUI.CommandsDialogs
             helpImageDisplayUserControl1.Visible = !AppSettings.DontShowHelpImages;
             helpImageDisplayUserControl1.IsOnHoverShowImage2NoticeText = _hoverShowImageLabelText.Text;
 
-            _remoteManager = new GitRemoteManager(Module);
+            _remoteManager = new GitRemoteManager(() => Module);
             Init(defaultRemote);
 
             Merge.Checked = AppSettings.FormPullAction == AppSettings.PullAction.Merge;
@@ -142,6 +143,7 @@ namespace GitUI.CommandsDialogs
             bool isRepoShallow = File.Exists(aCommands.Module.ResolveGitInternalPath("shallow"));
             if (isRepoShallow)
                 Unshallow.Visible = true;
+            _fullPathResolver = new FullPathResolver(() => Module.WorkingDir);
         }
 
 
@@ -276,7 +278,7 @@ namespace GitUI.CommandsDialogs
 
         private bool InitModules()
         {
-            if (!File.Exists(Module.WorkingDir + ".gitmodules"))
+            if (!File.Exists(_fullPathResolver.Resolve(".gitmodules")))
                 return false;
             if (!IsSubmodulesInitialized())
             {

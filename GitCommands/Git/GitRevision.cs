@@ -23,15 +23,14 @@ namespace GitCommands
 
         public string[] ParentGuids;
         private readonly List<IGitRef> _refs = new List<IGitRef>();
-        public readonly GitModule Module;
         private BuildInfo _buildStatus;
 
-        public GitRevision(GitModule aModule, string guid)
+        public GitRevision(string guid)
         {
+            // TODO: this looks like an incorrect behaviour, rev.Guid must be validated and set to "" if null or empty.
             Guid = guid;
             Subject = "";
             SubjectCount = "";
-            Module = aModule;
         }
 
         public List<IGitRef> Refs { get { return _refs; } }
@@ -84,9 +83,10 @@ namespace GitCommands
         {
             if (sha == null)
                 throw new ArgumentNullException("sha");
-            if (sha.Length > 8)
+            const int maxShaLength = 10;
+            if (sha.Length > maxShaLength)
             {
-                sha = sha.Substring(0, 8);
+                sha = sha.Substring(0, maxShaLength);
             }
 
             return sha;
@@ -140,19 +140,6 @@ namespace GitCommands
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public static GitRevision CreateForShortSha1(GitModule aModule, string sha1)
-        {
-            if (!sha1.IsNullOrWhiteSpace() && sha1.Length < 40)
-            {
-                string fullSha1;
-                if (aModule.IsExistingCommitHash(sha1, out fullSha1))
-                {
-                    sha1 = fullSha1;
-                }
-            }
-
-            return new GitRevision(aModule, sha1);
-        }
 
         public static bool IsFullSha1Hash(string id)
         {

@@ -27,6 +27,7 @@ namespace GitUI.Editor
         private bool _currentViewIsPatch;
         private readonly IFileViewer _internalFileViewer;
         private GetNextFileFnc _fileLoader;
+        private readonly IFullPathResolver _fullPathResolver;
 
         public FileViewer()
         {
@@ -107,6 +108,7 @@ namespace GitUI.Editor
             if (RunTime() && ContextMenuStrip == null)
                 ContextMenuStrip = contextMenu;
             contextMenu.Opening += ContextMenu_Opening;
+            _fullPathResolver = new FullPathResolver(() => Module.WorkingDir);
         }
 
         private void _internalFileViewer_ScrolledBeforeBegining(object sender, EventArgs e)
@@ -532,7 +534,7 @@ namespace GitUI.Editor
         {
             FilePreamble = null;
 
-            string fullPath = Path.GetFullPath(Path.Combine(Module.WorkingDir, fileName));
+            string fullPath = Path.GetFullPath(_fullPathResolver.Resolve(fileName));
 
             if (fileName.EndsWith("/") || Directory.Exists(fullPath))
             {
@@ -611,7 +613,7 @@ namespace GitUI.Editor
         {
             try
             {
-                using (Stream stream = File.OpenRead(Path.Combine(Module.WorkingDir, fileName)))
+                using (Stream stream = File.OpenRead(_fullPathResolver.Resolve(fileName)))
                 {
                     return CreateImage(fileName, stream);
                 }
@@ -647,7 +649,7 @@ namespace GitUI.Editor
             if (File.Exists(fileName))
                 path = fileName;
             else
-                path = Path.Combine(Module.WorkingDir, fileName);
+                path = _fullPathResolver.Resolve(fileName);
 
             if (File.Exists(path))
             {
