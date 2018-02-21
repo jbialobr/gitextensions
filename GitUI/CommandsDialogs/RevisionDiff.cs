@@ -10,6 +10,7 @@ using GitUI.CommandsDialogs.BrowseDialog;
 using GitUI.HelperDialogs;
 using ResourceManager;
 using GitUI.Hotkey;
+using System.Threading.Tasks;
 
 namespace GitUI.CommandsDialogs
 {
@@ -170,10 +171,10 @@ namespace GitUI.CommandsDialogs
             return _revisionGrid.DescribeRevision(revision);
         }
 
-        private bool GetNextPatchFile(bool searchBackward, bool loop, out int fileIndex, out string fileContent)
+        private bool GetNextPatchFile(bool searchBackward, bool loop, out int fileIndex, out Task fileContent)
         {
             fileIndex = -1;
-            fileContent = string.Empty;
+            fileContent = Task.FromResult<string>(null);
             var revisions = _revisionGrid.GetSelectedRevisions();
             if (revisions.Count == 0)
                 return false;
@@ -192,22 +193,8 @@ namespace GitUI.CommandsDialogs
             {
                 DiffFiles.SetSelectedIndex(fileIndex, notify: false);
             }
-            fileContent = GetSelectedPatch(revisions, DiffFiles.SelectedItem);
+            fileContent = ShowSelectedFileDiff();
             return true;
-        }
-
-        private string GetSelectedPatch(IList<GitRevision> revisions, GitItemStatus file)
-        {
-            if (revisions.Count == 0)
-                return string.Empty;
-
-            var selectedRevision = revisions[0];
-            string secondRevision = selectedRevision?.Guid;
-            string firstRevision = revisions.Count >= 2 ? revisions[1].Guid : null;
-            if (firstRevision == null && selectedRevision != null)
-                firstRevision = selectedRevision.FirstParentGuid;
-
-            return DiffText.GetSelectedPatch(firstRevision, secondRevision, file);
         }
 
         private ContextMenuSelectionInfo GetSelectionInfo()
@@ -248,7 +235,7 @@ namespace GitUI.CommandsDialogs
             RefreshArtificial();
         }
 
-        private void ShowSelectedFileDiff()
+        private async Task ShowSelectedFileDiff()
         {
             var items = _revisionGrid.GetSelectedRevisions();
             if (DiffFiles.SelectedItem == null || items.Count() == 0)
@@ -276,13 +263,13 @@ namespace GitUI.CommandsDialogs
                     return;
                 }
             }
-            DiffText.ViewChanges(items, DiffFiles.SelectedItem, String.Empty);
+            await DiffText.ViewChanges(items, DiffFiles.SelectedItem, String.Empty);
         }
 
 
-        private void DiffFiles_SelectedIndexChanged(object sender, EventArgs e)
+        private async void DiffFiles_SelectedIndexChanged(object sender, EventArgs e)
         {
-            ShowSelectedFileDiff();
+            await ShowSelectedFileDiff();
         }
 
         private void DiffFiles_DoubleClick(object sender, EventArgs e)
@@ -316,9 +303,9 @@ namespace GitUI.CommandsDialogs
                 DiffText.ViewPatch(String.Empty);
         }
 
-        private void DiffText_ExtraDiffArgumentsChanged(object sender, EventArgs e)
+        private async void DiffText_ExtraDiffArgumentsChanged(object sender, EventArgs e)
         {
-            ShowSelectedFileDiff();
+            await ShowSelectedFileDiff();
         }
 
         private void diffShowInFileTreeToolStripMenuItem_Click(object sender, EventArgs e)

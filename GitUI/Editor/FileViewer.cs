@@ -472,9 +472,9 @@ namespace GitUI.Editor
             Reset(true, true, true);
         }
 
-        public void ViewPatch(Func<string> loadPatchText)
+        public Task<string> ViewPatch(Func<string> loadPatchText)
         {
-            _async.Load(loadPatchText, ViewPatch);
+            return _async.Load(loadPatchText, ViewPatch);
         }
 
         public void ViewText(string fileName, string text)
@@ -1058,28 +1058,28 @@ namespace GitUI.Editor
             }
         }
 
-        private void FileViewer_ScrolledBeforeBegining(object sender, EventArgs e)
+        private async void FileViewer_ScrolledBeforeBegining(object sender, EventArgs e)
         {
-            if (ScrollToTheNextFile(true))
+            if (await ScrollToTheNextFile(true))
             {
                 _internalFileViewer.ScrollToEnd();
             }
         }
 
-        private void FileViewer_ScrolledAfterEnd(object sender, EventArgs e)
+        private async void FileViewer_ScrolledAfterEnd(object sender, EventArgs e)
         {
-            ScrollToTheNextFile(false);
+            await ScrollToTheNextFile(false);
         }
 
-        private bool ScrollToTheNextFile(bool seekBackward)
+        private async Task<bool> ScrollToTheNextFile(bool seekBackward)
         {
             if (_fileLoader != null)
             {
                 int fileIndex;
-                string fileContent;
+                Task fileContent;
                 if (_fileLoader(seekBackward, false, out fileIndex, out fileContent))
                 {
-                    _internalFileViewer.SetText(fileContent, true);
+                    await fileContent;
                     return true;
                 }
             }

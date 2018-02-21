@@ -152,15 +152,15 @@ namespace GitUI.Editor
                 DoubleClick(sender, e);
         }
 
-        private void BlameFileKeyUp(object sender, KeyEventArgs e)
+        private async void BlameFileKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.F)
                 Find();
 
             if (e.Modifiers == Keys.Shift && e.KeyCode == Keys.F3)
-                _findAndReplaceForm.FindNext(true, true, "Text not found");
+                await _findAndReplaceForm.FindNext(true, true, "Text not found");
             else if (e.KeyCode == Keys.F3)
-                _findAndReplaceForm.FindNext(true, false, "Text not found");
+                await _findAndReplaceForm.FindNext(true, false, "Text not found");
 
             VScrollBar_ValueChanged(this, e);
         }

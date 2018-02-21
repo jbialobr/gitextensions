@@ -7,10 +7,11 @@ using System.Windows.Forms;
 using ICSharpCode.TextEditor;
 using ICSharpCode.TextEditor.Document;
 using ResourceManager;
+using System.Threading.Tasks;
 
 namespace GitUI
 {
-    public delegate bool GetNextFileFnc(bool seekBackward, bool loop, out int fileIndex, out string fileContent);
+    public delegate bool GetNextFileFnc(bool seekBackward, bool loop, out int fileIndex, out Task fileContentLoaded);
 
     public partial class FindAndReplaceForm : GitExtensionsForm
     {
@@ -123,17 +124,17 @@ namespace GitUI
             txtLookFor.Focus();
         }
 
-        private void btnFindPrevious_Click(object sender, EventArgs e)
+        private async void btnFindPrevious_Click(object sender, EventArgs e)
         {
-            FindNext(false, true, _textNotFoundString.Text);
+            await FindNext(false, true, _textNotFoundString.Text);
         }
 
-        private void btnFindNext_Click(object sender, EventArgs e)
+        private async void btnFindNext_Click(object sender, EventArgs e)
         {
-            FindNext(false, false, _textNotFoundString.Text);
+            await FindNext(false, false, _textNotFoundString.Text);
         }
 
-        public TextRange FindNext(bool viaF3, bool searchBackward, string messageIfNotFound)
+        public async Task<TextRange> FindNext(bool viaF3, bool searchBackward, string messageIfNotFound)
         {
             if (string.IsNullOrEmpty(txtLookFor.Text))
             {
@@ -172,12 +173,12 @@ namespace GitUI
                     range = null;
                     if (currentIdx != -1 && startIdx == -1)
                         startIdx = currentIdx;
-                    string fileContent;
+                    Task fileContent;
                     int fileIndex;
                     if (_fileLoader(searchBackward, true, out fileIndex, out fileContent))
                     {
                         currentIdx = fileIndex;
-                        Editor.Text = fileContent;
+                        await fileContent;
                     }
                 }
             } while (range == null && startIdx != currentIdx && currentIdx != -1);
@@ -257,12 +258,12 @@ namespace GitUI
             Close();
         }
 
-        private void btnReplace_Click(object sender, EventArgs e)
+        private async void btnReplace_Click(object sender, EventArgs e)
         {
             SelectionManager sm = _editor.ActiveTextAreaControl.SelectionManager;
             if (string.Equals(sm.SelectedText, txtLookFor.Text, StringComparison.OrdinalIgnoreCase))
                 InsertText(txtReplaceWith.Text);
-            FindNext(false, _lastSearchWasBackward, _textNotFoundString.Text);
+            await FindNext(false, _lastSearchWasBackward, _textNotFoundString.Text);
         }
 
         private void btnReplaceAll_Click(object sender, EventArgs e)
