@@ -170,39 +170,6 @@ namespace GitUI.CommandsDialogs
             return _revisionGrid.DescribeRevision(revision);
         }
 
-        private int getNextIdx(int curIdx, int maxIdx, bool searchBackward, bool loop)
-        {
-            if (searchBackward)
-            {
-                if (curIdx == 0)
-                {
-                    if (loop)
-                    {
-                        curIdx = maxIdx;
-                    }
-                }
-                else
-                {
-                    curIdx--;
-                }
-            }
-            else
-            {
-                if (curIdx == maxIdx)
-                {
-                    if (loop)
-                    {
-                        curIdx = 0;
-                    }
-                }
-                else
-                {
-                    curIdx++;
-                }
-            }
-            return curIdx;
-        }
-
         private bool GetNextPatchFile(bool searchBackward, bool loop, out int fileIndex, out string fileContent)
         {
             fileIndex = -1;
@@ -215,7 +182,7 @@ namespace GitUI.CommandsDialogs
             if (idx == -1)
                 return false;
 
-            fileIndex = getNextIdx(idx, DiffFiles.GitItemStatuses.Count() - 1, searchBackward, loop);
+            fileIndex = DiffFiles.GetNextIndex(searchBackward, loop);
             if (fileIndex == idx)
             {
                 if (!loop)
@@ -231,8 +198,15 @@ namespace GitUI.CommandsDialogs
 
         private string GetSelectedPatch(IList<GitRevision> revisions, GitItemStatus file)
         {
-            string firstRevision = revisions.Count > 0 ? revisions[0].Guid : null;
-            string secondRevision = revisions.Count == 2 ? revisions[1].Guid : null;
+            if (revisions.Count == 0)
+                return string.Empty;
+
+            var selectedRevision = revisions[0];
+            string secondRevision = selectedRevision?.Guid;
+            string firstRevision = revisions.Count >= 2 ? revisions[1].Guid : null;
+            if (firstRevision == null && selectedRevision != null)
+                firstRevision = selectedRevision.FirstParentGuid;
+
             return DiffText.GetSelectedPatch(firstRevision, secondRevision, file);
         }
 
