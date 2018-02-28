@@ -98,6 +98,8 @@ namespace GitUI.Editor
             _internalFileViewer.ScrollPosChanged += _internalFileViewer_ScrollPosChanged;
             _internalFileViewer.SelectedLineChanged += _internalFileViewer_SelectedLineChanged;
             _internalFileViewer.DoubleClick += (sender, args) => OnRequestDiffView(EventArgs.Empty);
+            _internalFileViewer.ScrolledAfterEnd += _internalFileViewer_ScrolledAfterEnd;
+            _internalFileViewer.ScrolledBeforeBegining += _internalFileViewer_ScrolledBeforeBegining;
 
             this.HotkeysEnabled = true;
 
@@ -105,6 +107,16 @@ namespace GitUI.Editor
                 ContextMenuStrip = contextMenu;
             contextMenu.Opening += ContextMenu_Opening;
             _fullPathResolver = new FullPathResolver(() => Module.WorkingDir);
+        }
+
+        private void _internalFileViewer_ScrolledBeforeBegining(object sender, EventArgs e)
+        {
+            ScrolledBeforeBegining?.Invoke(sender, e);
+        }
+
+        private void _internalFileViewer_ScrolledAfterEnd(object sender, EventArgs e)
+        {
+            ScrolledAfterEnd?.Invoke(sender, e);
         }
 
         void FileViewer_GitUICommandsSourceSet(object sender, GitUICommandsSourceEventArgs e)
@@ -251,6 +263,8 @@ namespace GitUI.Editor
         public new event EventHandler TextChanged;
         public event EventHandler TextLoaded;
         public event CancelEventHandler ContextMenuOpening;
+        public event EventHandler ScrolledAfterEnd;
+        public event EventHandler ScrolledBeforeBegining;
 
         public ToolStripSeparator AddContextMenuSeparator()
         {
@@ -1018,6 +1032,43 @@ namespace GitUI.Editor
         {
             _internalFileViewer.SetFileLoader(fileLoader);
             _fileLoader = fileLoader;
+
+            ScrolledAfterEnd -= FileViewer_ScrolledAfterEnd;
+            ScrolledBeforeBegining -= FileViewer_ScrolledBeforeBegining;
+
+            if (AppSettings.EnableFluentDiffScroll.ValueOrDefault)
+            {
+                ScrolledAfterEnd += FileViewer_ScrolledAfterEnd;
+                ScrolledBeforeBegining += FileViewer_ScrolledBeforeBegining;
+            }
+        }
+
+        private async void FileViewer_ScrolledBeforeBegining(object sender, EventArgs e)
+        {
+            if (await ScrollToTheNextFile(true))
+            {
+                _internalFileViewer.ScrollToEnd();
+            }
+        }
+
+        private async void FileViewer_ScrolledAfterEnd(object sender, EventArgs e)
+        {
+            await ScrollToTheNextFile(false);
+        }
+
+        private async Task<bool> ScrollToTheNextFile(bool seekBackward)
+        {
+            if (_fileLoader != null)
+            {
+                int fileIndex;
+                Task fileContent;
+                if (_fileLoader(seekBackward, false, out fileIndex, out fileContent))
+                {
+                    await fileContent;
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void encodingToolStripComboBox_SelectedIndexChanged(object sender, EventArgs e)
