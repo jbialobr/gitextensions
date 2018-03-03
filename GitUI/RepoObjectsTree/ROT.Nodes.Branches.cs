@@ -55,7 +55,7 @@ namespace GitUI.RepoObjectsTree
 
                 var dirs = aFullPath.Split(PathSeparator);
                 Name = dirs[dirs.Length - 1];
-                ParentPath = dirs.Take(dirs.Length - 1).Join(PathSeparator);
+                ParentPath = dirs.Take(dirs.Length - 1).Join(PathSeparator.ToString());
             }
 
             internal BaseBranchNode CreateRootNode(IDictionary<string, BaseBranchNode> nodes,
