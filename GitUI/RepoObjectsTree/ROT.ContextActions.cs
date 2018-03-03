@@ -93,20 +93,26 @@ namespace GitUI.RepoObjectsTree
         {
             using (var form = new FormRemotes(UICommands))
             {
-                form.OnRemoteDeleted += OnRemoteDeleted;
-                form.OnRemoteRenamedOrAdded += OnRemoteRenamedOrAdded;
+                form.RemoteDeleted += OnRemoteDeleted;
+                form.RemoteRenamed += OnRemoteRenamed;
+                form.RemoteAdded += OnRemoteAdded;
                 form.ShowDialog(this);
             }
         }
 
-        private void OnRemoteRenamedOrAdded(string orgName, string newName)
+        private void OnRemoteAdded(object sender, RemoteAddedEventArgs args)
         {
-            _remoteTree?.RenameOrAddRemote(orgName, newName);
+            _remoteTree?.AddRemote(args.RemoteName);
         }
 
-        private void OnRemoteDeleted(string remoteName)
+        private void OnRemoteRenamed(object sender, RemoteRenamedEventArgs args)
         {
-            _remoteTree?.DeleteRemote(remoteName);
+            _remoteTree?.RenameRemote(args.OriginalName, args.NewName);
+        }
+
+        private void OnRemoteDeleted(object sender, RemoteDeletedEventArgs args)
+        {
+            _remoteTree?.DeleteRemote(args.RemoteName);
         }
     }
 }

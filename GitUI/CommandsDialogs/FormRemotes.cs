@@ -80,11 +80,9 @@ Inactive remote is completely invisible to git.");
             new TranslationString("Inactive");
         #endregion
 
-        public delegate void EventRemoteChange(string remoteName);
-        public delegate void EventRemoteRenamed(string orgName, string newName);
-
-        public EventRemoteChange OnRemoteDeleted;
-        public EventRemoteRenamed OnRemoteRenamedOrAdded;
+        public EventHandler<RemoteDeletedEventArgs> RemoteDeleted;
+        public EventHandler<RemoteRenamedEventArgs> RemoteRenamed;
+        public EventHandler<RemoteAddedEventArgs> RemoteAdded;
 
         public FormRemotes(GitUICommands aCommands)
             : base(aCommands)
@@ -343,10 +341,13 @@ Inactive remote is completely invisible to git.");
                                                        remoteUrl,
                                                        checkBoxSepPushUrl.Checked ? remotePushUrl : null,
                                                        PuttySshKey.Text);
-                if (OnRemoteRenamedOrAdded != null)
+                if (_selectedRemote?.Name == null)
                 {
-                    OnRemoteRenamedOrAdded(
-                        _selectedRemote != null? _selectedRemote.Name : remote, remote);
+                    FireRemoteAddedEvent(new RemoteAddedEventArgs(remote));
+                }
+                else
+                {
+                    FireRemoteRenamedEvent(new RemoteRenamedEventArgs(_selectedRemote.Name, remote));
                 }
 
                 if (!string.IsNullOrEmpty(result.UserMessage))
@@ -410,10 +411,7 @@ Inactive remote is completely invisible to git.");
                 }
                 else
                 {
-                    if (OnRemoteDeleted != null)
-                    {
-                        OnRemoteDeleted(_selectedRemote.Name);
-                    }
+                    FireRemoteDeletedEvent(new RemoteDeletedEventArgs(_selectedRemote.Name));
                 }
 
                 // Deleting a remote from the history list may be undesirable as
@@ -625,6 +623,21 @@ Inactive remote is completely invisible to git.");
                 label2.Text = _labelUrlAsFetchPush.Text;
             else
                 label2.Text = _labelUrlAsFetch.Text;
+        }
+
+        private void FireRemoteDeletedEvent(RemoteDeletedEventArgs args)
+        {
+            RemoteDeleted?.Invoke(this, args);
+        }
+
+        private void FireRemoteRenamedEvent(RemoteRenamedEventArgs args)
+        {
+            RemoteRenamed?.Invoke(this, args);
+        }
+
+        private void FireRemoteAddedEvent(RemoteAddedEventArgs args)
+        {
+            RemoteAdded?.Invoke(this, args);
         }
     }
 }

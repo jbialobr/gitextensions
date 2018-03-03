@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
@@ -68,13 +69,12 @@ namespace GitUI.RepoObjectsTree
                 TreeViewNode.Expand();
             }
 
-            public void RenameOrAddRemote(string orgName, string newName)
+            public void RenameRemote(string orgName, string newName)
             {
                 var treeNode = FindRemoteRepoTreeNodeByName(orgName);
                 if (treeNode == null)
                 {
-                    AddRemote(newName);
-                    return;
+                    throw new InvalidOperationException("Cannot rename a non-existing remote");
                 }
 
                 treeNode.Text = newName;
@@ -116,7 +116,7 @@ namespace GitUI.RepoObjectsTree
                 Nodes.Remove(repoNode);
             }
 
-            private void AddRemote(string remoteName)
+            public void AddRemote(string remoteName)
             {
                 Nodes.AddNode(new RemoteRepoNode(this, remoteName));
                 Nodes.FillTreeViewNode(TreeViewNode);
