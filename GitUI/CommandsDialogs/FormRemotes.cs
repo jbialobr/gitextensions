@@ -341,14 +341,6 @@ Inactive remote is completely invisible to git.");
                                                        remoteUrl,
                                                        checkBoxSepPushUrl.Checked ? remotePushUrl : null,
                                                        PuttySshKey.Text);
-                if (_selectedRemote?.Name == null)
-                {
-                    FireRemoteAddedEvent(new RemoteAddedEventArgs(remote));
-                }
-                else
-                {
-                    FireRemoteRenamedEvent(new RemoteRenamedEventArgs(_selectedRemote.Name, remote));
-                }
 
                 if (!string.IsNullOrEmpty(result.UserMessage))
                 {
@@ -356,6 +348,15 @@ Inactive remote is completely invisible to git.");
                 }
                 else
                 {
+                    if (_selectedRemote?.Name == null)
+                    {
+                        FireRemoteAddedEvent(new RemoteAddedEventArgs(remote));
+                    }
+                    else
+                    {
+                        FireRemoteRenamedEvent(new RemoteRenamedEventArgs(_selectedRemote.Name, remote));
+                    }
+
                     var remotes = Repositories.RemoteRepositoryHistory.Repositories;
                     RemoteUpdate(remotes, _selectedRemote?.Url, remoteUrl);
                     if (checkBoxSepPushUrl.Checked)
