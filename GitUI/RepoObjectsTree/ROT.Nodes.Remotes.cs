@@ -169,7 +169,7 @@ namespace GitUI.RepoObjectsTree
             public void Delete()
             {
                 var remoteBranchInfo = GetRemoteBranchInfo();
-                var cmd = new GitDeleteRemoteBranchCmd(remoteBranchInfo.Remote, remoteBranchInfo.BranchName);
+                var cmd = new GitDeleteRemoteBranchesCmd(remoteBranchInfo.Remote, new[] {remoteBranchInfo.BranchName});
                 if (MessageBoxes.ConfirmDeleteRemoteBranch(TreeViewNode.TreeView,
                     remoteBranchInfo.BranchName, remoteBranchInfo.Remote))
                 {
