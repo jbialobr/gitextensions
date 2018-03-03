@@ -273,7 +273,7 @@ namespace GitUI.RepoObjectsTree
             {
                 base.FillTreeViewNode();
 
-                TreeViewNode.Text = $@"{Strings.branches} ({Nodes.Count})";
+                TreeViewNode.Text = $@"{Strings.BranchesText} ({Nodes.Count})";
 
                 var activeBranch = Nodes.DepthEnumerator<LocalBranchNode>().FirstOrDefault(b => b.IsActive);
                 if (activeBranch == null)

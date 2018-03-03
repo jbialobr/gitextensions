@@ -80,14 +80,14 @@ namespace GitUI.RepoObjectsTree
 
             CancelBackgroundTasks();
 
-            var localBranchesRootNode = new TreeNode(Strings.branches.Text)
+            var localBranchesRootNode = new TreeNode(Strings.BranchesText.Text)
             {
                 ImageKey = @"LocalRepo.png",
             };
             localBranchesRootNode.SelectedImageKey = localBranchesRootNode.ImageKey;
             AddTree(new BranchTree(localBranchesRootNode, newSource));
 
-            var remoteBranchesRootNode = new TreeNode(Strings.remotes.Text)
+            var remoteBranchesRootNode = new TreeNode(Strings.RemotesText.Text)
             {
                 ImageKey = @"RemoteRepo.png",
             };
@@ -208,7 +208,7 @@ namespace GitUI.RepoObjectsTree
 
         private void AddTags()
         {
-            _tagTreeRootNode = new TreeNode(Strings.tags.Text) {ImageKey = @"tags.png"};
+            _tagTreeRootNode = new TreeNode(Strings.TagsText.Text) {ImageKey = @"tags.png"};
             _tagTreeRootNode.SelectedImageKey = _tagTreeRootNode.ImageKey;
             _tagTree = new TagTree(_tagTreeRootNode, UICommandsSource);
             AddTree(_tagTree);

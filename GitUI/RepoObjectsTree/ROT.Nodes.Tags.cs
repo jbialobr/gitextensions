@@ -97,7 +97,7 @@ namespace GitUI.RepoObjectsTree
             {
                 base.FillTreeViewNode();
 
-                TreeViewNode.Text = $@"{Strings.tags} ({Nodes.Count})";
+                TreeViewNode.Text = $@"{Strings.TagsText} ({Nodes.Count})";
 
                 TreeViewNode.Collapse();
             }
