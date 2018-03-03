@@ -3385,7 +3385,7 @@ namespace GitUI
         public void GoToRef(string refName, bool showNoRevisionMsg)
         {
             string sha1;
-            if (GitModule.TryParseDetachedHead(refName, out sha1))
+            if (DetachedHeadParser.TryParseDetachedHead(refName, out sha1))
             {
                 refName = sha1;
             }

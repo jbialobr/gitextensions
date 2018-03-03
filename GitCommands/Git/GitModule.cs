@@ -311,11 +311,6 @@ namespace GitCommands
         /// </summary>
         public Encoding LogOutputEncoding => EffectiveConfigFile.LogOutputEncoding ?? CommitEncoding;
 
-        /// <summary>"(no branch)"</summary>
-        public static readonly string DetachedBranch = "(no branch)";
-
-        private static readonly string[] DetachedPrefixes = { "(no branch", "(detached from ", "(HEAD detached at " };
-
         public AppSettings.PullAction LastPullAction
         {
             get => AppSettings.GetEnum("LastPullAction_" + WorkingDir, AppSettings.PullAction.None);
@@ -2502,7 +2497,7 @@ namespace GitCommands
             {
                 head = File.ReadAllText(headFileName, SystemEncoding);
                 if (!head.Contains("ref:"))
-                    return DetachedBranch;
+                    return DetachedHeadParser.DetachedBranch;
             }
             else
             {
@@ -2526,7 +2521,7 @@ namespace GitCommands
             {
                 var result = RunGitCmdResult("symbolic-ref HEAD");
                 if (result.ExitCode == 1)
-                    return DetachedBranch;
+                    return DetachedHeadParser.DetachedBranch;
                 return result.StdOutput;
             }
 
@@ -2542,29 +2537,9 @@ namespace GitCommands
         /// <summary>Indicates whether HEAD is not pointing to a branch.</summary>
         public bool IsDetachedHead()
         {
-            return IsDetachedHead(GetSelectedBranch());
+            return DetachedHeadParser.IsDetachedHead(GetSelectedBranch());
         }
 
-        public static bool IsDetachedHead(string branch)
-        {
-            return DetachedPrefixes.Any(a => branch.StartsWith(a, StringComparison.Ordinal));
-        }
-
-        public static bool TryParseDetachedHead(string text, out string sha1)
-        {
-            sha1 = null;
-            if (!IsDetachedHead(text))
-                return false;
-
-            var sha1Match = new Regex(@"^\(.* (?<sha1>.*)\)$").Match(text);
-            if (!sha1Match.Success)
-            {
-                return false;
-            }
-
-            sha1 = sha1Match.Groups["sha1"].Value;
-            return true;
-        }
 
         /// <summary>Gets the remote of the current branch; or "origin" if no remote is configured.</summary>
         public string GetCurrentRemote()

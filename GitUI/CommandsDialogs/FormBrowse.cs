@@ -2311,7 +2311,7 @@ namespace GitUI.CommandsDialogs
         private string GetModuleBranch(string path)
         {
             string branch = GitModule.GetSelectedBranchFast(path);
-            return string.Format("[{0}]", GitModule.IsDetachedHead(branch) ? _noBranchTitle.Text : branch);
+            return string.Format("[{0}]", DetachedHeadParser.IsDetachedHead(branch) ? _noBranchTitle.Text : branch);
         }
 
         private ToolStripMenuItem CreateSubmoduleMenuItem(SubmoduleInfo info, string textFormat)

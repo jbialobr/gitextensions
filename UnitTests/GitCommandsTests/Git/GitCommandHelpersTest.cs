@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using GitCommands;
+using GitCommands.Git;
 using NUnit.Framework;
 using ResourceManager;
 using TestClass = NUnit.Framework.TestFixtureAttribute;
@@ -255,7 +256,7 @@ namespace GitCommandsTests.Git
         public void ShouldExtractOldVersionOfDetachedHeadOutput()
         {
             string sha1;
-            Assert.True(GitModule.TryParseDetachedHead("(detached from c299581)", out sha1));
+            Assert.True(DetachedHeadParser.TryParseDetachedHead("(detached from c299581)", out sha1));
             Assert.AreEqual("c299581", sha1);
         }
 
@@ -263,7 +264,7 @@ namespace GitCommandsTests.Git
         public void ShouldExtractNewVersionOfDetachedHeadOutput()
         {
             string sha1;
-            Assert.True(GitModule.TryParseDetachedHead("(HEAD detached at c299582)", out sha1));
+            Assert.True(DetachedHeadParser.TryParseDetachedHead("(HEAD detached at c299582)", out sha1));
             Assert.AreEqual("c299582", sha1);
         }
 

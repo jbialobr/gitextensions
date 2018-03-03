@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
+using GitCommands.Git;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -37,7 +38,7 @@ namespace GitUI.CommandsDialogs
             {
                 if (!branch.StartsWith("* "))
                     mergedBranches.Add(branch.Trim());
-                else if (!branch.StartsWith("* ") || (branch.StartsWith("* ") && !GitModule.IsDetachedHead(branch.Substring(2))))
+                else if (!branch.StartsWith("* ") || (branch.StartsWith("* ") && !DetachedHeadParser.IsDetachedHead(branch.Substring(2))))
                     _currentBranch = branch.Trim('*', ' ');
             }
 
