@@ -8,25 +8,24 @@ namespace GitUI
     /// <summary><see cref="ToolStripButton"/> which blinks when</summary>
     public class WarningToolStripItem : ToolStripButton
     {
-        static readonly int BlinkInterval = 150;
-        readonly Timer _blinkTimer = new Timer { Interval = BlinkInterval };
-        int _counter;
-        Color _offColor;
+        private readonly Timer _blinkTimer = new Timer { Interval = 150 };
+        private int _counter;
+        private readonly Color _offColor;
 
         public WarningToolStripItem()
         {
             Width = 200;
             Height = 20;
 
-            _offColor = Parent != null ? Parent.BackColor : SystemColors.Control;
+            _offColor = Parent?.BackColor ?? SystemColors.Control;
             _blinkTimer.Tick += BlinkOnTick;
 
             _blinkTimer.Start();
         }
 
-        void BlinkOnTick(object s, EventArgs e)
+        private void BlinkOnTick(object s, EventArgs e)
         {
-            ToggleOnOff(() =>
+             ToggleOnOff(() =>
              {
                  BackColor = Color.Salmon;
              }, () =>
@@ -35,7 +34,7 @@ namespace GitUI
              });
         }
 
-        void ToggleOnOff(Action on, Action off, Action finish = null)
+        private void ToggleOnOff(Action on, Action off, Action finish = null)
         {
             if (_counter % 2 == 0)
             {// even -> off
