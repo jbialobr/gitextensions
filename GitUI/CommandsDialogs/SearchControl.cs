@@ -24,6 +24,8 @@ namespace GitUI.CommandsDialogs
         public SearchControl(Func<string, IList<T>> getCandidates, Action<Size> onSizeChanged)
         {
             InitializeComponent();
+            txtSearchBox.LostFocus += TxtSearchBoxOnLostFocus;
+            listBoxSearchResult.LostFocus += ListBoxSearchResultOnLostFocus;
             listBoxSearchResult.Left = Left;
             txtSearchBox.Select();
 
@@ -34,6 +36,24 @@ namespace GitUI.CommandsDialogs
             this._getCandidates = getCandidates;
             _onSizeChanged = onSizeChanged;
             AutoFit();
+        }
+
+        private void ListBoxSearchResultOnLostFocus(object sender, EventArgs eventArgs)
+        {
+            CloseDropdownWhenLostFocus();
+        }
+
+        private void TxtSearchBoxOnLostFocus(object sender, EventArgs eventArgs)
+        {
+            CloseDropdownWhenLostFocus();
+        }
+
+        private void CloseDropdownWhenLostFocus()
+        {
+            if (!txtSearchBox.Focused && !listBoxSearchResult.Focused)
+            {
+                CloseDropdown();
+            }
         }
 
         public void CloseDropdown()
