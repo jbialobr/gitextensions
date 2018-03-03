@@ -8,9 +8,9 @@ namespace GitUI.CommandsDialogs
 {
     public partial class SearchControl<T> : UserControl, IDisposable where T : class
     {
-        private readonly Func<string, IList<T>> getCandidates;
+        private readonly Func<string, IList<T>> _getCandidates;
         private readonly Action<Size> _onSizeChanged;
-        private AsyncLoader backgroundLoader = new AsyncLoader();
+        private AsyncLoader _backgroundLoader = new AsyncLoader();
         private bool _isUpdatingTextFromCode = false;
         public event Action OnTextEntered;
         public event Action OnCancelled;
@@ -31,7 +31,7 @@ namespace GitUI.CommandsDialogs
             {
                 throw new InvalidOperationException("getCandidates cannot be null");
             }
-            this.getCandidates = getCandidates;
+            this._getCandidates = getCandidates;
             _onSizeChanged = onSizeChanged;
             AutoFit();
         }
@@ -105,11 +105,8 @@ namespace GitUI.CommandsDialogs
 
         void IDisposable.Dispose()
         {
-            if (backgroundLoader != null)
-            {
-                backgroundLoader.Cancel();
-            }
-            backgroundLoader = null;
+            _backgroundLoader?.Cancel();
+            _backgroundLoader = null;
         }
 
         private void txtSearchBox_TextChange(object sender, EventArgs e)
@@ -120,9 +117,9 @@ namespace GitUI.CommandsDialogs
                 _isUpdatingTextFromCode = false;
                 return;
             }
-            string  _selectedText = txtSearchBox.Text;
+            string selectedText = txtSearchBox.Text;
 
-            backgroundLoader.Load(() => getCandidates(_selectedText), SearchForCandidates);
+            _backgroundLoader.Load(() => _getCandidates(selectedText), SearchForCandidates);
         }
 
         private void txtSearchBox_KeyUp(object sender, KeyEventArgs e)
@@ -138,10 +135,7 @@ namespace GitUI.CommandsDialogs
                 listBoxSearchResult.SelectedItem = null;
                 listBoxSearchResult.Visible = false;
                 e.SuppressKeyPress = true;
-                if (OnCancelled != null)
-                {
-                    OnCancelled();
-                }
+                OnCancelled?.Invoke();
             }
         }
 
@@ -153,10 +147,7 @@ namespace GitUI.CommandsDialogs
                 txtSearchBox.Text = listBoxSearchResult.SelectedItem.ToString();
             }
             listBoxSearchResult.Visible = false;
-            if (OnTextEntered != null)
-            {
-                OnTextEntered();
-            }
+            OnTextEntered?.Invoke();
         }
 
         private void txtSearchBox_KeyDown(object sender, KeyEventArgs e)
