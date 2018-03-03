@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using GitCommands;
+using JetBrains.Annotations;
 
 namespace GitUI.CommandsDialogs
 {
@@ -21,7 +22,7 @@ namespace GitUI.CommandsDialogs
             set { txtSearchBox.Text = value; }
         }
 
-        public SearchControl(Func<string, IList<T>> getCandidates, Action<Size> onSizeChanged)
+        public SearchControl([NotNull]Func<string, IList<T>> getCandidates, Action<Size> onSizeChanged)
         {
             InitializeComponent();
             txtSearchBox.LostFocus += TxtSearchBoxOnLostFocus;
@@ -29,11 +30,7 @@ namespace GitUI.CommandsDialogs
             listBoxSearchResult.Left = Left;
             txtSearchBox.Select();
 
-            if (getCandidates == null)
-            {
-                throw new InvalidOperationException("getCandidates cannot be null");
-            }
-            this._getCandidates = getCandidates;
+            _getCandidates = getCandidates;
             _onSizeChanged = onSizeChanged;
             AutoFit();
         }
