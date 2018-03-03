@@ -291,11 +291,6 @@ namespace GitUI
             return StartBrowseDialog("");
         }
 
-        public bool StartDeleteBranchDialog(string branch)
-        {
-            return StartDeleteBranchDialog(null, branch);
-        }
-
         public bool StartDeleteBranchDialog(IWin32Window owner, string branch)
         {
             return StartDeleteBranchDialog(owner, new string[] { branch });
