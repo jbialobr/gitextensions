@@ -2554,15 +2554,13 @@ namespace GitCommands
             return DetachedPrefixes.Any(a => branch.StartsWith(a, StringComparison.Ordinal));
         }
 
-        private static Regex detachedHeadRegex = new Regex(@"^\(.* (?<sha1>.*)\)$");
-
         public static bool TryParseDetachedHead(string text, out string sha1)
         {
             sha1 = null;
             if (!IsDetachedHead(text))
                 return false;
 
-            var sha1Match = detachedHeadRegex.Match(text);
+            var sha1Match = new Regex(@"^\(.* (?<sha1>.*)\)$").Match(text);
             if (!sha1Match.Success)
             {
                 return false;
