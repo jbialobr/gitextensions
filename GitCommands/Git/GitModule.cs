@@ -83,14 +83,10 @@ namespace GitCommands
     [DebuggerDisplay("GitModule ( {" + nameof(WorkingDir) + "} )")]
     public sealed class GitModule : IGitModule
     {
-        /// <summary>'/' : ref path separator</summary>
         public static readonly char RefSeparator = '/';
-        /// <summary>"/" : ref path separator</summary>
         public static readonly string RefSep = RefSeparator.ToString(CultureInfo.InvariantCulture);
 
-        /// <summary>'\n' : new-line separator</summary>
         private const char LineSeparator = '\n';
-        /// <summary>"*" indicates the current branch</summary>
         public static readonly char ActiveBranchIndicator = '*';
 
         private static readonly Regex DefaultHeadPattern = new Regex("refs/remotes/[^/]+/HEAD", RegexOptions.Compiled);
@@ -2123,7 +2119,6 @@ namespace GitCommands
             return allowEmpty ? remotes.Split('\n') : remotes.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        /// <summary>Gets the local config file.</summary>
         public IEnumerable<string> GetSettings(string setting)
         {
             return LocalConfigFile.GetValues(setting);
@@ -2167,6 +2162,7 @@ namespace GitCommands
                     stashes.Add(new GitStash(stashString, i));
                 }
             }
+
             return stashes;
         }
 

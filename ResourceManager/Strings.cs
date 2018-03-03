@@ -86,11 +86,8 @@ namespace ResourceManager
             return Instance._loadingData.Text;
         }
 
-        /// <summary>"branches" translation.</summary>
         public static readonly TranslationString branches = new TranslationString("Branches");
-        /// <summary>"remotes" translation.</summary>
         public static readonly TranslationString remotes = new TranslationString("Remotes");
-        /// <summary>"tags" translation.</summary>
         public static readonly TranslationString tags = new TranslationString("Tags");
 
         public static string GetUninterestingDiffOmitted()

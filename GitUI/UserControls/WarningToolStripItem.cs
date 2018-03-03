@@ -8,9 +8,6 @@ namespace GitUI
     /// <summary><see cref="ToolStripButton"/> which blinks when</summary>
     public class WarningToolStripItem : ToolStripButton
     {
-        /// <summary>3 seconds</summary>
-        //static readonly double TotalBlinkDuration = 3000;
-        /// <summary>150ms</summary>
         static readonly int BlinkInterval = 150;
         readonly Timer _blinkTimer = new Timer { Interval = BlinkInterval };
         int _counter;
@@ -38,7 +35,6 @@ namespace GitUI
              });
         }
 
-        /// <summary>Toggles between an 'on' and 'off' action.</summary>
         void ToggleOnOff(Action on, Action off, Action finish = null)
         {
             if (_counter % 2 == 0)
@@ -52,7 +48,7 @@ namespace GitUI
                 Debug.WriteLine("on");
             }
 
-            _counter++;// increment
+            _counter++;
 
             if (_counter >= 20)
             {// enough blinks -> stop blinking
