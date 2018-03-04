@@ -23,7 +23,7 @@ namespace GitUI.RepoObjectsTree
             private string ParentPath { get; }
 
             /// <summary>Full path of the branch. <example>"issues/issue1344"</example></summary>
-            public string FullPath => ParentPath.Combine(PathSeparator, Name);
+            public string FullPath => ParentPath.Combine(PathSeparator.ToString(), Name);
 
             public override int GetHashCode()
             {
