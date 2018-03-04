@@ -523,7 +523,7 @@ namespace GitUI.CommandsDialogs
             // 
             this.toggleLeftPanel.Alignment = System.Windows.Forms.ToolStripItemAlignment.Left;
             this.toggleLeftPanel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toggleLeftPanel.Image = global::GitUI.Properties.Resources.Branch;
+            this.toggleLeftPanel.Image = global::GitUI.Properties.MsVsImages.Branch_16x;
             this.toggleLeftPanel.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toggleLeftPanel.Name = "toggleLeftPanel";
             this.toggleLeftPanel.Size = new System.Drawing.Size(23, 22);

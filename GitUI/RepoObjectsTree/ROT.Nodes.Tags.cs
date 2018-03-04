@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using GitCommands;
 using GitUI.CommandsDialogs;
+using GitUI.Properties;
 using GitUIPluginInterfaces;
 using ResourceManager;
 
@@ -42,7 +43,7 @@ namespace GitUI.RepoObjectsTree
             protected override void ApplyStyle()
             {
                 base.ApplyStyle();
-                TreeViewNode.ImageKey = TreeViewNode.SelectedImageKey = @"tag.png";
+                TreeViewNode.ImageKey = TreeViewNode.SelectedImageKey = nameof(MsVsImages.Tag_16x);
             }
 
             public void Checkout()

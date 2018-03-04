@@ -282,6 +282,11 @@
       <DependentUpon>FormBrowseRepoSettingsPage.cs</DependentUpon>
     </Compile>
     <Compile Include="FindFilePredicateProvider.cs" />
+    <Compile Include="Properties\MsVsImages.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MsVsImages.resx</DependentUpon>
+    </Compile>
     <Compile Include="RevisionDiffInfoProvider.cs" />
     <Compile Include="RevisionDiffKind.cs" />
     <Compile Include="FormStatusOutputLog.cs" />
@@ -1264,6 +1269,11 @@
     <EmbeddedResource Include="CommandsDialogs\SettingsDialog\Plugins\PluginRootIntroductionPage.resx">
       <DependentUpon>PluginRootIntroductionPage.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Properties\MsVsImages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>MsVsImages.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="UserControls\BranchSelector.resx">
       <DependentUpon>BranchSelector.cs</DependentUpon>
     </EmbeddedResource>
@@ -2000,6 +2010,13 @@
     <Content Include="Resources\Icons\ignore_all_whitespaces.png" />
     <Content Include="Resources\Icons\ignore_whitespaces.png" />
     <Content Include="Resources\Icons\increase.png" />
+    <None Include="Resources\Icons\VS2017Images\BranchRemote_16x.png" />
+    <None Include="Resources\Icons\VS2017Images\Branch_16x.png" />
+    <None Include="Resources\Icons\VS2017Images\CollapseAll_16x.png" />
+    <None Include="Resources\Icons\VS2017Images\ExpandAll_16x.png" />
+    <None Include="Resources\Icons\VS2017Images\Folder_grey_16x.png" />
+    <None Include="Resources\Icons\VS2017Images\Repository_16x.png" />
+    <None Include="Resources\Icons\VS2017Images\Tag_16x.png" />
     <Content Include="Resources\Icons\whitespace.png" />
     <Content Include="Resources\Icons\tag_error.png" />
     <Content Include="Resources\Icons\tag_ok.png" />
@@ -2008,15 +2025,6 @@
     <Content Include="Resources\Icons\tag_many.png" />
     <Content Include="Resources\Icons\tag_ok.png" />
     <Content Include="Resources\Icons\tag_warning.png" />
-    <Content Include="Resources\Icons\CollapseAll.png" />
-    <Content Include="Resources\Icons\ExpandAll.png" />
-    <Content Include="Resources\Icons\Branch.png" />
-    <Content Include="Resources\Icons\CheckOut.png" />
-    <Content Include="Resources\Icons\DeleteRed.png" />
-    <Content Include="Resources\Icons\BranchFrom.png" />
-    <Content Include="Resources\Icons\RemoteBranch.png" />
-    <Content Include="Resources\Icons\RemoteRepo.png" />
-    <Content Include="Resources\Icons\LocalRepo.png" />
     <Content Include="Translation\Czech.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

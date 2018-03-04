@@ -7,6 +7,7 @@ using GitCommands;
 using GitCommands.Git;
 using GitUI.CommandsDialogs;
 using GitUI.HelperDialogs;
+using GitUI.Properties;
 
 namespace GitUI.RepoObjectsTree
 {
@@ -217,7 +218,7 @@ namespace GitUI.RepoObjectsTree
             protected override void ApplyStyle()
             {
                 base.ApplyStyle();
-                TreeViewNode.ImageKey = TreeViewNode.SelectedImageKey = @"RemoteBranch.png";
+                TreeViewNode.ImageKey = TreeViewNode.SelectedImageKey = nameof(MsVsImages.BranchRemote_16x);
             }
         }
 
@@ -240,7 +241,7 @@ namespace GitUI.RepoObjectsTree
             protected override void ApplyStyle()
             {
                 base.ApplyStyle();
-                TreeViewNode.ImageKey = TreeViewNode.SelectedImageKey = @"RemoteRepo.png";
+                TreeViewNode.ImageKey = TreeViewNode.SelectedImageKey = nameof(MsVsImages.Repository_16x);
             }
 
             public void ChangeName(string newName)

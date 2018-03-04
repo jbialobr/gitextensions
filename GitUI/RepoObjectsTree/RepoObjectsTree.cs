@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitUI.CommandsDialogs;
+using GitUI.Properties;
 using ResourceManager;
 
 namespace GitUI.RepoObjectsTree
@@ -20,10 +21,11 @@ namespace GitUI.RepoObjectsTree
         private readonly List<Tree> _rootNodes = new List<Tree>();
         private SearchControl<string> _txtBranchCriterion;
         private readonly HashSet<string> _branchCriterionAutoCompletionSrc = new HashSet<string>();
-
+        private readonly ImageList _imageList = new ImageList();
         public RepoObjectsTree()
         {
             InitializeComponent();
+            InitImageList();
             InitiliazeSearchBox();
             treeMain.PreviewKeyDown += OnPreviewKeyDown;
 
@@ -39,6 +41,18 @@ namespace GitUI.RepoObjectsTree
             treeMain.NodeMouseDoubleClick += OnNodeDoubleClick;
             mnubtnFilterRemoteBranchInRevisionGrid.ToolTipText = _showBranchOnly.Text;
             mnubtnFilterLocalBranchInRevisionGrid.ToolTipText = _showBranchOnly.Text;
+        }
+
+        private void InitImageList()
+        {
+            _imageList.Images.Add(nameof(MsVsImages.Branch_16x), MsVsImages.Branch_16x);
+            _imageList.Images.Add(nameof(MsVsImages.Repository_16x), MsVsImages.Repository_16x);
+            _imageList.Images.Add(nameof(MsVsImages.BranchRemote_16x), MsVsImages.BranchRemote_16x);
+            _imageList.Images.Add(nameof(MsVsImages.Folder_grey_16x), MsVsImages.Folder_grey_16x);
+            _imageList.Images.Add(nameof(MsVsImages.Tag_16x), MsVsImages.Tag_16x);
+            treeMain.ImageList = _imageList;
+            treeMain.ImageKey = nameof(MsVsImages.Branch_16x);
+            treeMain.SelectedImageKey = treeMain.ImageKey;
         }
 
         private void InitiliazeSearchBox()
@@ -82,14 +96,14 @@ namespace GitUI.RepoObjectsTree
 
             var localBranchesRootNode = new TreeNode(Strings.BranchesText.Text)
             {
-                ImageKey = @"LocalRepo.png",
+                ImageKey = nameof(MsVsImages.Repository_16x),
             };
             localBranchesRootNode.SelectedImageKey = localBranchesRootNode.ImageKey;
             AddTree(new BranchTree(localBranchesRootNode, newSource));
 
             var remoteBranchesRootNode = new TreeNode(Strings.RemotesText.Text)
             {
-                ImageKey = @"RemoteRepo.png",
+                ImageKey = nameof(MsVsImages.Repository_16x),
             };
             remoteBranchesRootNode.SelectedImageKey = remoteBranchesRootNode.ImageKey;
             _remoteTree = new RemoteBranchTree(remoteBranchesRootNode, newSource)
@@ -208,7 +222,7 @@ namespace GitUI.RepoObjectsTree
 
         private void AddTags()
         {
-            _tagTreeRootNode = new TreeNode(Strings.TagsText.Text) {ImageKey = @"tags.png"};
+            _tagTreeRootNode = new TreeNode(Strings.TagsText.Text) {ImageKey = nameof(MsVsImages.Tag_16x) };
             _tagTreeRootNode.SelectedImageKey = _tagTreeRootNode.ImageKey;
             _tagTree = new TagTree(_tagTreeRootNode, UICommandsSource);
             AddTree(_tagTree);
