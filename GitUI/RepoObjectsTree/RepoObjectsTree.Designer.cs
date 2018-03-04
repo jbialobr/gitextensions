@@ -492,7 +492,7 @@ namespace GitUI.RepoObjectsTree
             // RepoObjectsTree
             // 
             this.Controls.Add(this.repoTreePanel);
-            this.MinimumSize = new System.Drawing.Size(300, 0);
+            this.MinimumSize = new System.Drawing.Size(190, 0);
             this.Name = "RepoObjectsTree";
             this.Size = new System.Drawing.Size(300, 350);
             this.menuMain.ResumeLayout(false);
