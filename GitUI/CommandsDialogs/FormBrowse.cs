@@ -152,7 +152,6 @@ namespace GitUI.CommandsDialogs
         {
             InitializeComponent();
             Translate();
-            RecoverSplitterContainerLayout();
         }
 
         public FormBrowse(GitUICommands aCommands, string filter)
@@ -290,7 +289,6 @@ namespace GitUI.CommandsDialogs
 
             FillTerminalTab();
             ManageWorktreeSupport();
-            RecoverSplitterContainerLayout();
         }
 
         private void LayoutRevisionInfo()
@@ -2004,17 +2002,6 @@ namespace GitUI.CommandsDialogs
             SaveSplitterPositions();
             if (_dashboard != null && _dashboard.Visible)
                 _dashboard.SaveSplitterPositions();
-            try
-            {
-                var settings = Properties.Settings.Default;
-                settings.FormBrowse_MainSplitContainer_SplitterDistance = MainSplitContainer.SplitterDistance;
-                settings.FormBrowse_LeftPanel_Collapsed = MainSplitContainer.Panel1Collapsed;
-                settings.Save();
-            }
-            catch (ConfigurationException)
-            {
-                //TODO: howto restore a corrupted config? Properties.Settings.Default.Reset() doesn't work.
-            }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -2789,13 +2776,6 @@ namespace GitUI.CommandsDialogs
         private void toggleLeftPanel_Click(object sender, EventArgs e)
         {
             MainSplitContainer.Panel1Collapsed = !MainSplitContainer.Panel1Collapsed;
-        }
-
-        private void RecoverSplitterContainerLayout()
-        {
-            var settings = Properties.Settings.Default;
-            MainSplitContainer.SplitterDistance = settings.FormBrowse_MainSplitContainer_SplitterDistance;
-            MainSplitContainer.Panel1Collapsed = settings.FormBrowse_LeftPanel_Collapsed;
         }
 
         private void manageWorktreeToolStripMenuItem_Click(object sender, EventArgs e)
