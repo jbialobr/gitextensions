@@ -92,6 +92,10 @@ namespace GitUI.RepoObjectsTree
         {
             base.OnUICommandsSourceChanged(sender, newSource);
 
+            UICommands.RemoteDeleted += OnRemoteDeleted;
+            UICommands.RemoteRenamed += OnRemoteRenamed;
+            UICommands.RemoteAdded += OnRemoteAdded;
+
             CancelBackgroundTasks();
 
             var localBranchesRootNode = new TreeNode(Strings.BranchesText.Text)

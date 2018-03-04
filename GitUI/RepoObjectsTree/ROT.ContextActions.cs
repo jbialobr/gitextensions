@@ -13,7 +13,6 @@ namespace GitUI.RepoObjectsTree
             _lastRightClickedNode = e.Button == MouseButtons.Right ? e.Node : null;
         }
 
-
         private static void RegisterClick(ToolStripItem item, Action onClick)
         {
             item.Click += (o, e) => onClick();
@@ -93,9 +92,6 @@ namespace GitUI.RepoObjectsTree
         {
             using (var form = new FormRemotes(UICommands))
             {
-                form.RemoteDeleted += OnRemoteDeleted;
-                form.RemoteRenamed += OnRemoteRenamed;
-                form.RemoteAdded += OnRemoteAdded;
                 form.ShowDialog(this);
             }
         }

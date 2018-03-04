@@ -80,10 +80,6 @@ Inactive remote is completely invisible to git.");
             new TranslationString("Inactive");
         #endregion
 
-        public EventHandler<RemoteDeletedEventArgs> RemoteDeleted;
-        public EventHandler<RemoteRenamedEventArgs> RemoteRenamed;
-        public EventHandler<RemoteAddedEventArgs> RemoteAdded;
-
         public FormRemotes(GitUICommands aCommands)
             : base(aCommands)
         {
@@ -628,17 +624,17 @@ Inactive remote is completely invisible to git.");
 
         private void FireRemoteDeletedEvent(RemoteDeletedEventArgs args)
         {
-            RemoteDeleted?.Invoke(this, args);
+            UICommands.RemoteDeleted?.Invoke(this, args);
         }
 
         private void FireRemoteRenamedEvent(RemoteRenamedEventArgs args)
         {
-            RemoteRenamed?.Invoke(this, args);
+            UICommands.RemoteRenamed?.Invoke(this, args);
         }
 
         private void FireRemoteAddedEvent(RemoteAddedEventArgs args)
         {
-            RemoteAdded?.Invoke(this, args);
+            UICommands.RemoteAdded?.Invoke(this, args);
         }
     }
 }

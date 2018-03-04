@@ -171,6 +171,10 @@ namespace GitUI
         public event GitUIEventHandler PreSparseWorkingCopy;
         public event GitUIPostActionEventHandler PostSparseWorkingCopy;
 
+        public EventHandler<RemoteDeletedEventArgs> RemoteDeleted;
+        public EventHandler<RemoteRenamedEventArgs> RemoteRenamed;
+        public EventHandler<RemoteAddedEventArgs> RemoteAdded;
+
         /// <summary>
         /// listeners for changes being made to repository
         /// </summary>
