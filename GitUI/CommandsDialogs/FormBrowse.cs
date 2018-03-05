@@ -26,6 +26,7 @@ using GitUI.UserControls.RevisionGridClasses;
 using GitUI.UserControls.ToolStripClasses;
 using GitUIPluginInterfaces;
 using Microsoft.Win32;
+using System.Configuration;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using ResourceManager;
 
@@ -180,13 +181,19 @@ namespace GitUI.CommandsDialogs
                 CommitInfoTabControl.RemoveIfExists(GpgInfoTabPage);
             }
 
-            RevisionGrid.UICommandsSource = this;
+            if (aCommands != null)
+            {
+                RevisionGrid.UICommandsSource = this;
+                repoObjectsTree.UICommandsSource = this;
+            }
             Repositories.LoadRepositoryHistoryAsync();
             Task.Factory.StartNew(PluginLoader.Load)
                 .ContinueWith((task) => RegisterPlugins(), TaskScheduler.FromCurrentSynchronizationContext());
             RevisionGrid.GitModuleChanged += SetGitModule;
+            RevisionGrid.OnToggleLeftPanelRequested = () => toggleLeftPanel_Click(null, null);
             _filterRevisionsHelper = new FilterRevisionsHelper(toolStripRevisionFilterTextBox, toolStripRevisionFilterDropDownButton, RevisionGrid, toolStripRevisionFilterLabel, ShowFirstParent, form: this);
             _filterBranchHelper = new FilterBranchHelper(toolStripBranchFilterComboBox, toolStripBranchFilterDropDownButton, RevisionGrid);
+            repoObjectsTree.FilterBranchHelper = _filterBranchHelper;
             toolStripBranchFilterComboBox.DropDown += toolStripBranches_DropDown_ResizeDropDownWidth;
             revisionDiff.Bind(RevisionGrid, fileTree);
 
@@ -616,6 +623,7 @@ namespace GitUI.CommandsDialogs
             // load custom user menu
             LoadUserMenu();
 
+            repoObjectsTree.Reload();
             if (validWorkingDir)
             {
                 // add Navigate and View menu
@@ -1233,7 +1241,7 @@ namespace GitUI.CommandsDialogs
 
         private void DeleteBranchToolStripMenuItemClick(object sender, EventArgs e)
         {
-            UICommands.StartDeleteBranchDialog(this, null);
+            UICommands.StartDeleteBranchDialog(this, string.Empty);
         }
 
         private void DeleteTagToolStripMenuItemClick(object sender, EventArgs e)
@@ -1951,12 +1959,12 @@ namespace GitUI.CommandsDialogs
 
         private void toggleSplitViewLayout_Click(object sender, EventArgs e)
         {
-            EnabledSplitViewLayout(MainSplitContainer.Panel2Collapsed);
+            EnabledSplitViewLayout(RightSplitContainer.Panel2Collapsed);
         }
 
         private void EnabledSplitViewLayout(bool enabled)
         {
-            MainSplitContainer.Panel2Collapsed = !enabled;
+            RightSplitContainer.Panel2Collapsed = !enabled;
         }
 
         public static void OpenContainingFolder(FileStatusList diffFiles, GitModule module)
@@ -1975,6 +1983,7 @@ namespace GitUI.CommandsDialogs
         {
             _splitterManager.AddSplitter(RevisionsSplitContainer, "RevisionsSplitContainer");
             _splitterManager.AddSplitter(MainSplitContainer, "MainSplitContainer");
+            _splitterManager.AddSplitter(RightSplitContainer, nameof(RightSplitContainer));
             revisionDiff.InitSplitterManager(_splitterManager);
             fileTree.InitSplitterManager(_splitterManager);
             //hide status in order to restore splitters against the full height (the most common case)
@@ -2289,7 +2298,7 @@ namespace GitUI.CommandsDialogs
         private string GetModuleBranch(string path)
         {
             string branch = GitModule.GetSelectedBranchFast(path);
-            return string.Format("[{0}]", GitModule.IsDetachedHead(branch) ? _noBranchTitle.Text : branch);
+            return string.Format("[{0}]", DetachedHeadParser.IsDetachedHead(branch) ? _noBranchTitle.Text : branch);
         }
 
         private ToolStripMenuItem CreateSubmoduleMenuItem(SubmoduleInfo info, string textFormat)
@@ -2762,6 +2771,11 @@ namespace GitUI.CommandsDialogs
             {
                 RefreshRevisions();
             }
+        }
+
+        private void toggleLeftPanel_Click(object sender, EventArgs e)
+        {
+            MainSplitContainer.Panel1Collapsed = !MainSplitContainer.Panel1Collapsed;
         }
 
         private void manageWorktreeToolStripMenuItem_Click(object sender, EventArgs e)

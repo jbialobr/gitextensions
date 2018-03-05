@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GitCommands;
+using GitCommands.Git;
 
 namespace GitUI.UserControls
 {
@@ -108,7 +109,7 @@ namespace GitUI.UserControls
             {
                 var branches = Module.GetAllBranchesWhichContainGivenCommit(_containRevisons[0], LocalBranch.Checked,
                         !LocalBranch.Checked)
-                        .Where(a => !GitModule.IsDetachedHead(a) &&
+                        .Where(a => !DetachedHeadParser.IsDetachedHead(a) &&
                                     !a.EndsWith("/HEAD"));
                 result.UnionWith(branches);
 
@@ -119,7 +120,7 @@ namespace GitUI.UserControls
                 var branches =
                     Module.GetAllBranchesWhichContainGivenCommit(containRevison, LocalBranch.Checked,
                         !LocalBranch.Checked)
-                        .Where(a => !GitModule.IsDetachedHead(a) &&
+                        .Where(a => !DetachedHeadParser.IsDetachedHead(a) &&
                                     !a.EndsWith("/HEAD"));
                 result.IntersectWith(branches);
             }

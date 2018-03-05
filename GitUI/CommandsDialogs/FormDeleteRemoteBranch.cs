@@ -7,6 +7,7 @@ using GitCommands;
 using ResourceManager;
 using GitUIPluginInterfaces;
 using System.IO;
+using GitCommands.Git;
 using GitUI.Script;
 
 namespace GitUI.CommandsDialogs
@@ -69,7 +70,7 @@ namespace GitUI.CommandsDialogs
 
                     EnsurePageant(remote);
 
-                    var cmd = new GitDeleteRemoteBranchesCmd(remote, remoteGroup);
+                    var cmd = new GitDeleteRemoteBranchesCmd(remote, remoteGroup.Select(x => x.LocalName));
 
                     ScriptManager.RunEventScripts(this, ScriptEvent.BeforePush);
 

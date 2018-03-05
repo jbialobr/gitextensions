@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
@@ -82,6 +83,12 @@ namespace GitCommands
     [DebuggerDisplay("GitModule ( {" + nameof(WorkingDir) + "} )")]
     public sealed class GitModule : IGitModule
     {
+        public static readonly char RefSeparator = '/';
+        public static readonly string RefSep = RefSeparator.ToString(CultureInfo.InvariantCulture);
+
+        private const char LineSeparator = '\n';
+        public static readonly char ActiveBranchIndicator = '*';
+
         private static readonly Regex DefaultHeadPattern = new Regex("refs/remotes/[^/]+/HEAD", RegexOptions.Compiled);
         private static readonly Regex AnsiCodePattern = new Regex(@"\u001B[\u0040-\u005F].*?[\u0040-\u007E]", RegexOptions.Compiled);
         private static readonly Regex CpEncodingPattern = new Regex("cp\\d+", RegexOptions.Compiled);
@@ -93,7 +100,7 @@ namespace GitCommands
         private readonly IRevisionDiffProvider _revisionDiffProvider = new RevisionDiffProvider();
 
 
-        public const string NoNewLineAtTheEnd = "\\ No newline at end of file";
+        public static readonly string NoNewLineAtTheEnd = "\\ No newline at end of file";
         private const string DiffCommandWithStandardArgs = " -c diff.submodule=short diff --no-color ";
 
         public GitModule(string workingdir)
@@ -303,11 +310,6 @@ namespace GitCommands
         /// Encoding for commit header (message, notes, author, committer, emails)
         /// </summary>
         public Encoding LogOutputEncoding => EffectiveConfigFile.LogOutputEncoding ?? CommitEncoding;
-
-        /// <summary>"(no branch)"</summary>
-        public static readonly string DetachedBranch = "(no branch)";
-
-        private static readonly string[] DetachedPrefixes = { "(no branch", "(detached from ", "(HEAD detached at " };
 
         public AppSettings.PullAction LastPullAction
         {
@@ -2495,7 +2497,7 @@ namespace GitCommands
             {
                 head = File.ReadAllText(headFileName, SystemEncoding);
                 if (!head.Contains("ref:"))
-                    return DetachedBranch;
+                    return DetachedHeadParser.DetachedBranch;
             }
             else
             {
@@ -2519,7 +2521,7 @@ namespace GitCommands
             {
                 var result = RunGitCmdResult("symbolic-ref HEAD");
                 if (result.ExitCode == 1)
-                    return DetachedBranch;
+                    return DetachedHeadParser.DetachedBranch;
                 return result.StdOutput;
             }
 
@@ -2535,13 +2537,9 @@ namespace GitCommands
         /// <summary>Indicates whether HEAD is not pointing to a branch.</summary>
         public bool IsDetachedHead()
         {
-            return IsDetachedHead(GetSelectedBranch());
+            return DetachedHeadParser.IsDetachedHead(GetSelectedBranch());
         }
 
-        public static bool IsDetachedHead(string branch)
-        {
-            return DetachedPrefixes.Any(a => branch.StartsWith(a, StringComparison.Ordinal));
-        }
 
         /// <summary>Gets the remote of the current branch; or "origin" if no remote is configured.</summary>
         public string GetCurrentRemote()
@@ -2738,6 +2736,18 @@ namespace GitCommands
             gitRefs.AddRange(defaultHeads.Values);
 
             return gitRefs;
+        }
+
+        /// <summary>Gets the branch names, with the active branch, if applicable, listed first.
+        /// The active branch will be indicated by a "*", so ensure to Trim before processing.</summary>
+        public IEnumerable<string> GetBranchNames()
+        {
+            return RunGitCmd("branch", SystemEncoding)
+                .Split(LineSeparator)
+                .Where(branch => !string.IsNullOrWhiteSpace(branch))// first is ""
+                .OrderByDescending(branch => branch.Contains(ActiveBranchIndicator))// * for current branch
+                .ThenBy(r => r)
+                .Select(line => line.Trim());
         }
 
         /// <summary>
