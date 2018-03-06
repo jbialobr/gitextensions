@@ -112,7 +112,7 @@ namespace GitUI.RepoObjectsTree
             remoteBranchesRootNode.SelectedImageKey = remoteBranchesRootNode.ImageKey;
             _remoteTree = new RemoteBranchTree(remoteBranchesRootNode, newSource)
             {
-                TreeViewNode = {ContextMenuStrip = menuRemotes}
+                TreeViewNode = { ContextMenuStrip = menuRemotes }
             };
             AddTree(_remoteTree);
 
@@ -226,7 +226,7 @@ namespace GitUI.RepoObjectsTree
 
         private void AddTags()
         {
-            _tagTreeRootNode = new TreeNode(Strings.TagsText.Text) {ImageKey = nameof(MsVsImages.Tag_16x) };
+            _tagTreeRootNode = new TreeNode(Strings.TagsText.Text) { ImageKey = nameof(MsVsImages.Tag_16x) };
             _tagTreeRootNode.SelectedImageKey = _tagTreeRootNode.ImageKey;
             _tagTree = new TagTree(_tagTreeRootNode, UICommandsSource);
             AddTree(_tagTree);

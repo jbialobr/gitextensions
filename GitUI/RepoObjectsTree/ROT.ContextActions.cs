@@ -18,7 +18,7 @@ namespace GitUI.RepoObjectsTree
             item.Click += (o, e) => onClick();
         }
 
-        private void RegisterClick<T>(ToolStripItem item, Action<T> onClick) where T: Node
+        private void RegisterClick<T>(ToolStripItem item, Action<T> onClick) where T : Node
         {
             item.Click += (o, e) => Node.OnNode(_lastRightClickedNode, onClick);
         }
@@ -35,11 +35,11 @@ namespace GitUI.RepoObjectsTree
             RegisterClick<LocalBranchNode>(mnubtnBranchDelete, branch => branch.Delete());
             RegisterClick<LocalBranchNode>(mnubtnBranchDeleteForce, branch => branch.DeleteForce());
             RegisterClick<LocalBranchNode>(mnubtnFilterLocalBranchInRevisionGrid, FilterInRevisionGrid);
-            Node.RegisterContextMenu(typeof (LocalBranchNode), menuBranch);
+            Node.RegisterContextMenu(typeof(LocalBranchNode), menuBranch);
 
             RegisterClick<BranchPathNode>(mnubtnDeleteAllBranches, branchPath => branchPath.DeleteAll());
             RegisterClick<BranchPathNode>(mnubtnDeleteAllBranchesForce, branchPath => branchPath.DeleteAllForce());
-            Node.RegisterContextMenu(typeof (BranchPathNode), menuBranchPath);
+            Node.RegisterContextMenu(typeof(BranchPathNode), menuBranchPath);
 
             RegisterClick<RemoteBranchNode>(mnubtnDeleteRemoteBranch, remoteBranch => remoteBranch.Delete());
             RegisterClick<RemoteBranchNode>(mnubtnBranchCheckout, branch => branch.Checkout());

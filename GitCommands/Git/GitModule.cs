@@ -2735,15 +2735,12 @@ namespace GitCommands
 
         /// <summary>Gets the branch names, with the active branch, if applicable, listed first.
         /// The active branch will be indicated by a "*", so ensure to Trim before processing.</summary>
-        public IEnumerable<string> GetBranchNames()
-        {
-            return RunGitCmd("branch", SystemEncoding)
+        public IEnumerable<string> GetBranchNames() => RunGitCmd("branch", SystemEncoding)
                 .Split(LineSeparator)
-                .Where(branch => !string.IsNullOrWhiteSpace(branch))// first is ""
-                .OrderByDescending(branch => branch.Contains(ActiveBranchIndicator))// * for current branch
+                .Where(branch => !string.IsNullOrWhiteSpace(branch)) // first is ""
+                .OrderByDescending(branch => branch.Contains(ActiveBranchIndicator)) // * for current branch
                 .ThenBy(r => r)
                 .Select(line => line.Trim());
-        }
 
         /// <summary>
         /// Gets branches which contain the given commit.

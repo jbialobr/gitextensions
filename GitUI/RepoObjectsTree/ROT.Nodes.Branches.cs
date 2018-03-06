@@ -153,13 +153,13 @@ namespace GitUI.RepoObjectsTree
 
             public void Delete()
             {
-                UICommands.StartDeleteBranchDialog(ParentWindow(), new[] {FullPath});
+                UICommands.StartDeleteBranchDialog(ParentWindow(), new[] { FullPath });
             }
 
             public void DeleteForce()
             {
                 var branchHead = GitRef.CreateBranchRef(UICommands.Module, null, FullPath);
-                var cmd = new GitDeleteBranchCmd(new[] {branchHead}, true);
+                var cmd = new GitDeleteBranchCmd(new[] { branchHead }, true);
                 UICommands.StartCommandLineProcessDialog(cmd, null);
             }
         }
@@ -283,7 +283,7 @@ namespace GitUI.RepoObjectsTree
                 }
             }
         }
-    #endregion private classes
+        #endregion private classes
 
     }
 }

@@ -56,7 +56,7 @@ namespace GitUI.Editor
         private void ActiveTextArea_MouseWheel(object sender, MouseEventArgs e)
         {
             int vpos = TextEditor.ActiveTextAreaControl.VScrollBar.Value;
-            
+
             if (e.Delta < 0)
             {
                 int maxPos = TextEditor.ActiveTextAreaControl.VScrollBar.Maximum - TextEditor.ActiveTextAreaControl.VScrollBar.Height;
@@ -108,7 +108,7 @@ namespace GitUI.Editor
                         }
                         _scrollDownLastTime = DateTime.Now;
                     }
-                }               
+                }
             }
             else if (e.KeyData == Keys.PageUp || e.KeyData == Keys.Up || (e.KeyCode == Keys.Home && e.Control))
             {

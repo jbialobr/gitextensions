@@ -159,7 +159,7 @@ namespace GitUI.RepoObjectsTree
             {
                 var remote = FullPath.Split('/').First();
                 var branch = FullPath.Substring(remote.Length + 1);
-                return new RemoteBranchInfo {Remote = remote, BranchName = branch};
+                return new RemoteBranchInfo { Remote = remote, BranchName = branch };
             }
 
             public void CreateBranch()
@@ -170,7 +170,7 @@ namespace GitUI.RepoObjectsTree
             public void Delete()
             {
                 var remoteBranchInfo = GetRemoteBranchInfo();
-                var cmd = new GitDeleteRemoteBranchesCmd(remoteBranchInfo.Remote, new[] {remoteBranchInfo.BranchName});
+                var cmd = new GitDeleteRemoteBranchesCmd(remoteBranchInfo.Remote, new[] { remoteBranchInfo.BranchName });
                 if (MessageBoxes.ConfirmDeleteRemoteBranch(TreeViewNode.TreeView,
                     remoteBranchInfo.BranchName, remoteBranchInfo.Remote))
                 {

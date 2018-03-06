@@ -90,7 +90,7 @@ namespace GitUI.RepoObjectsTree
                     }
 
                     node.TreeViewNode = tvNode;
-                    //recurse to subnodes
+                    // recurse to subnodes
                     node.Nodes.FillTreeViewNode(tvNode);
                     oldNodeIdx++;
                 }
