@@ -17,9 +17,9 @@ namespace GitUI
         public static SynchronizationContext UISynchronizationContext;
 
 
-        public static void OpenWithDifftool(this RevisionGrid grid, string fileName, string oldFileName, GitUI.RevisionDiffKind diffKind, bool isTracked=true)
+        public static void OpenWithDifftool(this RevisionGrid grid, string fileName, string oldFileName, GitUI.RevisionDiffKind diffKind, bool isTracked = true)
         {
-            //Note: Order in revisions is that first clicked is last in array
+            // Note: Order in revisions is that first clicked is last in array
 
             string error = RevisionDiffInfoProvider.Get(grid.GetSelectedRevisions(), diffKind,
                 out var extraDiffArgs, out var firstRevision, out var secondRevision);
@@ -39,8 +39,10 @@ namespace GitUI
         private static PatchApply.Patch GetItemPatch(GitModule module, GitItemStatus file,
             string firstRevision, string secondRevision, string diffArgs, Encoding encoding)
         {
+            // Files with tree guid should be presented with normal diff
+            var isTracked = file.IsTracked || file.TreeGuid.IsNotNullOrWhitespace() && secondRevision.IsNotNullOrWhitespace();
             return module.GetSingleDiff(firstRevision, secondRevision, file.Name, file.OldName,
-                    diffArgs, encoding, true, file.IsTracked);
+                    diffArgs, encoding, true, isTracked);
         }
 
         public static string GetSelectedPatch(this FileViewer diffViewer, string firstRevision, string secondRevision, GitItemStatus file)
@@ -50,7 +52,7 @@ namespace GitUI
                 var fullPath = Path.Combine(diffViewer.Module.WorkingDir, file.Name);
                 if (Directory.Exists(fullPath) && GitModule.IsValidGitWorkingDir(fullPath))
                 {
-                    //git-status does not detect details for untracked and git-diff --no-index will not give info
+                    // git-status does not detect details for untracked and git-diff --no-index will not give info
                     return LocalizationHelpers.GetSubmoduleText(diffViewer.Module, file.Name.TrimEnd('/'), "");
                 }
             }
@@ -154,7 +156,7 @@ namespace GitUI
             {
                 yield return node;
 
-                foreach(TreeNode subNode in node.Nodes.AllNodes())
+                foreach (TreeNode subNode in node.Nodes.AllNodes())
                     yield return subNode;
             }
         }

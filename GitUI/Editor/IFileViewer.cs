@@ -56,7 +56,7 @@ namespace GitUI.Editor
         int LineAtCaret { get; }
         string GetLineText(int line);
         int TotalNumberOfLines { get; }
-        //lineNumber is 0 based
+        // lineNumber is 0 based
         void GoToLine(int lineNumber);
 
         /// <summary>

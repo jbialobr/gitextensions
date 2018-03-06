@@ -294,7 +294,7 @@ namespace GitUI.Editor
             set
             {
                 var scrollBar = TextEditor.ActiveTextAreaControl.VScrollBar;
-                if (scrollBar == null) 
+                if (scrollBar == null)
                 {
                     return;
                 }

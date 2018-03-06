@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Text.RegularExpressions;
 using GitCommands.Git.Extensions;
 using GitUIPluginInterfaces;
@@ -56,10 +55,10 @@ namespace GitCommands
         }
 
         public string Subject { get; set; }
-        //Count for artificial commits (could be changed to object lists)
+        // Count for artificial commits (could be changed to object lists)
         public string SubjectCount { get; set; }
         public string Body { get; set; }
-        //UTF-8 when is null or empty
+        // UTF-8 when is null or empty
         public string MessageEncoding { get; set; }
 
         #region IGitItem Members
@@ -92,17 +91,6 @@ namespace GitCommands
             return sha;
         }
 
-        public bool MatchesSearchString(string searchString)
-        {
-            if (Refs.Any(gitHead => gitHead.Name.ToLower().Contains(searchString)))
-                return true;
-
-            if ((searchString.Length > 2) && Guid.StartsWith(searchString, StringComparison.CurrentCultureIgnoreCase))
-                return true;
-
-            return (Author != null && Author.StartsWith(searchString, StringComparison.CurrentCultureIgnoreCase)) ||
-                    Subject.ToLower().Contains(searchString);
-        }
 
 
         /// <summary>
