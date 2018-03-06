@@ -97,7 +97,7 @@ namespace GitUI.CommandsDialogs
 
         #endregion
 
-        public void GetTabText()
+        public void DisplayDiffTab()
         {
             DiffText.SaveCurrentScrollPos();
             var revisions = _revisionGrid.GetSelectedRevisions();

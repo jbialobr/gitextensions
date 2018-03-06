@@ -1005,7 +1005,7 @@ namespace GitUI.CommandsDialogs
                 return;
 
             _selectedRevisionUpdatedTargets |= UpdateTargets.DiffList;
-            revisionDiff.GetTabText();
+            revisionDiff.DisplayDiffTab();
         }
 
         private void FillCommitInfo()
