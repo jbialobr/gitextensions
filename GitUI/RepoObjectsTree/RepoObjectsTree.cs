@@ -73,11 +73,10 @@ namespace GitUI.RepoObjectsTree
             _txtBranchCriterion.PreviewKeyDown += OnPreviewKeyDown;
         }
 
-        private IList<string> SearchForBranch(string arg)
+        private IEnumerable<string> SearchForBranch(string arg)
         {
             return _branchCriterionAutoCompletionSrc
-                .Where(r => r.IndexOf(arg, StringComparison.OrdinalIgnoreCase) != -1)
-                .ToList();
+                .Where(r => r.IndexOf(arg, StringComparison.OrdinalIgnoreCase) != -1);
         }
 
         private void OnPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
