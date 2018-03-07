@@ -27,6 +27,7 @@ GitExtensionsShellEx/Generated/
 *.user
 1
 2
+3
 *.opendb
 *.sdf
 *.opensdf
