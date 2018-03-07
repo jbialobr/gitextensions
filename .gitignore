@@ -25,6 +25,7 @@ GitExtensionsShellEx/Generated/
 *.orig
 *.msi
 *.user
+1
 *.opendb
 *.sdf
 *.opensdf
