@@ -715,6 +715,8 @@ namespace GitUI.RevisionGridClasses
                 {
                     SetRowCount(_graphData.Count);
                 }
+
+                throw new Exception("" + row);
             }
 
             // We only need to invalidate if the row is visible
