@@ -1739,7 +1739,7 @@ namespace GitUI.CommandsDialogs
 
             toolStripItem.Click += (hs, he) => ChangeWorkingDir(repo.Path);
 
-            if (repo.Title != null || repo.Path != caption)
+            if (!repo.Path.Equals(caption))
             {
                 toolStripItem.ToolTipText = repo.Path;
             }
