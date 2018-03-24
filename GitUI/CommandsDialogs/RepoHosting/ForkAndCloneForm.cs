@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Repository;
 using GitUIPluginInterfaces.RepositoryHosts;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.RepoHosting
@@ -79,25 +81,31 @@ namespace GitUI.CommandsDialogs.RepoHosting
             _myReposLV.Items.Clear();
             _myReposLV.Items.Add(new ListViewItem { Text = _strLoading.Text });
 
-            AsyncLoader.DoAsync(
-                () => _gitHoster.GetMyRepos(),
-                repos =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(
+                async () =>
                 {
-                    _myReposLV.Items.Clear();
-                    foreach (var repo in repos)
+                    await TaskScheduler.Default;
+                    try
                     {
-                        var lvi = new ListViewItem { Tag = repo, Text = repo.Name };
-                        lvi.SubItems.Add(repo.IsAFork ? _strYes.Text : _strNo.Text);
-                        lvi.SubItems.Add(repo.Forks.ToString());
-                        lvi.SubItems.Add(repo.IsPrivate ? _strYes.Text : _strNo.Text);
-                        _myReposLV.Items.Add(lvi);
+                        var repos = _gitHoster.GetMyRepos();
+                        await this.SwitchToMainThreadAsync();
+                        _myReposLV.Items.Clear();
+                        foreach (var repo in repos)
+                        {
+                            var lvi = new ListViewItem { Tag = repo, Text = repo.Name };
+                            lvi.SubItems.Add(repo.IsAFork ? _strYes.Text : _strNo.Text);
+                            lvi.SubItems.Add(repo.Forks.ToString());
+                            lvi.SubItems.Add(repo.IsPrivate ? _strYes.Text : _strNo.Text);
+                            _myReposLV.Items.Add(lvi);
+                        }
                     }
-                },
-                ex =>
-                {
-                    _myReposLV.Items.Clear();
-                    _helpTextLbl.Text = string.Format(_strFailedToGetRepos.Text, _gitHoster.Description) +
-                        "\r\n\r\nException: " + ex.Exception.Message + "\r\n\r\n" + _helpTextLbl.Text;
+                    catch (Exception ex)
+                    {
+                        await this.SwitchToMainThreadAsync();
+                        _myReposLV.Items.Clear();
+                        _helpTextLbl.Text = string.Format(_strFailedToGetRepos.Text, _gitHoster.Description) +
+                            "\r\n\r\nException: " + ex.Message + "\r\n\r\n" + _helpTextLbl.Text;
+                    }
                 });
         }
 
@@ -112,14 +120,23 @@ namespace GitUI.CommandsDialogs.RepoHosting
 
             PrepareSearch(sender, e);
 
-            AsyncLoader.DoAsync(
-                () => _gitHoster.SearchForRepository(search),
-                HandleSearchResult,
-                ex =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(
+                async () =>
                 {
-                    MessageBox.Show(this, _strSearchFailed.Text + Environment.NewLine + ex.Exception.Message,
-                        _strError.Text);
-                    _searchBtn.Enabled = true;
+                    await TaskScheduler.Default;
+                    try
+                    {
+                        var repos = _gitHoster.SearchForRepository(search);
+                        await this.SwitchToMainThreadAsync();
+                        HandleSearchResult(repos);
+                    }
+                    catch (Exception ex)
+                    {
+                        await this.SwitchToMainThreadAsync();
+                        MessageBox.Show(this, _strSearchFailed.Text + Environment.NewLine + ex.Message,
+                            _strError.Text);
+                        _searchBtn.Enabled = true;
+                    }
                 });
         }
 
@@ -133,22 +150,31 @@ namespace GitUI.CommandsDialogs.RepoHosting
 
             PrepareSearch(sender, e);
 
-            AsyncLoader.DoAsync(
-                () => _gitHoster.GetRepositoriesOfUser(search.Trim()),
-                HandleSearchResult,
-                ex =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(
+                async () =>
                 {
-                    if (ex.Exception.Message.Contains("404"))
+                    await TaskScheduler.Default;
+                    try
                     {
-                        MessageBox.Show(this, _strUserNotFound.Text, _strError.Text);
+                        var repos = _gitHoster.GetRepositoriesOfUser(search.Trim());
+                        await this.SwitchToMainThreadAsync();
+                        HandleSearchResult(repos);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        MessageBox.Show(this, _strCouldNotFetchReposOfUser.Text + Environment.NewLine +
-                            ex.Exception.Message, _strError.Text);
-                    }
+                        await this.SwitchToMainThreadAsync();
+                        if (ex.Message.Contains("404"))
+                        {
+                            MessageBox.Show(this, _strUserNotFound.Text, _strError.Text);
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, _strCouldNotFetchReposOfUser.Text + Environment.NewLine +
+                                ex.Message, _strError.Text);
+                        }
 
-                    _searchBtn.Enabled = true;
+                        _searchBtn.Enabled = true;
+                    }
                 });
         }
 

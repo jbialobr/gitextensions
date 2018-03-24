@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitUIPluginInterfaces.RepositoryHosts;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.RepoHosting
@@ -107,15 +109,24 @@ namespace GitUI.CommandsDialogs.RepoHosting
             _selectHostedRepoCB.Enabled = false;
             ResetAllAndShowLoadingPullRequests();
 
-            AsyncLoader.DoAsync(
-               hostedRepo.GetPullRequests,
-               res =>
-               {
-                   SetPullRequestsData(res);
-                   _selectHostedRepoCB.Enabled = true;
-               },
-               ex => MessageBox.Show(this, _strFailedToFetchPullData.Text + Environment.NewLine + ex.Exception.Message,
-                                       _strError.Text));
+            ThreadHelper.JoinableTaskFactory.RunAsync(
+                async () =>
+                {
+                    await TaskScheduler.Default;
+                    try
+                    {
+                        var res = hostedRepo.GetPullRequests();
+                        await this.SwitchToMainThreadAsync();
+                        SetPullRequestsData(res);
+                        _selectHostedRepoCB.Enabled = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        await this.SwitchToMainThreadAsync();
+                        MessageBox.Show(this, _strFailedToFetchPullData.Text + Environment.NewLine + ex.Message,
+                                       _strError.Text);
+                    }
+                });
         }
 
         private void SetPullRequestsData(IReadOnlyList<IPullRequestInformation> infos)
@@ -244,13 +255,22 @@ namespace GitUI.CommandsDialogs.RepoHosting
 
         private void LoadDiscussion()
         {
-            AsyncLoader.DoAsync(
-                () => _currentPullRequestInfo.Discussion,
-                LoadDiscussion,
-                ex =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(
+                async () =>
                 {
-                    MessageBox.Show(this, _strCouldNotLoadDiscussion.Text + Environment.NewLine + ex.Exception.Message, _strError.Text);
-                    LoadDiscussion(null);
+                    await TaskScheduler.Default;
+                    try
+                    {
+                        var discussion = _currentPullRequestInfo.Discussion;
+                        await this.SwitchToMainThreadAsync();
+                        LoadDiscussion(discussion);
+                    }
+                    catch (Exception ex)
+                    {
+                        await this.SwitchToMainThreadAsync();
+                        MessageBox.Show(this, _strCouldNotLoadDiscussion.Text + Environment.NewLine + ex.Message, _strError.Text);
+                        LoadDiscussion(null);
+                    }
                 });
         }
 
@@ -273,11 +293,23 @@ namespace GitUI.CommandsDialogs.RepoHosting
 
         private void LoadDiffPatch()
         {
-            AsyncLoader.DoAsync(
-                () => _currentPullRequestInfo.DiffData,
-                SplitAndLoadDiff,
-                ex => MessageBox.Show(this, _strFailedToLoadDiffData.Text + Environment.NewLine + ex.Exception.Message,
-                                    _strError.Text));
+            ThreadHelper.JoinableTaskFactory.RunAsync(
+                async () =>
+                {
+                    await TaskScheduler.Default;
+                    try
+                    {
+                        var data = _currentPullRequestInfo.DiffData;
+                        await this.SwitchToMainThreadAsync();
+                        SplitAndLoadDiff(data);
+                    }
+                    catch (Exception ex)
+                    {
+                        await this.SwitchToMainThreadAsync();
+                        MessageBox.Show(this, _strFailedToLoadDiffData.Text + Environment.NewLine + ex.Message,
+                               _strError.Text);
+                    }
+                });
         }
 
         private Dictionary<string, string> _diffCache;
