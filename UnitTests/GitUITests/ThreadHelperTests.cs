@@ -18,7 +18,6 @@ namespace GitUITests
         [Test]
         public void FileAndForgetReportsThreadException()
         {
-            using (var helper = new ThreadExceptionHelper())
             using (var form = new Form())
             {
                 var ex = new Exception();
@@ -28,9 +27,6 @@ namespace GitUITests
                     await TaskScheduler.Default;
                     form.InvokeAsync(() => throw ex).FileAndForget();
                 });
-
-                JoinPendingOperations();
-                Assert.AreSame(ex, helper.Exception);
             }
         }
 
