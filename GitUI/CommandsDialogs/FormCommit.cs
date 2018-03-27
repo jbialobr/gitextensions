@@ -17,6 +17,7 @@ using GitUI.CommandsDialogs.CommitDialog;
 using GitUI.HelperDialogs;
 using GitUI.Hotkey;
 using GitUI.Script;
+using GitUI.SpellChecker;
 using Microsoft.VisualStudio.Threading;
 using PatchApply;
 using ResourceManager;
@@ -3151,6 +3152,21 @@ namespace GitUI.CommandsDialogs
                 Staged.SelectedIndex = 0;
                 StagedSelectionChanged(null, null);
             }
+        }
+
+        internal TestAccessor GetTestAccessor()
+            => new TestAccessor(this);
+
+        public readonly struct TestAccessor
+        {
+            private readonly FormCommit _formCommit;
+
+            public TestAccessor(FormCommit formCommit)
+            {
+                _formCommit = formCommit;
+            }
+
+            public EditNetSpell Message => _formCommit.Message;
         }
     }
 
