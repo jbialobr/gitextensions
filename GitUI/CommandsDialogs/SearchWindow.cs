@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 
@@ -8,20 +9,20 @@ namespace GitUI.CommandsDialogs
 {
     public partial class SearchWindow<T> : Form where T : class
     {
-        private readonly Func<string, IReadOnlyList<T>> _getCandidates;
+        private readonly Func<string, Task<IReadOnlyList<T>>> _getCandidatesAsync;
         private readonly AsyncLoader _backgroundLoader = new AsyncLoader();
 
-        public SearchWindow(Func<string, IReadOnlyList<T>> getCandidates)
+        public SearchWindow(Func<string, Task<IReadOnlyList<T>>> getCandidatesAsync)
         {
             InitializeComponent();
             textBox1.Select();
 
-            if (getCandidates == null)
+            if (getCandidatesAsync == null)
             {
-                throw new InvalidOperationException("getCandidates cannot be null");
+                throw new InvalidOperationException($"{nameof(getCandidatesAsync)} cannot be null");
             }
 
-            _getCandidates = getCandidates;
+            _getCandidatesAsync = getCandidatesAsync;
             AutoFit();
 
             if (Parent == null)
@@ -91,7 +92,7 @@ namespace GitUI.CommandsDialogs
         {
             string selectedText = textBox1.Text;
 
-            _backgroundLoader.LoadAsync(() => _getCandidates(selectedText), SearchForCandidates);
+            _backgroundLoader.LoadAsync(() => ThreadHelper.JoinableTaskFactory.Run(() => _getCandidatesAsync(selectedText)), SearchForCandidates);
         }
 
         private void textBox1_KeyUp(object sender, KeyEventArgs e)

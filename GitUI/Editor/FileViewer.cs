@@ -412,7 +412,10 @@ namespace GitUI.Editor
 
         public Task ViewFileAsync(string fileName)
         {
-            return ViewItemAsync(fileName, () => GetImage(fileName), () => GetFileText(fileName),
+            return ViewItemAsync(
+                fileName,
+                () => GetImage(fileName),
+                () => GetFileTextAsync(fileName),
                 () => LocalizationHelpers.GetSubmoduleText(Module, fileName.TrimEnd('/'), ""));
         }
 
@@ -518,11 +521,11 @@ namespace GitUI.Editor
             }
         }
 
-        private string GetFileTextIfBlobExists(string guid)
+        private async Task<string> GetFileTextIfBlobExistsAsync(string guid)
         {
             if (guid != "")
             {
-                return Module.GetFileText(guid, Encoding);
+                return await Module.GetFileTextAsync(guid, Encoding).ConfigureAwait(false);
             }
             else
             {
@@ -532,11 +535,14 @@ namespace GitUI.Editor
 
         public Task ViewGitItemAsync(string fileName, string guid)
         {
-            return ViewItemAsync(fileName, () => GetImage(fileName, guid), () => GetFileTextIfBlobExists(guid),
+            return ViewItemAsync(
+                fileName,
+                () => GetImage(fileName, guid),
+                () => GetFileTextIfBlobExistsAsync(guid),
                 () => LocalizationHelpers.GetSubmoduleText(Module, fileName.TrimEnd('/'), guid));
         }
 
-        private Task ViewItemAsync(string fileName, Func<Image> getImage, Func<string> getFileText, Func<string> getSubmoduleText)
+        private Task ViewItemAsync(string fileName, Func<Image> getImage, Func<Task<string>> getFileTextAsync, Func<string> getSubmoduleText)
         {
             FilePreamble = null;
 
@@ -583,7 +589,9 @@ namespace GitUI.Editor
             }
             else
             {
-                return _async.LoadAsync(getFileText, text => ViewTextAsync(fileName, text));
+                return _async.LoadAsync(
+                    () => ThreadHelper.JoinableTaskFactory.Run(getFileTextAsync),
+                    text => ViewTextAsync(fileName, text));
             }
         }
 
@@ -650,7 +658,7 @@ namespace GitUI.Editor
             return new MemoryStream(new BinaryReader(stream).ReadBytes((int)stream.Length));
         }
 
-        private string GetFileText(string fileName)
+        private async Task<string> GetFileTextAsync(string fileName)
         {
             var path = File.Exists(fileName)
                 ? fileName
@@ -664,7 +672,7 @@ namespace GitUI.Editor
             using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new StreamReader(stream, Module.FilesEncoding))
             {
-                var content = reader.ReadToEnd();
+                var content = await reader.ReadToEndAsync().ConfigureAwait(false);
                 FilePreamble = reader.CurrentEncoding.GetPreamble();
                 return content;
             }

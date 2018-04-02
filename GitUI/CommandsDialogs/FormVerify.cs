@@ -262,7 +262,7 @@ namespace GitUI.CommandsDialogs
                 return;
             }
 
-            using (var frm = new FormEdit(Module.ShowSha1(currenItem.Hash)))
+            using (var frm = new FormEdit(ThreadHelper.JoinableTaskFactory.Run(() => Module.ShowSha1Async(currenItem.Hash))))
             {
                 frm.ShowDialog(this);
             }

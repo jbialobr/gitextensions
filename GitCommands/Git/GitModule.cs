@@ -626,7 +626,7 @@ namespace GitCommands
         /// </summary>
         [NotNull]
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
-        public string RunCacheableCmd(string cmd, string arguments = "", Encoding encoding = null)
+        public async Task<string> RunCacheableCmdAsync(string cmd, string arguments = "", Encoding encoding = null)
         {
             if (encoding == null)
             {
@@ -636,7 +636,7 @@ namespace GitCommands
             byte[] cmdout, cmderr;
             if (!GitCommandCache.TryGet(arguments, out cmdout, out cmderr))
             {
-                (_, cmdout, cmderr) = ThreadHelper.JoinableTaskFactory.Run(() => GitCommandHelpers.RunCmdByteAsync(cmd, arguments, WorkingDir, null));
+                (_, cmdout, cmderr) = await GitCommandHelpers.RunCmdByteAsync(cmd, arguments, WorkingDir, null).ConfigureAwait(false);
 
                 GitCommandCache.Add(arguments, cmdout, cmderr);
             }
@@ -1205,7 +1205,7 @@ namespace GitCommands
                 /* Committer Date */ "%ct%n";
             const string messageFormat = "%e%n%B%nNotes:%n%-N";
             string cmd = "log -n1 --format=format:" + formatString + (shortFormat ? "%e%n%s" : messageFormat) + " " + commit;
-            var revInfo = RunCacheableCmd(AppSettings.GitCommand, cmd, LosslessEncoding);
+            var revInfo = ThreadHelper.JoinableTaskFactory.Run(() => RunCacheableCmdAsync(AppSettings.GitCommand, cmd, LosslessEncoding));
             string[] lines = revInfo.Split('\n');
             var revision = new GitRevision(lines[0])
             {
@@ -1253,9 +1253,9 @@ namespace GitCommands
             return parentsRevisions;
         }
 
-        public string ShowSha1(string sha1)
+        public async Task<string> ShowSha1Async(string sha1)
         {
-            return ReEncodeShowString(RunCacheableCmd(AppSettings.GitCommand, "show " + sha1, LosslessEncoding));
+            return ReEncodeShowString(await RunCacheableCmdAsync(AppSettings.GitCommand, "show " + sha1, LosslessEncoding).ConfigureAwait(false));
         }
 
         public string DeleteTag(string tagName)
@@ -2342,7 +2342,7 @@ namespace GitCommands
                 !firstRevision.IsNullOrEmpty();
 
             var patch = cacheResult
-                ? RunCacheableCmd(AppSettings.GitCommand, args.ToString(), LosslessEncoding)
+                ? ThreadHelper.JoinableTaskFactory.Run(() => RunCacheableCmdAsync(AppSettings.GitCommand, args.ToString(), LosslessEncoding))
                 : ThreadHelper.JoinableTaskFactory.Run(() => RunCmdAsync(AppSettings.GitCommand, args.ToString(), LosslessEncoding));
 
             var patches = PatchProcessor.CreatePatchesFromString(patch, encoding).ToList();
@@ -2377,10 +2377,12 @@ namespace GitCommands
             return RunGitCmd(cmd);
         }
 
-        public string GetDiffFilesText(string firstRevision, string secondRevision, bool noCache = false)
+        public async Task<string> GetDiffFilesTextAsync(string firstRevision, string secondRevision, bool noCache = false)
         {
             string cmd = DiffCommandWithStandardArgs + "-M -C --name-status " + _revisionDiffProvider.Get(firstRevision, secondRevision);
-            return noCache ? RunGitCmd(cmd) : RunCacheableCmd(AppSettings.GitCommand, cmd, SystemEncoding);
+            return noCache
+                ? RunGitCmd(cmd)
+                : await RunCacheableCmdAsync(AppSettings.GitCommand, cmd, SystemEncoding).ConfigureAwait(false);
         }
 
         public IReadOnlyList<GitItemStatus> GetDiffFilesWithSubmodulesStatus(string firstRevision, string secondRevision)
@@ -2394,7 +2396,9 @@ namespace GitCommands
         {
             noCache = noCache || firstRevision.IsArtificial() || secondRevision.IsArtificial();
             string cmd = DiffCommandWithStandardArgs + "-M -C -z --name-status " + _revisionDiffProvider.Get(firstRevision, secondRevision);
-            string result = noCache ? RunGitCmd(cmd) : RunCacheableCmd(AppSettings.GitCommand, cmd, SystemEncoding);
+            string result = noCache
+                ? RunGitCmd(cmd)
+                : ThreadHelper.JoinableTaskFactory.Run(() => RunCacheableCmdAsync(AppSettings.GitCommand, cmd, SystemEncoding));
             var resultCollection = GitCommandHelpers.GetAllChangedFilesFromString(this, result, true).ToList();
             if (firstRevision == GitRevision.UnstagedGuid || secondRevision == GitRevision.UnstagedGuid)
             {
@@ -3085,9 +3089,9 @@ namespace GitCommands
             }
         }
 
-        public IReadOnlyList<string> GetFullTree(string id)
+        public async Task<IReadOnlyList<string>> GetFullTreeAsync(string id)
         {
-            string tree = RunCacheableCmd(AppSettings.GitCommand, string.Format("ls-tree -z -r --name-only {0}", id), SystemEncoding);
+            string tree = await RunCacheableCmdAsync(AppSettings.GitCommand, string.Format("ls-tree -z -r --name-only {0}", id), SystemEncoding).ConfigureAwait(false);
             return tree.Split('\0', '\n');
         }
 
@@ -3102,7 +3106,7 @@ namespace GitCommands
             };
 
             var tree = GitRevision.IsFullSha1Hash(id)
-                ? RunCacheableCmd(AppSettings.GitCommand, args.ToString(), SystemEncoding)
+                ? ThreadHelper.JoinableTaskFactory.Run(() => RunCacheableCmdAsync(AppSettings.GitCommand, args.ToString(), SystemEncoding))
                 : ThreadHelper.JoinableTaskFactory.Run(() => RunCmdAsync(AppSettings.GitCommand, args.ToString(), SystemEncoding));
 
             return _gitTreeParser.Parse(tree);
@@ -3129,7 +3133,7 @@ namespace GitCommands
                 fileName.ToPosixPath().Quote()
             };
 
-            var output = RunCacheableCmd(AppSettings.GitCommand, args.ToString(), LosslessEncoding);
+            var output = ThreadHelper.JoinableTaskFactory.Run(() => RunCacheableCmdAsync(AppSettings.GitCommand, args.ToString(), LosslessEncoding));
 
             try
             {
@@ -3343,9 +3347,9 @@ namespace GitCommands
             }
         }
 
-        public string GetFileText(string id, Encoding encoding)
+        public async Task<string> GetFileTextAsync(string id, Encoding encoding)
         {
-            return RunCacheableCmd(AppSettings.GitCommand, "cat-file blob \"" + id + "\"", encoding);
+            return await RunCacheableCmdAsync(AppSettings.GitCommand, "cat-file blob \"" + id + "\"", encoding).ConfigureAwait(false);
         }
 
         public string GetFileBlobHash(string fileName, string revision)
@@ -3853,7 +3857,7 @@ namespace GitCommands
                 }).ToList();
         }
 
-        public string GetCombinedDiffContent(GitRevision revisionOfMergeCommit, string filePath, string extraArgs, Encoding encoding)
+        public async Task<string> GetCombinedDiffContentAsync(GitRevision revisionOfMergeCommit, string filePath, string extraArgs, Encoding encoding)
         {
             var args = new ArgumentBuilder
             {
@@ -3867,7 +3871,7 @@ namespace GitCommands
                 filePath
             };
 
-            var patch = RunCacheableCmd(AppSettings.GitCommand, args.ToString(), LosslessEncoding);
+            var patch = await RunCacheableCmdAsync(AppSettings.GitCommand, args.ToString(), LosslessEncoding).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(patch))
             {

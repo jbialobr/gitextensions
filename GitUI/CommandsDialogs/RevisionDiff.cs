@@ -305,8 +305,9 @@ namespace GitUI.CommandsDialogs
 
             if (DiffFiles.SelectedItemParent?.Guid == DiffFiles.CombinedDiffGuid)
             {
-                var diffOfConflict = Module.GetCombinedDiffContent(DiffFiles.Revision, DiffFiles.SelectedItem.Name,
+                var diffOfConflict = await Module.GetCombinedDiffContentAsync(DiffFiles.Revision, DiffFiles.SelectedItem.Name,
                     DiffText.GetExtraDiffArguments(), DiffText.Encoding);
+                await this.SwitchToMainThreadAsync();
 
                 if (string.IsNullOrWhiteSpace(diffOfConflict))
                 {
@@ -506,14 +507,15 @@ namespace GitUI.CommandsDialogs
         {
             var candidates = DiffFiles.GitItemStatuses;
 
-            IReadOnlyList<GitItemStatus> FindDiffFilesMatches(string name)
+            Task<IReadOnlyList<GitItemStatus>> FindDiffFilesMatchesAsync(string name)
             {
                 var predicate = _findFilePredicateProvider.Get(name, Module.WorkingDir);
-                return candidates.Where(item => predicate(item.Name) || predicate(item.OldName)).ToList();
+                IReadOnlyList<GitItemStatus> result = candidates.Where(item => predicate(item.Name) || predicate(item.OldName)).ToList();
+                return Task.FromResult(result);
             }
 
             GitItemStatus selectedItem;
-            using (var searchWindow = new SearchWindow<GitItemStatus>(FindDiffFilesMatches)
+            using (var searchWindow = new SearchWindow<GitItemStatus>(FindDiffFilesMatchesAsync)
             {
                 Owner = FindForm()
             })

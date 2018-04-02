@@ -1948,7 +1948,7 @@ namespace GitUI
 
         private void RunSearchFileCommand()
         {
-            var searchWindow = new SearchWindow<string>(FindFileMatches);
+            var searchWindow = new SearchWindow<string>(FindFileMatchesAsync);
             Application.Run(searchWindow);
             if (searchWindow.SelectedItem != null)
             {
@@ -2100,9 +2100,9 @@ namespace GitUI
             return arguments;
         }
 
-        private IReadOnlyList<string> FindFileMatches(string name)
+        private async Task<IReadOnlyList<string>> FindFileMatchesAsync(string name)
         {
-            var candidates = Module.GetFullTree("HEAD");
+            var candidates = await Module.GetFullTreeAsync("HEAD").ConfigureAwait(false);
 
             var predicate = _fildFilePredicateProvider.Get(name, Module.WorkingDir);
 
