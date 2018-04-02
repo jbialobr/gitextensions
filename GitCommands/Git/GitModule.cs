@@ -636,7 +636,7 @@ namespace GitCommands
             byte[] cmdout, cmderr;
             if (!GitCommandCache.TryGet(arguments, out cmdout, out cmderr))
             {
-                GitCommandHelpers.RunCmdByte(cmd, arguments, WorkingDir, null, out cmdout, out cmderr);
+                (_, cmdout, cmderr) = ThreadHelper.JoinableTaskFactory.Run(() => GitCommandHelpers.RunCmdByteAsync(cmd, arguments, WorkingDir, null));
 
                 GitCommandCache.Add(arguments, cmdout, cmderr);
             }
@@ -650,7 +650,7 @@ namespace GitCommands
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
         public CmdResult RunCmdResult(string cmd, string arguments, Encoding encoding = null, byte[] stdInput = null)
         {
-            int exitCode = GitCommandHelpers.RunCmdByte(cmd, arguments, WorkingDir, stdInput, out var output, out var error);
+            var (exitCode, output, error) = ThreadHelper.JoinableTaskFactory.Run(() => GitCommandHelpers.RunCmdByteAsync(cmd, arguments, WorkingDir, stdInput));
             if (encoding == null)
             {
                 encoding = SystemEncoding;
@@ -1669,7 +1669,7 @@ namespace GitCommands
                 pageantProcess.WaitForInputIdle();
             }
 
-            GitCommandHelpers.RunCmd(AppSettings.Pageant, "\"" + sshKeyFile + "\"");
+            ThreadHelper.JoinableTaskFactory.Run(() => GitCommandHelpers.RunCmdAsync(AppSettings.Pageant, "\"" + sshKeyFile + "\""));
         }
 
         public string GetPuttyKeyFileForRemote(string remote)
@@ -1883,7 +1883,7 @@ namespace GitCommands
             if (processReader.IsValueCreated)
             {
                 processReader.Value.Process.StandardInput.Close();
-                processReader.Value.WaitForExit();
+                ThreadHelper.JoinableTaskFactory.Run(() => processReader.Value.WaitForExitAsync());
                 output = processReader.Value.OutputString(SystemEncoding);
                 error = processReader.Value.ErrorString(SystemEncoding);
             }
@@ -1906,7 +1906,7 @@ namespace GitCommands
             if (processReader.IsValueCreated)
             {
                 processReader.Value.Process.StandardInput.Close();
-                processReader.Value.WaitForExit();
+                ThreadHelper.JoinableTaskFactory.Run(() => processReader.Value.WaitForExitAsync());
                 output = processReader.Value.OutputString(SystemEncoding);
                 error = processReader.Value.ErrorString(SystemEncoding);
             }
@@ -1930,7 +1930,7 @@ namespace GitCommands
             if (processReader.IsValueCreated)
             {
                 processReader.Value.Process.StandardInput.Close();
-                processReader.Value.WaitForExit();
+                ThreadHelper.JoinableTaskFactory.Run(() => processReader.Value.WaitForExitAsync());
                 wereErrors = processReader.Value.Process.ExitCode != 0;
                 output = processReader.Value.OutputString(SystemEncoding);
                 error = processReader.Value.ErrorString(SystemEncoding);
@@ -1946,7 +1946,7 @@ namespace GitCommands
             if (processReader.IsValueCreated)
             {
                 processReader.Value.Process.StandardInput.Close();
-                processReader.Value.WaitForExit();
+                ThreadHelper.JoinableTaskFactory.Run(() => processReader.Value.WaitForExitAsync());
                 output = output.Combine(Environment.NewLine, processReader.Value.OutputString(SystemEncoding));
                 error = error.Combine(Environment.NewLine, processReader.Value.ErrorString(SystemEncoding));
                 wereErrors = wereErrors || processReader.Value.Process.ExitCode != 0;
@@ -1969,7 +1969,7 @@ namespace GitCommands
             if (processReader.IsValueCreated)
             {
                 processReader.Value.Process.StandardInput.Close();
-                processReader.Value.WaitForExit();
+                ThreadHelper.JoinableTaskFactory.Run(() => processReader.Value.WaitForExitAsync());
                 output = processReader.Value.OutputString(SystemEncoding);
                 error = processReader.Value.ErrorString(SystemEncoding);
             }
@@ -1984,7 +1984,7 @@ namespace GitCommands
             if (processReader.IsValueCreated)
             {
                 processReader.Value.Process.StandardInput.Close();
-                processReader.Value.WaitForExit();
+                ThreadHelper.JoinableTaskFactory.Run(() => processReader.Value.WaitForExitAsync());
                 output = output.Combine(Environment.NewLine, processReader.Value.OutputString(SystemEncoding));
                 error = error.Combine(Environment.NewLine, processReader.Value.ErrorString(SystemEncoding));
             }

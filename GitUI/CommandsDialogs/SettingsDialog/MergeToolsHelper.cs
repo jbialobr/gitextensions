@@ -103,7 +103,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog
                 if (EnvUtils.RunningOnUnix())
                 {
                     // Maybe command -v is better, but didn't work
-                    kdiff3path = GitCommandHelpers.RunCmd("which", "kdiff3").Replace("\n", string.Empty);
+                    kdiff3path = ThreadHelper.JoinableTaskFactory.Run(() => GitCommandHelpers.RunCmdAsync("which", "kdiff3")).Replace("\n", string.Empty);
                     if (string.IsNullOrEmpty(kdiff3path))
                     {
                         return null;
