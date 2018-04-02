@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitUI;
@@ -40,7 +41,7 @@ namespace ResourceManager
                 {
                     if (hotkey != null && hotkey.KeyData == keyData)
                     {
-                        return ExecuteCommand(hotkey.CommandCode);
+                        return ThreadHelper.JoinableTaskFactory.Run(() => ExecuteCommandAsync(hotkey.CommandCode));
                     }
                 }
             }
@@ -59,9 +60,9 @@ namespace ResourceManager
         }
 
         /// <summary>Override this method to handle form-specific Hotkey commands.</summary>
-        protected virtual bool ExecuteCommand(int command)
+        protected virtual async Task<bool> ExecuteCommandAsync(int command)
         {
-            return false;
+            return await Task.FromResult(false);
         }
 
         protected void SetFont()

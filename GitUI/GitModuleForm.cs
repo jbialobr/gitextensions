@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 
@@ -57,14 +58,14 @@ namespace GitUI
             UICommands = commands;
         }
 
-        protected override bool ExecuteCommand(int command)
+        protected override async Task<bool> ExecuteCommandAsync(int command)
         {
             if (ExecuteScriptCommand(command))
             {
                 return true;
             }
 
-            return base.ExecuteCommand(command);
+            return await base.ExecuteCommandAsync(command).ConfigureAwait(false);
         }
 
         protected bool ExecuteScriptCommand(int command)

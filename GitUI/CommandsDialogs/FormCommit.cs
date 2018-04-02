@@ -487,7 +487,7 @@ namespace GitUI.CommandsDialogs
             toolbarSelectionFilter.Visible = visible;
         }
 
-        protected override bool ExecuteCommand(int cmd)
+        protected override async Task<bool> ExecuteCommandAsync(int cmd)
         {
             switch ((Commands)cmd)
             {
@@ -503,7 +503,7 @@ namespace GitUI.CommandsDialogs
                 case Commands.ShowHistory: return StartFileHistoryDialog();
                 case Commands.ToggleSelectionFilter: return ToggleSelectionFilter();
                 case Commands.StageAll: return StageAllFiles();
-                default: return base.ExecuteCommand(cmd);
+                default: return await base.ExecuteCommandAsync(cmd).ConfigureAwait(false);
             }
         }
 

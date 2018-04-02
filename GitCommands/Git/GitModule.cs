@@ -1089,7 +1089,7 @@ namespace GitCommands
         }
 
         /// <summary>Runs a bash or shell command.</summary>
-        public Process RunBash(string bashCommand = null)
+        public async Task<Process> RunBashAsync(string bashCommand = null)
         {
             if (EnvUtils.RunningOnUnix())
             {
@@ -1102,7 +1102,11 @@ namespace GitCommands
                 };
 
                 string args = "";
-                string cmd = termEmuCmds.FirstOrDefault(termEmuCmd => !string.IsNullOrEmpty(ThreadHelper.JoinableTaskFactory.Run(() => RunCmdAsync("which", termEmuCmd))));
+                string cmd = await termEmuCmds
+                    .FirstOrDefaultAsync(
+                        async termEmuCmd => !string.IsNullOrEmpty(await RunCmdAsync("which", termEmuCmd).ConfigureAwait(false)),
+                        continueOnCapturedContext: false)
+                    .ConfigureAwait(false);
 
                 if (string.IsNullOrEmpty(cmd))
                 {

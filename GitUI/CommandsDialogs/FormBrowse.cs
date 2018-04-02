@@ -1279,7 +1279,7 @@ namespace GitUI.CommandsDialogs
 
         private void GitBashToolStripMenuItemClick1(object sender, EventArgs e)
         {
-            Module.RunBash();
+            ThreadHelper.JoinableTaskFactory.Run(() => Module.RunBashAsync());
         }
 
         private void GitGuiToolStripMenuItemClick(object sender, EventArgs e)
@@ -2064,11 +2064,11 @@ namespace GitUI.CommandsDialogs
             UICommands.RepoChangedNotifier.Notify();
         }
 
-        protected override bool ExecuteCommand(int cmd)
+        protected override async Task<bool> ExecuteCommandAsync(int cmd)
         {
             switch ((Commands)cmd)
             {
-                case Commands.GitBash: Module.RunBash(); break;
+                case Commands.GitBash: await Module.RunBashAsync().ConfigureAwait(false); break;
                 case Commands.GitGui: Module.RunGui(); break;
                 case Commands.GitGitK: Module.RunGitK(); break;
                 case Commands.FocusRevisionGrid: RevisionGrid.Focus(); break;
@@ -2087,15 +2087,15 @@ namespace GitUI.CommandsDialogs
                 case Commands.CloseRepository: CloseToolStripMenuItemClick(null, null); break;
                 case Commands.Stash: UICommands.StashSave(this, AppSettings.IncludeUntrackedFilesInManualStash); break;
                 case Commands.StashPop: UICommands.StashPop(this); break;
-                default: return base.ExecuteCommand(cmd);
+                default: return await base.ExecuteCommandAsync(cmd).ConfigureAwait(false);
             }
 
             return true;
         }
 
-        internal bool ExecuteCommand(Commands cmd)
+        internal async Task<bool> ExecuteCommandAsync(Commands cmd)
         {
-            return ExecuteCommand((int)cmd);
+            return await ExecuteCommandAsync((int)cmd).ConfigureAwait(false);
         }
 
         #endregion

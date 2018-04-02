@@ -388,7 +388,11 @@ namespace GitUI.CommandsDialogs
         private void diffShowInFileTreeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // switch to view (and fills the first level of file tree data model if not already done)
-            (FindForm() as FormBrowse)?.ExecuteCommand(FormBrowse.Commands.FocusFileTree);
+            if (FindForm() is FormBrowse form)
+            {
+                ThreadHelper.JoinableTaskFactory.Run(() => form.ExecuteCommandAsync(FormBrowse.Commands.FocusFileTree));
+            }
+
             _revisionFileTree.ExpandToFile(DiffFiles.SelectedItems.First().Name);
         }
 

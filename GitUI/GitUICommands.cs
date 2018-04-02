@@ -1838,7 +1838,7 @@ namespace GitUI
                     StartFormatPatchDialog();
                     return;
                 case "gitbash":
-                    Module.RunBash();
+                    ThreadHelper.JoinableTaskFactory.Run(() => Module.RunBashAsync());
                     return;
                 case "gitignore":
                     StartEditGitIgnoreDialog(false);
