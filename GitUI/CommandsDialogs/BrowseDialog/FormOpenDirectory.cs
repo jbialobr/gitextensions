@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Repository;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.BrowseDialog
@@ -24,15 +26,20 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             InitializeComponent();
             Translate();
 
-            _NO_TRANSLATE_Directory.DataSource = GetDirectories(currentModule);
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                var repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
 
-            Load.Select();
-
-            _NO_TRANSLATE_Directory.Focus();
-            _NO_TRANSLATE_Directory.Select();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                _NO_TRANSLATE_Directory.DataSource = GetDirectories(currentModule, repositoryHistory);
+                Load.Select();
+                _NO_TRANSLATE_Directory.Focus();
+                _NO_TRANSLATE_Directory.Select();
+            }).FileAndForget();
         }
 
-        private static IReadOnlyList<string> GetDirectories(GitModule currentModule)
+        private static IReadOnlyList<string> GetDirectories(GitModule currentModule, RepositoryHistory repositoryHistory)
         {
             List<string> directories = new List<string>();
 
@@ -50,7 +57,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 }
             }
 
-            directories.AddRange(RepositoryManager.RepositoryHistory.Repositories.Select(r => r.Path));
+            directories.AddRange(repositoryHistory.Repositories.Select(r => r.Path));
 
             if (directories.Count == 0)
             {
@@ -119,6 +126,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             }
             catch (Exception)
             {
+                // no-op
             }
         }
 

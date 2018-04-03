@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Repository;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -32,15 +34,16 @@ namespace GitUI.CommandsDialogs
             InitializeComponent();
             Translate();
 
-            Directory.Text = string.IsNullOrEmpty(dir)
-                ? AppSettings.DefaultCloneDestinationPath
-                : dir;
-        }
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                var repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
 
-        private void DirectoryDropDown(object sender, EventArgs e)
-        {
-            Directory.DataSource = RepositoryManager.RepositoryHistory.Repositories;
-            Directory.DisplayMember = nameof(Repository.Path);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                Directory.DataSource = repositoryHistory.Repositories;
+                Directory.DisplayMember = nameof(Repository.Path);
+                Directory.Text = string.IsNullOrEmpty(dir) ? AppSettings.DefaultCloneDestinationPath : dir;
+            }).FileAndForget();
         }
 
         private void InitClick(object sender, EventArgs e)
