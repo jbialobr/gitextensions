@@ -191,7 +191,8 @@ namespace GitUI.CommandsDialogs
                 repoObjectsTree.UICommandsSource = this;
             }
 
-            Repositories.LoadRepositoryHistoryAsync();
+            var recentRepos = Repositories.RepositoryHistory;
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
