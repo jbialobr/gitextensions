@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using GitCommands;
 using GitCommands.Patches;
+using GitUI;
 using JetBrains.Annotations;
 using ResourceManager.CommitDataRenders;
 
@@ -253,7 +254,7 @@ namespace ResourceManager
                     }
                 }
 
-                string diffs = gitModule.GetDiffFilesText(status.OldCommit, status.Commit);
+                string diffs = ThreadHelper.JoinableTaskFactory.Run(() => gitModule.GetDiffFilesTextAsync(status.OldCommit, status.Commit));
                 if (!string.IsNullOrEmpty(diffs))
                 {
                     sb.AppendLine("\nDifferences:");

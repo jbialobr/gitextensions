@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Utils;
@@ -1212,7 +1213,7 @@ namespace GitUI.CommandsDialogs
             ChooseBase = 4
         }
 
-        protected override bool ExecuteCommand(int cmd)
+        protected override async Task<bool> ExecuteCommandAsync(int cmd)
         {
             Commands command = (Commands)cmd;
 
@@ -1223,7 +1224,7 @@ namespace GitUI.CommandsDialogs
                 case Commands.ChooseBase: ContextChooseBase_Click(null, null); break;
                 case Commands.ChooseLocal: ContextChooseLocal_Click(null, null); break;
                 case Commands.ChooseRemote: ContextChooseRemote_Click(null, null); break;
-                default: return base.ExecuteCommand(cmd);
+                default: return await base.ExecuteCommandAsync(cmd).ConfigureAwait(false);
             }
 
             return true;

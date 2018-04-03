@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Git;
@@ -233,9 +234,9 @@ See the changes in the commit form.");
             base.OnRuntimeLoad(e);
         }
 
-        private IReadOnlyList<string> FindFileMatches(string name)
+        private async Task<IReadOnlyList<string>> FindFileMatchesAsync(string name)
         {
-            var candidates = Module.GetFullTree(_revision.TreeGuid);
+            var candidates = await Module.GetFullTreeAsync(_revision.TreeGuid).ConfigureAwait(false);
             var predicate = _findFilePredicateProvider.Get(name, Module.WorkingDir);
 
             return candidates.Where(predicate).ToList();
@@ -409,7 +410,7 @@ See the changes in the commit form.");
         private void findToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string selectedItem;
-            using (var searchWindow = new SearchWindow<string>(FindFileMatches) { Owner = FindForm() })
+            using (var searchWindow = new SearchWindow<string>(FindFileMatchesAsync) { Owner = FindForm() })
             {
                 searchWindow.ShowDialog(this);
                 selectedItem = searchWindow.SelectedItem;

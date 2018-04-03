@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Settings;
@@ -178,9 +179,9 @@ namespace GitUI
             return Module.RunGitCmd(arguments);
         }
 
-        public string CommandLineCommand(string cmd, string arguments)
+        public async Task<string> CommandLineCommandAsync(string cmd, string arguments)
         {
-            return Module.RunCmd(cmd, arguments);
+            return await Module.RunCmdAsync(cmd, arguments).ConfigureAwait(false);
         }
 
         private bool RequiresValidWorkingDir(object owner)
@@ -1837,7 +1838,7 @@ namespace GitUI
                     StartFormatPatchDialog();
                     return;
                 case "gitbash":
-                    Module.RunBash();
+                    ThreadHelper.JoinableTaskFactory.Run(() => Module.RunBashAsync());
                     return;
                 case "gitignore":
                     StartEditGitIgnoreDialog(false);
@@ -1947,7 +1948,7 @@ namespace GitUI
 
         private void RunSearchFileCommand()
         {
-            var searchWindow = new SearchWindow<string>(FindFileMatches);
+            var searchWindow = new SearchWindow<string>(FindFileMatchesAsync);
             Application.Run(searchWindow);
             if (searchWindow.SelectedItem != null)
             {
@@ -2099,9 +2100,9 @@ namespace GitUI
             return arguments;
         }
 
-        private IReadOnlyList<string> FindFileMatches(string name)
+        private async Task<IReadOnlyList<string>> FindFileMatchesAsync(string name)
         {
-            var candidates = Module.GetFullTree("HEAD");
+            var candidates = await Module.GetFullTreeAsync("HEAD").ConfigureAwait(false);
 
             var predicate = _fildFilePredicateProvider.Get(name, Module.WorkingDir);
 

@@ -7,11 +7,14 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using GitCommands.Git;
 using GitCommands.Patches;
 using GitCommands.Utils;
+using GitUI;
 using GitUIPluginInterfaces;
 using JetBrains.Annotations;
+using Microsoft.VisualStudio.Threading;
 
 namespace GitCommands
 {
@@ -210,30 +213,29 @@ namespace GitCommands
             return StartProcessAndReadLines(arguments, cmd, workDir, stdInput);
         }
 
-        private static Process StartProcessAndReadAllText(string arguments, string cmd, string workDir, out string stdOutput, out string stdError, string stdInput)
+        private static async Task<(Process, string stdOutput, string stdError)> StartProcessAndReadAllTextAsync(string arguments, string cmd, string workDir, string stdInput)
         {
             if (string.IsNullOrEmpty(cmd))
             {
-                stdOutput = stdError = "";
-                return null;
+                return (null, "", "");
             }
 
             // process used to execute external commands
             var process = StartProcess(cmd, arguments, workDir, GitModule.SystemEncoding);
             if (!string.IsNullOrEmpty(stdInput))
             {
-                process.StandardInput.Write(stdInput);
+                await process.StandardInput.WriteAsync(stdInput).ConfigureAwait(false);
                 process.StandardInput.Close();
             }
 
-            SynchronizedProcessReader.Read(process, out stdOutput, out stdError);
-            return process;
+            var (stdOutput, stdError) = await SynchronizedProcessReader.ReadAsync(process).ConfigureAwait(false);
+            return (process, stdOutput, stdError);
         }
 
         /// <summary>
         /// Run command, console window is hidden, wait for exit, redirect output
         /// </summary>
-        public static string RunCmd(string cmd, string arguments)
+        public static async Task<string> RunCmdAsync(string cmd, string arguments)
         {
             try
             {
@@ -241,10 +243,10 @@ namespace GitCommands
 
                 arguments = arguments.Replace("$QUOTE$", "\\\"");
 
-                string output, error;
-                using (var process = StartProcessAndReadAllText(arguments, cmd, "", out output, out error, null))
+                var (process, output, error) = await StartProcessAndReadAllTextAsync(arguments, cmd, "", null).ConfigureAwait(false);
+                using (process)
                 {
-                    process.WaitForExit();
+                    await process.WaitForExitAsync().ConfigureAwait(false);
                 }
 
                 if (!string.IsNullOrEmpty(error))
@@ -260,45 +262,43 @@ namespace GitCommands
             }
         }
 
-        private static Process StartProcessAndReadAllBytes(string arguments, string cmd, string workDir, out byte[] stdOutput, out byte[] stdError, byte[] stdInput)
+        private static async Task<(Process, byte[] stdOutput, byte[] stdError)> StartProcessAndReadAllBytesAsync(string arguments, string cmd, string workDir, byte[] stdInput)
         {
             if (string.IsNullOrEmpty(cmd))
             {
-                stdOutput = stdError = null;
-                return null;
+                return (null, null, null);
             }
 
             // process used to execute external commands
             var process = StartProcess(cmd, arguments, workDir, Encoding.Default);
             if (stdInput != null && stdInput.Length > 0)
             {
-                process.StandardInput.BaseStream.Write(stdInput, 0, stdInput.Length);
+                await process.StandardInput.BaseStream.WriteAsync(stdInput, 0, stdInput.Length).ConfigureAwait(false);
                 process.StandardInput.Close();
             }
 
-            SynchronizedProcessReader.ReadBytes(process, out stdOutput, out stdError);
-
-            return process;
+            var (stdOutput, stdError) = await SynchronizedProcessReader.ReadBytesAsync(process).ConfigureAwait(false);
+            return (process, stdOutput, stdError);
         }
 
         /// <summary>
         /// Run command, console window is hidden, wait for exit, redirect output
         /// </summary>
-        public static int RunCmdByte(string cmd, string arguments, string workingdir, byte[] stdInput, out byte[] output, out byte[] error)
+        public static async Task<(int exitCode, byte[] output, byte[] error)> RunCmdByteAsync(string cmd, string arguments, string workingdir, byte[] stdInput)
         {
             try
             {
                 arguments = arguments.Replace("$QUOTE$", "\\\"");
-                using (var process = StartProcessAndReadAllBytes(arguments, cmd, workingdir, out output, out error, stdInput))
+                var (process, output, error) = await StartProcessAndReadAllBytesAsync(arguments, cmd, workingdir, stdInput).ConfigureAwait(false);
+                using (process)
                 {
-                    process.WaitForExit();
-                    return process.ExitCode;
+                    await process.WaitForExitAsync().ConfigureAwait(false);
+                    return (process.ExitCode, output, error);
                 }
             }
             catch (Win32Exception)
             {
-                output = error = null;
-                return 1;
+                return (1, null, null);
             }
         }
 
@@ -310,7 +310,7 @@ namespace GitCommands
             {
                 if (_versionInUse == null || _versionInUse.IsUnknown)
                 {
-                    var result = RunCmd(AppSettings.GitCommand, "--version");
+                    var result = ThreadHelper.JoinableTaskFactory.Run(() => RunCmdAsync(AppSettings.GitCommand, "--version"));
                     _versionInUse = new GitVersion(result);
                 }
 
