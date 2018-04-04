@@ -1670,11 +1670,15 @@ namespace GitUI.CommandsDialogs
 
         private void ClearRecentRepositoriesListClick(object sender, EventArgs e)
         {
-            _repositoryHistory.Repositories.Clear();
-            RepositoryManager.SaveSettings();
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                _repositoryHistory.Repositories.Clear();
+                await RepositoryManager.SaveRepositoryHistoryAsync(_repositoryHistory);
 
-            // Force clear recent repositories list from dashboard.
-            _dashboard?.ShowRecentRepositories();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                _dashboard?.ShowRecentRepositories();
+            }).FileAndForget();
         }
 
         private void PluginSettingsToolStripMenuItemClick(object sender, EventArgs e)

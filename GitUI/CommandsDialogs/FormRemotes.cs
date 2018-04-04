@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
 using GitCommands.Remote;
 using GitCommands.Repository;
 using GitUIPluginInterfaces;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -194,35 +196,42 @@ Inactive remote is completely invisible to git.");
 
         private void InitialiseTabRemotes(string preselectRemote = null)
         {
-            // because the binding the same BindingList to multiple controls,
-            // and changes in one of the bound control automatically get reflected
-            // in the other control, which causes rather frustrating UX.
-            // to address that, re-create binding lists for each individual control
-            var repos = RepositoryManager.RemoteRepositoryHistory.Repositories.OrderBy(x => x.Path);
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                // to stop the flicker binding the lists and
-                // when the selected remote is getting reset and then selected again
-                Url.BeginUpdate();
-                comboBoxPushUrl.BeginUpdate();
-                Remotes.BeginUpdate();
+                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                var repositoryHistory = (await RepositoryManager.LoadRepositoryRemoteHistoryAsync()).Repositories;
 
-                Url.DataSource = repos.ToList();
-                Url.DisplayMember = nameof(Repository.Path);
-                Url.SelectedItem = null;
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
+                {
+                    // because the binding the same BindingList to multiple controls,
+                    // and changes in one of the bound control automatically get reflected
+                    // in the other control, which causes rather frustrating UX.
+                    // to address that, re-create binding lists for each individual control
 
-                comboBoxPushUrl.DataSource = repos.ToList();
-                comboBoxPushUrl.DisplayMember = nameof(Repository.Path);
-                comboBoxPushUrl.SelectedItem = null;
+                    // to stop the flicker binding the lists and
+                    // when the selected remote is getting reset and then selected again
+                    Url.BeginUpdate();
+                    comboBoxPushUrl.BeginUpdate();
+                    Remotes.BeginUpdate();
 
-                BindRemotes(preselectRemote);
-            }
-            finally
-            {
-                Remotes.EndUpdate();
-                Url.EndUpdate();
-                comboBoxPushUrl.EndUpdate();
-            }
+                    Url.DataSource = repositoryHistory.ToList();
+                    Url.DisplayMember = nameof(Repository.Path);
+                    Url.SelectedItem = null;
+
+                    comboBoxPushUrl.DataSource = repositoryHistory.ToList();
+                    comboBoxPushUrl.DisplayMember = nameof(Repository.Path);
+                    comboBoxPushUrl.SelectedItem = null;
+
+                    BindRemotes(preselectRemote);
+                }
+                finally
+                {
+                    Remotes.EndUpdate();
+                    Url.EndUpdate();
+                    comboBoxPushUrl.EndUpdate();
+                }
+            }).FileAndForget();
         }
 
         private void InitialiseTabBehaviors()
@@ -365,14 +374,21 @@ Inactive remote is completely invisible to git.");
                         FireRemoteRenamedEvent(new RemoteRenamedEventArgs(_selectedRemote.Name, remote));
                     }
 
-                    var remotes = RepositoryManager.RemoteRepositoryHistory.Repositories;
-                    RemoteUpdate(remotes, _selectedRemote?.Url, remoteUrl);
-                    if (checkBoxSepPushUrl.Checked)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                     {
-                        RemoteUpdate(remotes, _selectedRemote?.PushUrl, remotePushUrl);
-                    }
+                        await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                        var repositoryHistory = await RepositoryManager.LoadRepositoryRemoteHistoryAsync();
 
-                    RepositoryManager.SaveSettings();
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                        RemoteUpdate(repositoryHistory.Repositories, _selectedRemote?.Url, remoteUrl);
+                        if (checkBoxSepPushUrl.Checked)
+                        {
+                            RemoteUpdate(repositoryHistory.Repositories, _selectedRemote?.PushUrl, remotePushUrl);
+                        }
+
+                        await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                        await RepositoryManager.SaveRepositoryRemoteHistoryAsync(repositoryHistory);
+                    }).FileAndForget();
                 }
 
                 // if the user has just created a fresh new remote

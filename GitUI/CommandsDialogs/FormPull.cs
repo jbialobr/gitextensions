@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
@@ -15,6 +16,7 @@ using GitUI.Properties;
 using GitUI.Script;
 using GitUI.UserControls;
 using GitUIPluginInterfaces;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -801,14 +803,6 @@ namespace GitUI.CommandsDialogs
             FillFormTitle();
         }
 
-        private void FillPullSourceDropDown()
-        {
-            string prevUrl = comboBoxPullSource.Text;
-            comboBoxPullSource.DataSource = RepositoryManager.RemoteRepositoryHistory.Repositories;
-            comboBoxPullSource.DisplayMember = nameof(Repository.Path);
-            comboBoxPullSource.Text = prevUrl;
-        }
-
         private void FillFormTitle()
         {
             var format = Fetch.Checked
@@ -868,7 +862,17 @@ namespace GitUI.CommandsDialogs
             Merge.Enabled = true;
             Rebase.Enabled = true;
 
-            FillPullSourceDropDown();
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                var repositoryHistory = await RepositoryManager.LoadRepositoryRemoteHistoryAsync();
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                string prevUrl = comboBoxPullSource.Text;
+                comboBoxPullSource.DataSource = repositoryHistory.Repositories;
+                comboBoxPullSource.DisplayMember = nameof(Repository.Path);
+                comboBoxPullSource.Text = prevUrl;
+            }).FileAndForget();
         }
 
         private void AddRemoteClick(object sender, EventArgs e)

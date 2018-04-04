@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
@@ -13,6 +14,7 @@ using GitCommands.Repository;
 using GitUI.Script;
 using GitUI.UserControls;
 using GitUIPluginInterfaces;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -641,14 +643,6 @@ namespace GitUI.CommandsDialogs
             return false;
         }
 
-        private void FillPushDestinationDropDown()
-        {
-            string prevUrl = PushDestination.Text;
-            PushDestination.DataSource = RepositoryManager.RemoteRepositoryHistory.Repositories;
-            PushDestination.DisplayMember = nameof(Repository.Path);
-            PushDestination.Text = prevUrl;
-        }
-
         private void UpdateBranchDropDown()
         {
             var curBranch = _NO_TRANSLATE_Branch.Text;
@@ -790,8 +784,19 @@ namespace GitUI.CommandsDialogs
 
             if (PushToUrl.Checked)
             {
-                FillPushDestinationDropDown();
-                BranchSelectedValueChanged(null, null);
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                    var repositoryHistory = await RepositoryManager.LoadRepositoryRemoteHistoryAsync();
+
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    string prevUrl = PushDestination.Text;
+                    PushDestination.DataSource = repositoryHistory.Repositories;
+                    PushDestination.DisplayMember = nameof(Repository.Path);
+                    PushDestination.Text = prevUrl;
+
+                    BranchSelectedValueChanged(null, null);
+                }).FileAndForget();
             }
             else
             {
