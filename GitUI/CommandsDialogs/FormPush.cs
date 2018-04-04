@@ -308,7 +308,7 @@ namespace GitUI.CommandsDialogs
 
             if (PushToUrl.Checked)
             {
-                Repositories.AddMostRecentRepository(PushDestination.Text);
+                RepositoryManager.AddMostRecentRepository(PushDestination.Text);
             }
 
             AppSettings.RecursiveSubmodules = RecursiveSubmodules.SelectedIndex;
@@ -644,7 +644,7 @@ namespace GitUI.CommandsDialogs
         private void FillPushDestinationDropDown()
         {
             string prevUrl = PushDestination.Text;
-            PushDestination.DataSource = Repositories.RemoteRepositoryHistory.Repositories;
+            PushDestination.DataSource = RepositoryManager.RemoteRepositoryHistory.Repositories;
             PushDestination.DisplayMember = nameof(Repository.Path);
             PushDestination.Text = prevUrl;
         }
