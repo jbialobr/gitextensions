@@ -7,7 +7,7 @@ using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
 using GitCommands.Remote;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using GitUIPluginInterfaces;
 using Microsoft.VisualStudio.Threading;
 using ResourceManager;
@@ -199,7 +199,7 @@ Inactive remote is completely invisible to git.");
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = (await RepositoryManager.LoadRepositoryRemoteHistoryAsync()).Repositories;
+                var repositoryHistory = (await RepositoryManager.LoadRemoteHistoryAsync()).Repositories;
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 try
@@ -377,7 +377,7 @@ Inactive remote is completely invisible to git.");
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                     {
                         await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                        var repositoryHistory = await RepositoryManager.LoadRepositoryRemoteHistoryAsync();
+                        var repositoryHistory = await RepositoryManager.LoadRemoteHistoryAsync();
 
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                         RemoteUpdate(repositoryHistory.Repositories, _selectedRemote?.Url, remoteUrl);
@@ -387,7 +387,7 @@ Inactive remote is completely invisible to git.");
                         }
 
                         await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                        await RepositoryManager.SaveRepositoryRemoteHistoryAsync(repositoryHistory);
+                        await RepositoryManager.SaveRemoteHistoryAsync(repositoryHistory);
                     }).FileAndForget();
                 }
 

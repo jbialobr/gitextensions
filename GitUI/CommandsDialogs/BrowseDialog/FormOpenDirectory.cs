@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
@@ -29,7 +29,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
+                var repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_Directory.DataSource = GetDirectories(currentModule, repositoryHistory);
@@ -95,7 +95,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryManager.AddMostRecentRepositoryAsync(_choosenModule.WorkingDir);
+                    await RepositoryManager.AddMostRecentLocalHistoryAsync(_choosenModule.WorkingDir);
                 }).FileAndForget();
 
                 Close();

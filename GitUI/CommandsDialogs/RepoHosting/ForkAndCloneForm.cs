@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using GitUIPluginInterfaces.RepositoryHosts;
 using Microsoft.VisualStudio.Threading;
 using ResourceManager;
@@ -64,7 +64,7 @@ namespace GitUI.CommandsDialogs.RepoHosting
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    var repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
+                    var repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
 
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     var lastRepo = repositoryHistory.Repositories.FirstOrDefault();

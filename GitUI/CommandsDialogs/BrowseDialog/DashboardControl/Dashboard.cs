@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
@@ -184,7 +184,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                     {
                         await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                        await RepositoryManager.AddMostRecentRepositoryAsync(dir);
+                        await RepositoryManager.AddMostRecentLocalHistoryAsync(dir);
                     }).FileAndForget();
                     OnModuleChanged(this, new GitModuleEventArgs(module));
                 }

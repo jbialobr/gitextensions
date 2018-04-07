@@ -12,7 +12,7 @@ using ConEmu.WinForms;
 using GitCommands;
 using GitCommands.Git;
 using GitCommands.Gpg;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using GitCommands.Utils;
 using GitUI.CommandsDialogs.BrowseDialog;
 using GitUI.CommandsDialogs.BrowseDialog.DashboardControl;
@@ -194,7 +194,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                _repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
+                _repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
 
                 try
                 {
@@ -719,7 +719,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await TaskScheduler.Default;
-                    _repositoryHistory = await RepositoryManager.AddMostRecentRepositoryAsync(path);
+                    _repositoryHistory = await RepositoryManager.AddMostRecentLocalHistoryAsync(path);
                 });
             }
 
@@ -1675,7 +1675,7 @@ namespace GitUI.CommandsDialogs
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 _repositoryHistory.Repositories.Clear();
-                await RepositoryManager.SaveRepositoryHistoryAsync(_repositoryHistory);
+                await RepositoryManager.SaveLocalHistoryAsync(_repositoryHistory);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _dashboard?.ShowRecentRepositories();
@@ -1821,7 +1821,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    _repositoryHistory = await RepositoryManager.AddMostRecentRepositoryAsync(path);
+                    _repositoryHistory = await RepositoryManager.AddMostRecentLocalHistoryAsync(path);
                 });
 
                 AppSettings.RecentWorkingDir = path;

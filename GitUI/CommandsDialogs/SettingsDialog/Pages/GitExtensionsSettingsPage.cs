@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GitCommands;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using Microsoft.VisualStudio.Threading;
 
 namespace GitUI.CommandsDialogs.SettingsDialog.Pages
@@ -19,7 +19,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
+                var repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var historicPaths = repositoryHistory.Repositories

@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace GitCommands.Repository
+namespace GitCommands.UserRepositoryHistory
 {
     public static class RepositoryManager
     {
@@ -13,7 +13,35 @@ namespace GitCommands.Repository
 
         private static readonly IRepositoryStorage RepositoryStorage = new RepositoryStorage();
 
-        public static Task<RepositoryHistory> LoadRepositoryHistoryAsync()
+        public static Task AddAsMostRecentRemoteHistoryAsync(string repositoryPath)
+        {
+            if (!PathUtil.IsUrl(repositoryPath))
+            {
+                // TODO: throw a specific exception
+                throw new NotSupportedException();
+            }
+
+            return AddAsMostRecentRepositoryAsync(repositoryPath, LoadRemoteHistoryAsync, SaveRemoteHistoryAsync);
+        }
+
+        public static Task<RepositoryHistory> AddMostRecentLocalHistoryAsync(string repositoryPath)
+        {
+            if (PathUtil.IsUrl(repositoryPath))
+            {
+                // TODO: throw a specific exception
+                throw new NotSupportedException();
+            }
+
+            repositoryPath = repositoryPath.ToNativePath().EnsureTrailingPathSeparator();
+            return AddAsMostRecentRepositoryAsync(repositoryPath, LoadLocalHistoryAsync, SaveLocalHistoryAsync);
+        }
+
+        public static void AdjustHistorySize(IList<Repository> repositories, int recentRepositoriesHistorySize)
+        {
+            // TODO:
+        }
+
+        public static Task<RepositoryHistory> LoadLocalHistoryAsync()
         {
             int size = AppSettings.RecentRepositoriesHistorySize;
             return Task.Run(() =>
@@ -31,36 +59,7 @@ namespace GitCommands.Repository
             });
         }
 
-        public static Task RemoveRepositoryHistoryAsync(Repository repository)
-        {
-            // TODO:
-            return Task.CompletedTask;
-        }
-
-        public static Task<RepositoryHistory> AddMostRecentRepositoryAsync(string repositoryPath)
-        {
-            if (PathUtil.IsUrl(repositoryPath))
-            {
-                // TODO: throw a specific exception
-                throw new NotSupportedException();
-            }
-
-            repositoryPath = repositoryPath.ToNativePath().EnsureTrailingPathSeparator();
-            return AddAsMostRecentRepositoryAsync(repositoryPath, LoadRepositoryHistoryAsync, SaveRepositoryHistoryAsync);
-        }
-
-        public static Task AddMostRecentRemoteRepositoryAsync(string repositoryPath)
-        {
-            if (!PathUtil.IsUrl(repositoryPath))
-            {
-                // TODO: throw a specific exception
-                throw new NotSupportedException();
-            }
-
-            return AddAsMostRecentRepositoryAsync(repositoryPath, LoadRepositoryRemoteHistoryAsync, SaveRepositoryRemoteHistoryAsync);
-        }
-
-        public static Task<RepositoryHistory> LoadRepositoryRemoteHistoryAsync()
+        public static Task<RepositoryHistory> LoadRemoteHistoryAsync()
         {
             // BUG: this must be a separate settings
             // TODO: to be addressed separately
@@ -80,27 +79,28 @@ namespace GitCommands.Repository
             });
         }
 
-        public static void AdjustRepositoryHistorySize(IList<Repository> repositories, int recentRepositoriesHistorySize)
+        public static Task RemoveFromHistoryAsync(Repository repository)
         {
             // TODO:
+            return Task.CompletedTask;
         }
 
-        public static Task SaveRepositoryHistoryAsync(RepositoryHistory repositoryHistory)
+        public static Task SaveLocalHistoryAsync(RepositoryHistory repositoryHistory)
         {
             return Task.Run(() =>
             {
-                AdjustRepositoryHistorySize(repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
+                AdjustHistorySize(repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
                 RepositoryStorage.Save(KeyRecentHistory, repositoryHistory.Repositories);
             });
         }
 
-        public static Task SaveRepositoryRemoteHistoryAsync(RepositoryHistory repositoryHistory)
+        public static Task SaveRemoteHistoryAsync(RepositoryHistory repositoryHistory)
         {
             return Task.Run(() =>
             {
                 // BUG: this must be a separate settings
                 // TODO: to be addressed separately
-                AdjustRepositoryHistorySize(repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
+                AdjustHistorySize(repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
                 RepositoryStorage.Save(KeyRemoteHistory, repositoryHistory.Repositories);
             });
         }

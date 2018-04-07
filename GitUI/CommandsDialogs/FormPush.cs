@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
 using GitCommands.Remote;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using GitUI.Script;
 using GitUI.UserControls;
 using GitUIPluginInterfaces;
@@ -314,7 +314,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryManager.AddMostRecentRemoteRepositoryAsync(path);
+                    await RepositoryManager.AddAsMostRecentRemoteHistoryAsync(path);
                 }).FileAndForget();
             }
 
@@ -792,7 +792,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    var repositoryHistory = await RepositoryManager.LoadRepositoryRemoteHistoryAsync();
+                    var repositoryHistory = await RepositoryManager.LoadRemoteHistoryAsync();
 
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     string prevUrl = PushDestination.Text;

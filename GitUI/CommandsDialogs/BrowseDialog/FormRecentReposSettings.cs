@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using Microsoft.VisualStudio.Threading;
 
 namespace GitUI.CommandsDialogs.BrowseDialog
@@ -23,7 +23,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                _repositoryHistory = await RepositoryManager.LoadRepositoryHistoryAsync();
+                _repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 LoadSettings();
@@ -58,10 +58,10 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 if (mustResizeRepositriesHistory)
                 {
-                    RepositoryManager.AdjustRepositoryHistorySize(_repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
+                    RepositoryManager.AdjustHistorySize(_repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
                 }
 
-                await RepositoryManager.SaveRepositoryHistoryAsync(_repositoryHistory);
+                await RepositoryManager.SaveLocalHistoryAsync(_repositoryHistory);
             }).FileAndForget();
         }
 
@@ -284,7 +284,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                await RepositoryManager.RemoveRepositoryHistoryAsync(repo.Repo);
+                await RepositoryManager.RemoveFromHistoryAsync(repo.Repo);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RefreshRepos();
