@@ -29,7 +29,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_Directory.DataSource = GetDirectories(currentModule, repositoryHistory);
@@ -95,7 +95,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryManager.AddMostRecentLocalHistoryAsync(_choosenModule.WorkingDir);
+                    await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(_choosenModule.WorkingDir);
                 }).FileAndForget();
 
                 Close();

@@ -24,7 +24,7 @@ namespace GitUI.CommandsDialogs.SubmodulesDialog
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadRemoteHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 Directory.DataSource = repositoryHistory.Repositories;

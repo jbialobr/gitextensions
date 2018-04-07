@@ -402,7 +402,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryManager.AddAsMostRecentRemoteHistoryAsync(path);
+                    await RepositoryHistoryManager.Remotes.AddAsMostRecentAsync(path);
                 }).FileAndForget();
             }
 
@@ -870,7 +870,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadRemoteHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 string prevUrl = comboBoxPullSource.Text;

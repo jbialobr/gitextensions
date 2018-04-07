@@ -37,7 +37,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 Directory.DataSource = repositoryHistory.Repositories;
@@ -75,7 +75,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                await RepositoryManager.AddMostRecentLocalHistoryAsync(path);
+                await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path);
             }).FileAndForget();
 
             Close();

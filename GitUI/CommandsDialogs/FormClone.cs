@@ -53,7 +53,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_To.DataSource = repositoryHistory.Repositories;
@@ -67,7 +67,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = await RepositoryManager.LoadRemoteHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_From.DataSource = repositoryHistory.Repositories;
@@ -249,7 +249,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryManager.AddMostRecentLocalHistoryAsync(dirTo);
+                    await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(dirTo);
                 }).FileAndForget();
 
                 if (!string.IsNullOrEmpty(_puttySshKey))

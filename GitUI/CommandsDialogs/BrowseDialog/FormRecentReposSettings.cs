@@ -23,7 +23,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                _repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
+                _repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 LoadSettings();
@@ -49,19 +49,12 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             AppSettings.SortLessRecentRepos = sortLessRecentRepos.Checked;
             AppSettings.MaxMostRecentRepositories = (int)_NO_TRANSLATE_maxRecentRepositories.Value;
             AppSettings.RecentReposComboMinWidth = (int)comboMinWidthEdit.Value;
-
-            var mustResizeRepositriesHistory = AppSettings.RecentRepositoriesHistorySize != (int)_NO_TRANSLATE_RecentRepositoriesHistorySize.Value;
             AppSettings.RecentRepositoriesHistorySize = (int)_NO_TRANSLATE_RecentRepositoriesHistorySize.Value;
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                if (mustResizeRepositriesHistory)
-                {
-                    RepositoryManager.AdjustHistorySize(_repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
-                }
-
-                await RepositoryManager.SaveLocalHistoryAsync(_repositoryHistory);
+                await RepositoryHistoryManager.Locals.SaveHistoryAsync(_repositoryHistory);
             }).FileAndForget();
         }
 
@@ -284,7 +277,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                await RepositoryManager.RemoveFromHistoryAsync(repo.Repo);
+                await RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(repo.Repo);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RefreshRepos();

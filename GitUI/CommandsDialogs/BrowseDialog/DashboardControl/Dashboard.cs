@@ -184,7 +184,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                     {
                         await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                        await RepositoryManager.AddMostRecentLocalHistoryAsync(dir);
+                        await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(dir);
                     }).FileAndForget();
                     OnModuleChanged(this, new GitModuleEventArgs(module));
                 }

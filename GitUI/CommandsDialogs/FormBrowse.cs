@@ -194,7 +194,7 @@ namespace GitUI.CommandsDialogs
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                _repositoryHistory = await RepositoryManager.LoadLocalHistoryAsync();
+                _repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
                 try
                 {
@@ -719,7 +719,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await TaskScheduler.Default;
-                    _repositoryHistory = await RepositoryManager.AddMostRecentLocalHistoryAsync(path);
+                    _repositoryHistory = await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path);
                 });
             }
 
@@ -1675,7 +1675,7 @@ namespace GitUI.CommandsDialogs
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 _repositoryHistory.Repositories.Clear();
-                await RepositoryManager.SaveLocalHistoryAsync(_repositoryHistory);
+                await RepositoryHistoryManager.Locals.SaveHistoryAsync(_repositoryHistory);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _dashboard?.ShowRecentRepositories();
@@ -1821,7 +1821,7 @@ namespace GitUI.CommandsDialogs
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    _repositoryHistory = await RepositoryManager.AddMostRecentLocalHistoryAsync(path);
+                    _repositoryHistory = await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path);
                 });
 
                 AppSettings.RecentWorkingDir = path;
