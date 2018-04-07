@@ -246,7 +246,11 @@ namespace GitUI.CommandsDialogs
                     }
                 }
 
-                RepositoryManager.AddMostRecentRepository(dirTo);
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                    await RepositoryManager.AddMostRecentRepositoryAsync(dirTo);
+                }).FileAndForget();
 
                 if (!string.IsNullOrEmpty(_puttySshKey))
                 {

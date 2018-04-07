@@ -710,19 +710,20 @@ namespace GitUI.CommandsDialogs
 
         private void RefreshWorkingDirCombo()
         {
-            Repository r = null;
-            if (_repositoryHistory.Repositories.Count > 0)
+            if (!Module.WorkingDir.Equals(_repositoryHistory.Repositories.FirstOrDefault()?.Path, StringComparison.InvariantCultureIgnoreCase))
             {
-                r = _repositoryHistory.Repositories[0];
+                var path = Module.WorkingDir;
+
+                // save the current repository as the most recent
+                // the call is blocking because we are reloading the list of repositories
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await TaskScheduler.Default;
+                    _repositoryHistory = await RepositoryManager.AddMostRecentRepositoryAsync(path);
+                });
             }
 
             List<RecentRepoInfo> mostRecentRepos = new List<RecentRepoInfo>();
-
-            if (r == null || !r.Path.Equals(Module.WorkingDir, StringComparison.InvariantCultureIgnoreCase))
-            {
-                RepositoryManager.AddMostRecentRepository(Module.WorkingDir);
-            }
-
             using (var graphics = CreateGraphics())
             {
                 var splitter = new RecentRepoSplitter
@@ -1816,13 +1817,19 @@ namespace GitUI.CommandsDialogs
 
             if (Module.IsValidGitWorkingDir())
             {
-                RepositoryManager.AddMostRecentRepository(Module.WorkingDir);
-                AppSettings.RecentWorkingDir = module.WorkingDir;
-                ChangeTerminalActiveFolder(Module.WorkingDir);
+                var path = Module.WorkingDir;
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                    _repositoryHistory = await RepositoryManager.AddMostRecentRepositoryAsync(path);
+                });
+
+                AppSettings.RecentWorkingDir = path;
+                ChangeTerminalActiveFolder(path);
 
 #if DEBUG
                 // Current encodings
-                Debug.WriteLine("Encodings for " + module.WorkingDir);
+                Debug.WriteLine("Encodings for " + path);
                 Debug.WriteLine("Files content encoding: " + module.FilesEncoding.EncodingName);
                 Debug.WriteLine("Commit encoding: " + module.CommitEncoding.EncodingName);
                 if (module.LogOutputEncoding.CodePage != module.CommitEncoding.CodePage)

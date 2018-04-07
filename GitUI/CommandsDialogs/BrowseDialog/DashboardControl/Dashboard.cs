@@ -3,9 +3,11 @@ using System.Collections;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Repository;
+using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
@@ -179,7 +181,11 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
                         }
                     }
 
-                    RepositoryManager.AddMostRecentRepository(module.WorkingDir);
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    {
+                        await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                        await RepositoryManager.AddMostRecentRepositoryAsync(dir);
+                    }).FileAndForget();
                     OnModuleChanged(this, new GitModuleEventArgs(module));
                 }
 
