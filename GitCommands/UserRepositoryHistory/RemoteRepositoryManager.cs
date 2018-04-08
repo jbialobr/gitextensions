@@ -13,7 +13,6 @@ namespace GitCommands.UserRepositoryHistory
     public sealed class RemoteRepositoryManager : IRepositoryManager
     {
         private const string KeyRemoteHistory = "history remote";
-
         private readonly IRepositoryStorage _repositoryStorage;
 
         public RemoteRepositoryManager(IRepositoryStorage repositoryStorage)
@@ -94,7 +93,7 @@ namespace GitCommands.UserRepositoryHistory
                     return repositoryHistory;
                 }
 
-                repositoryHistory.Repositories = new BindingList<Repository>(history.ToList());
+                repositoryHistory.Repositories = new BindingList<Repository>(AdjustHistorySize(history, size).ToList());
                 return repositoryHistory;
             });
         }
@@ -118,18 +117,18 @@ namespace GitCommands.UserRepositoryHistory
         /// <remarks>The size of the history will be adjusted as per <see cref="AppSettings.RecentRepositoriesHistorySize"/> setting.</remarks>
         public Task SaveHistoryAsync(RepositoryHistory repositoryHistory)
         {
+            // BUG: this must be a separate settings
+            // TODO: to be addressed separately
+            int size = AppSettings.RecentRepositoriesHistorySize;
             return Task.Run(() =>
             {
-                // BUG: this must be a separate settings
-                // TODO: to be addressed separately
-                AdjustHistorySize(repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
-                _repositoryStorage.Save(KeyRemoteHistory, repositoryHistory.Repositories);
+                _repositoryStorage.Save(KeyRemoteHistory, AdjustHistorySize(repositoryHistory.Repositories, size));
             });
         }
 
-        private void AdjustHistorySize(IList<Repository> repositories, int recentRepositoriesHistorySize)
+        private static IEnumerable<Repository> AdjustHistorySize(IEnumerable<Repository> repositories, int recentRepositoriesHistorySize)
         {
-            // TODO:
+            return repositories.Take(recentRepositoriesHistorySize);
         }
     }
 }

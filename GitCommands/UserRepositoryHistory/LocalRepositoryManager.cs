@@ -94,7 +94,7 @@ namespace GitCommands.UserRepositoryHistory
                     return repositoryHistory;
                 }
 
-                repositoryHistory.Repositories = new BindingList<Repository>(history.ToList());
+                repositoryHistory.Repositories = new BindingList<Repository>(AdjustHistorySize(history, size).ToList());
                 return repositoryHistory;
             });
         }
@@ -118,16 +118,16 @@ namespace GitCommands.UserRepositoryHistory
         /// <remarks>The size of the history will be adjusted as per <see cref="AppSettings.RecentRepositoriesHistorySize"/> setting.</remarks>
         public Task SaveHistoryAsync(RepositoryHistory repositoryHistory)
         {
+            int size = AppSettings.RecentRepositoriesHistorySize;
             return Task.Run(() =>
             {
-                AdjustHistorySize(repositoryHistory.Repositories, AppSettings.RecentRepositoriesHistorySize);
-                _repositoryStorage.Save(KeyRecentHistory, repositoryHistory.Repositories);
+                _repositoryStorage.Save(KeyRecentHistory, AdjustHistorySize(repositoryHistory.Repositories, size));
             });
         }
 
-        private void AdjustHistorySize(IList<Repository> repositories, int recentRepositoriesHistorySize)
+        private static IEnumerable<Repository> AdjustHistorySize(IEnumerable<Repository> repositories, int recentRepositoriesHistorySize)
         {
-            // TODO:
+            return repositories.Take(recentRepositoriesHistorySize);
         }
     }
 }
