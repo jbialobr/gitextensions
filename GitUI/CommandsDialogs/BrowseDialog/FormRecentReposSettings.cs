@@ -12,7 +12,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
 {
     public partial class FormRecentReposSettings : GitExtensionsForm
     {
-        private RepositoryHistory _repositoryHistory;
+        private IList<Repository> _repositoryHistory;
 
         public FormRecentReposSettings()
             : base(true)
@@ -119,7 +119,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
 
             try
             {
-                splitter.SplitRecentRepos(_repositoryHistory.Repositories, mostRecentRepos, lessRecentRepos);
+                splitter.SplitRecentRepos(_repositoryHistory, mostRecentRepos, lessRecentRepos);
             }
             finally
             {

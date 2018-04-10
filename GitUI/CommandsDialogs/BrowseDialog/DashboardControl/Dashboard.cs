@@ -106,10 +106,6 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
             GitModuleChanged?.Invoke(this, e);
         }
 
-        private void AddDashboardEntry(RepositoryCategory entry)
-        {
-        }
-
         public override void Refresh()
         {
             _initialized = false;

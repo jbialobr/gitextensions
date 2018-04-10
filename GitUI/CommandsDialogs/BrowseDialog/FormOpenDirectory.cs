@@ -39,7 +39,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             }).FileAndForget();
         }
 
-        private static IReadOnlyList<string> GetDirectories(GitModule currentModule, RepositoryHistory repositoryHistory)
+        private static IReadOnlyList<string> GetDirectories(GitModule currentModule, IEnumerable<Repository> repositoryHistory)
         {
             List<string> directories = new List<string>();
 
@@ -57,7 +57,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 }
             }
 
-            directories.AddRange(repositoryHistory.Repositories.Select(r => r.Path));
+            directories.AddRange(repositoryHistory.Select(r => r.Path));
 
             if (directories.Count == 0)
             {

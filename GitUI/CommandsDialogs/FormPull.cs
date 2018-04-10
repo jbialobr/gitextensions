@@ -874,7 +874,7 @@ namespace GitUI.CommandsDialogs
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 string prevUrl = comboBoxPullSource.Text;
-                comboBoxPullSource.DataSource = repositoryHistory.Repositories;
+                comboBoxPullSource.DataSource = repositoryHistory;
                 comboBoxPullSource.DisplayMember = nameof(Repository.Path);
                 comboBoxPullSource.Text = prevUrl;
             }).FileAndForget();

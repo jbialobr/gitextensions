@@ -199,7 +199,7 @@ Inactive remote is completely invisible to git.");
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                var repositoryHistory = (await RepositoryHistoryManager.Remotes.LoadHistoryAsync()).Repositories;
+                var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 try
@@ -380,10 +380,10 @@ Inactive remote is completely invisible to git.");
                         var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                        RemoteUpdate(repositoryHistory.Repositories, _selectedRemote?.Url, remoteUrl);
+                        RemoteUpdate(repositoryHistory, _selectedRemote?.Url, remoteUrl);
                         if (checkBoxSepPushUrl.Checked)
                         {
-                            RemoteUpdate(repositoryHistory.Repositories, _selectedRemote?.PushUrl, remotePushUrl);
+                            RemoteUpdate(repositoryHistory, _selectedRemote?.PushUrl, remotePushUrl);
                         }
 
                         await TaskScheduler.Default.SwitchTo(alwaysYield: true);

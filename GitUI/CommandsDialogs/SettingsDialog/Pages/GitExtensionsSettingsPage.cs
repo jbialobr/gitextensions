@@ -22,8 +22,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
                 var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                var historicPaths = repositoryHistory.Repositories
-                                                     .Select(GetParentPath())
+                var historicPaths = repositoryHistory.Select(GetParentPath())
                                                      .Where(x => !string.IsNullOrEmpty(x))
                                                      .Distinct(StringComparer.CurrentCultureIgnoreCase)
                                                      .ToArray();

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -34,7 +33,7 @@ namespace GitCommands.UserRepositoryHistory
         /// <exception cref="ArgumentException"><paramref name="repositoryPath"/> is <see langword="null"/> or <see cref="string.Empty"/>.</exception>
         /// <exception cref="NotSupportedException"><paramref name="repositoryPath"/> is a URL.</exception>
         [ContractAnnotation("repositoryPath:null=>halt")]
-        public Task<RepositoryHistory> AddAsMostRecentAsync(string repositoryPath)
+        public Task<IList<Repository>> AddAsMostRecentAsync(string repositoryPath)
         {
             if (string.IsNullOrWhiteSpace(repositoryPath))
             {
@@ -52,28 +51,28 @@ namespace GitCommands.UserRepositoryHistory
                                            .EnsureTrailingPathSeparator();
             return AddAsMostRecentRepositoryAsync(repositoryPath);
 
-            Task<RepositoryHistory> AddAsMostRecentRepositoryAsync(string path)
+            Task<IList<Repository>> AddAsMostRecentRepositoryAsync(string path)
             {
-                return Task.Run(async () =>
-                {
-                    var repositoryHistory = await LoadHistoryAsync();
+                return Task.Run<IList<Repository>>(async () =>
+               {
+                   var repositoryHistory = (await LoadHistoryAsync()).ToList();
 
-                    var repository = repositoryHistory.Repositories.FirstOrDefault(r => r.Path.Equals(path, StringComparison.CurrentCultureIgnoreCase));
-                    if (repository != null)
-                    {
-                        repositoryHistory.Repositories.Remove(repository);
-                    }
-                    else
-                    {
-                        repository = new Repository(path);
-                    }
+                   var repository = repositoryHistory.FirstOrDefault(r => r.Path.Equals(path, StringComparison.CurrentCultureIgnoreCase));
+                   if (repository != null)
+                   {
+                       repositoryHistory.Remove(repository);
+                   }
+                   else
+                   {
+                       repository = new Repository(path);
+                   }
 
-                    repositoryHistory.Repositories.Insert(0, repository);
+                   repositoryHistory.Insert(0, repository);
 
-                    await SaveHistoryAsync(repositoryHistory);
+                   await SaveHistoryAsync(repositoryHistory);
 
-                    return repositoryHistory;
-                });
+                   return repositoryHistory;
+               });
             }
         }
 
@@ -81,21 +80,18 @@ namespace GitCommands.UserRepositoryHistory
         /// Loads the history of local git repositories from a persistent storage.
         /// </summary>
         /// <returns>The history of local git repositories.</returns>
-        public Task<RepositoryHistory> LoadHistoryAsync()
+        public Task<IList<Repository>> LoadHistoryAsync()
         {
             int size = AppSettings.RecentRepositoriesHistorySize;
-            return Task.Run(() =>
+            return Task.Run<IList<Repository>>(() =>
             {
-                var repositoryHistory = new RepositoryHistory(size);
-
                 var history = _repositoryStorage.Load(KeyRecentHistory);
                 if (history == null)
                 {
-                    return repositoryHistory;
+                    return Array.Empty<Repository>();
                 }
 
-                repositoryHistory.Repositories = new BindingList<Repository>(AdjustHistorySize(history, size).ToList());
-                return repositoryHistory;
+                return AdjustHistorySize(history, size).ToList();
             });
         }
 
@@ -104,12 +100,12 @@ namespace GitCommands.UserRepositoryHistory
         /// </summary>
         /// <param name="repository">A repository to remove.</param>
         /// <returns>The current version of the history of local git repositories after the update.</returns>
-        public Task<RepositoryHistory> RemoveFromHistoryAsync(Repository repository)
+        public Task<IList<Repository>> RemoveFromHistoryAsync(Repository repository)
         {
             return Task.Run(async () =>
             {
                 var repositoryHistory = await LoadHistoryAsync();
-                if (!repositoryHistory.Repositories.Remove(repository))
+                if (!repositoryHistory.Remove(repository))
                 {
                     return repositoryHistory;
                 }
@@ -125,12 +121,12 @@ namespace GitCommands.UserRepositoryHistory
         /// <param name="repositoryHistory">A collection of local git repositories.</param>
         /// <returns>An awaitable task.</returns>
         /// <remarks>The size of the history will be adjusted as per <see cref="AppSettings.RecentRepositoriesHistorySize"/> setting.</remarks>
-        public Task SaveHistoryAsync(RepositoryHistory repositoryHistory)
+        public Task SaveHistoryAsync(IEnumerable<Repository> repositoryHistory)
         {
             int size = AppSettings.RecentRepositoriesHistorySize;
             return Task.Run(() =>
             {
-                _repositoryStorage.Save(KeyRecentHistory, AdjustHistorySize(repositoryHistory.Repositories, size));
+                _repositoryStorage.Save(KeyRecentHistory, AdjustHistorySize(repositoryHistory, size));
             });
         }
 

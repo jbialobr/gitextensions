@@ -796,7 +796,7 @@ namespace GitUI.CommandsDialogs
 
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     string prevUrl = PushDestination.Text;
-                    PushDestination.DataSource = repositoryHistory.Repositories;
+                    PushDestination.DataSource = repositoryHistory;
                     PushDestination.DisplayMember = nameof(Repository.Path);
                     PushDestination.Text = prevUrl;
 
