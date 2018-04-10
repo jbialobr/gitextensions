@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
 using GitUIPluginInterfaces.RepositoryHosts;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.RepoHosting
@@ -61,19 +59,18 @@ namespace GitUI.CommandsDialogs.RepoHosting
             }
             else
             {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
-                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                     var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    await this.SwitchToMainThreadAsync();
                     var lastRepo = repositoryHistory.FirstOrDefault();
                     if (!string.IsNullOrEmpty(lastRepo?.Path))
                     {
                         string p = lastRepo.Path.Trim('/', '\\');
                         _destinationTB.Text = Path.GetDirectoryName(p);
                     }
-                }).FileAndForget();
+                });
             }
 
             Text = _gitHoster.Description + ": " + Text;

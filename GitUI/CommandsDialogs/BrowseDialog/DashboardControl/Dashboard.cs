@@ -3,11 +3,9 @@ using System.Collections;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
@@ -177,11 +175,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
                         }
                     }
 
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                    {
-                        await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                        await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(dir);
-                    }).FileAndForget();
+                    ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(dir));
                     OnModuleChanged(this, new GitModuleEventArgs(module));
                 }
 

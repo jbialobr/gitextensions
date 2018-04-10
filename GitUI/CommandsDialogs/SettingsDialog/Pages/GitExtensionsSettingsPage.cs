@@ -1,10 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
-using Microsoft.VisualStudio.Threading;
 
 namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
@@ -16,18 +14,17 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             Text = "Git Extensions";
             Translate();
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 var historicPaths = repositoryHistory.Select(GetParentPath())
                                                      .Where(x => !string.IsNullOrEmpty(x))
                                                      .Distinct(StringComparer.CurrentCultureIgnoreCase)
                                                      .ToArray();
                 cbDefaultCloneDestination.Items.AddRange(historicPaths);
-            }).FileAndForget();
+            });
         }
 
         protected override void SettingsToPage()

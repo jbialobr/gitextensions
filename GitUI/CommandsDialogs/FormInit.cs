@@ -1,10 +1,8 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -34,16 +32,15 @@ namespace GitUI.CommandsDialogs
             InitializeComponent();
             Translate();
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 Directory.DataSource = repositoryHistory;
                 Directory.DisplayMember = nameof(Repository.Path);
                 Directory.Text = string.IsNullOrEmpty(dir) ? AppSettings.DefaultCloneDestinationPath : dir;
-            }).FileAndForget();
+            });
         }
 
         private void InitClick(object sender, EventArgs e)
@@ -72,11 +69,7 @@ namespace GitUI.CommandsDialogs
             _gitModuleChanged?.Invoke(this, new GitModuleEventArgs(module));
 
             var path = Directory.Text;
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path);
-            }).FileAndForget();
+            ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path));
 
             Close();
         }

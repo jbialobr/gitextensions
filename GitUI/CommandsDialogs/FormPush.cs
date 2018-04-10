@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
@@ -14,7 +13,6 @@ using GitCommands.UserRepositoryHistory;
 using GitUI.Script;
 using GitUI.UserControls;
 using GitUIPluginInterfaces;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -311,11 +309,7 @@ namespace GitUI.CommandsDialogs
             if (PushToUrl.Checked)
             {
                 var path = PushDestination.Text;
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryHistoryManager.Remotes.AddAsMostRecentAsync(path);
-                }).FileAndForget();
+                ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Remotes.AddAsMostRecentAsync(path));
             }
 
             AppSettings.RecursiveSubmodules = RecursiveSubmodules.SelectedIndex;
@@ -789,19 +783,18 @@ namespace GitUI.CommandsDialogs
 
             if (PushToUrl.Checked)
             {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
-                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                     var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    await this.SwitchToMainThreadAsync();
                     string prevUrl = PushDestination.Text;
                     PushDestination.DataSource = repositoryHistory;
                     PushDestination.DisplayMember = nameof(Repository.Path);
                     PushDestination.Text = prevUrl;
 
                     BranchSelectedValueChanged(null, null);
-                }).FileAndForget();
+                });
             }
             else
             {
@@ -1044,37 +1037,37 @@ namespace GitUI.CommandsDialogs
             switch (e.Column.ColumnName)
             {
                 case PushColumnName:
-                {
-                    if ((bool)e.ProposedValue)
                     {
-                        e.Row[ForceColumnName] = false;
-                        e.Row[DeleteColumnName] = false;
-                    }
+                        if ((bool)e.ProposedValue)
+                        {
+                            e.Row[ForceColumnName] = false;
+                            e.Row[DeleteColumnName] = false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
 
                 case ForceColumnName:
-                {
-                    if ((bool)e.ProposedValue)
                     {
-                        e.Row[PushColumnName] = false;
-                        e.Row[DeleteColumnName] = false;
-                    }
+                        if ((bool)e.ProposedValue)
+                        {
+                            e.Row[PushColumnName] = false;
+                            e.Row[DeleteColumnName] = false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
 
                 case DeleteColumnName:
-                {
-                    if ((bool)e.ProposedValue)
                     {
-                        e.Row[PushColumnName] = false;
-                        e.Row[ForceColumnName] = false;
-                    }
+                        if ((bool)e.ProposedValue)
+                        {
+                            e.Row[PushColumnName] = false;
+                            e.Row[ForceColumnName] = false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
 

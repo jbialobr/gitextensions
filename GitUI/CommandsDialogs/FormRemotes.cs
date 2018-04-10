@@ -196,12 +196,11 @@ Inactive remote is completely invisible to git.");
 
         private void InitialiseTabRemotes(string preselectRemote = null)
         {
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 try
                 {
                     // because the binding the same BindingList to multiple controls,
@@ -231,7 +230,7 @@ Inactive remote is completely invisible to git.");
                     Url.EndUpdate();
                     comboBoxPushUrl.EndUpdate();
                 }
-            }).FileAndForget();
+            });
         }
 
         private void InitialiseTabBehaviors()
@@ -374,21 +373,20 @@ Inactive remote is completely invisible to git.");
                         FireRemoteRenamedEvent(new RemoteRenamedEventArgs(_selectedRemote.Name, remote));
                     }
 
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    ThreadHelper.JoinableTaskFactory.Run(async () =>
                     {
-                        await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                         var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                        await this.SwitchToMainThreadAsync();
                         RemoteUpdate(repositoryHistory, _selectedRemote?.Url, remoteUrl);
                         if (checkBoxSepPushUrl.Checked)
                         {
                             RemoteUpdate(repositoryHistory, _selectedRemote?.PushUrl, remotePushUrl);
                         }
 
-                        await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                        await TaskScheduler.Default;
                         await RepositoryHistoryManager.Remotes.SaveHistoryAsync(repositoryHistory);
-                    }).FileAndForget();
+                    });
                 }
 
                 // if the user has just created a fresh new remote

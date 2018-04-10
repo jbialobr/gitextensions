@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
@@ -16,7 +15,6 @@ using GitUI.Properties;
 using GitUI.Script;
 using GitUI.UserControls;
 using GitUIPluginInterfaces;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -399,11 +397,7 @@ namespace GitUI.CommandsDialogs
             if (PullFromUrl.Checked && Directory.Exists(comboBoxPullSource.Text))
             {
                 var path = comboBoxPullSource.Text;
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryHistoryManager.Remotes.AddAsMostRecentAsync(path);
-                }).FileAndForget();
+                ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Remotes.AddAsMostRecentAsync(path));
             }
 
             var source = CalculateSource();
@@ -867,17 +861,16 @@ namespace GitUI.CommandsDialogs
             Merge.Enabled = true;
             Rebase.Enabled = true;
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 string prevUrl = comboBoxPullSource.Text;
                 comboBoxPullSource.DataSource = repositoryHistory;
                 comboBoxPullSource.DisplayMember = nameof(Repository.Path);
                 comboBoxPullSource.Text = prevUrl;
-            }).FileAndForget();
+            });
         }
 
         private void AddRemoteClick(object sender, EventArgs e)

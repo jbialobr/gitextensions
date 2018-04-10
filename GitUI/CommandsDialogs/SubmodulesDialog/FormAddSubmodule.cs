@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
 using GitUIPluginInterfaces;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.SubmodulesDialog
@@ -21,17 +19,16 @@ namespace GitUI.CommandsDialogs.SubmodulesDialog
             InitializeComponent();
             Translate();
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 Directory.DataSource = repositoryHistory;
                 Directory.DisplayMember = nameof(Repository.Path);
                 Directory.Text = "";
                 LocalPath.Text = "";
-            }).FileAndForget();
+            });
         }
 
         private void BrowseClick(object sender, EventArgs e)

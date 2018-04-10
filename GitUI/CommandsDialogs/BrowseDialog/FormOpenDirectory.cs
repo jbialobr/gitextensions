@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.BrowseDialog
@@ -26,17 +24,16 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             InitializeComponent();
             Translate();
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_Directory.DataSource = GetDirectories(currentModule, repositoryHistory);
                 Load.Select();
                 _NO_TRANSLATE_Directory.Focus();
                 _NO_TRANSLATE_Directory.Select();
-            }).FileAndForget();
+            });
         }
 
         private static IReadOnlyList<string> GetDirectories(GitModule currentModule, IEnumerable<Repository> repositoryHistory)
@@ -92,12 +89,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             {
                 _choosenModule = new GitModule(_NO_TRANSLATE_Directory.Text);
 
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                    await RepositoryHistoryManager.Locals.AddAsMostRecentAsync(_choosenModule.WorkingDir);
-                }).FileAndForget();
-
+                ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(_choosenModule.WorkingDir));
                 Close();
             }
             else

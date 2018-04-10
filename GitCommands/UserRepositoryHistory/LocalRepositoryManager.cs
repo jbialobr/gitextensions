@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.VisualStudio.Threading;
 
 namespace GitCommands.UserRepositoryHistory
 {
@@ -33,7 +34,7 @@ namespace GitCommands.UserRepositoryHistory
         /// <exception cref="ArgumentException"><paramref name="repositoryPath"/> is <see langword="null"/> or <see cref="string.Empty"/>.</exception>
         /// <exception cref="NotSupportedException"><paramref name="repositoryPath"/> is a URL.</exception>
         [ContractAnnotation("repositoryPath:null=>halt")]
-        public Task<IList<Repository>> AddAsMostRecentAsync(string repositoryPath)
+        public async Task<IList<Repository>> AddAsMostRecentAsync(string repositoryPath)
         {
             if (string.IsNullOrWhiteSpace(repositoryPath))
             {
@@ -49,30 +50,32 @@ namespace GitCommands.UserRepositoryHistory
             repositoryPath = repositoryPath.Trim()
                                            .ToNativePath()
                                            .EnsureTrailingPathSeparator();
-            return AddAsMostRecentRepositoryAsync(repositoryPath);
 
-            Task<IList<Repository>> AddAsMostRecentRepositoryAsync(string path)
+            // awaiting instead of passing through as per review comment
+            // https://github.com/gitextensions/gitextensions/pull/4766/files/03bae27e850fb70450a0dcc3390ea16666ec2983#r179945808
+            return await AddAsMostRecentRepositoryAsync(repositoryPath);
+
+            async Task<IList<Repository>> AddAsMostRecentRepositoryAsync(string path)
             {
-                return Task.Run<IList<Repository>>(async () =>
-               {
-                   var repositoryHistory = (await LoadHistoryAsync()).ToList();
+                await TaskScheduler.Default;
 
-                   var repository = repositoryHistory.FirstOrDefault(r => r.Path.Equals(path, StringComparison.CurrentCultureIgnoreCase));
-                   if (repository != null)
-                   {
-                       repositoryHistory.Remove(repository);
-                   }
-                   else
-                   {
-                       repository = new Repository(path);
-                   }
+                var repositoryHistory = (await LoadHistoryAsync()).ToList();
 
-                   repositoryHistory.Insert(0, repository);
+                var repository = repositoryHistory.FirstOrDefault(r => r.Path.Equals(path, StringComparison.CurrentCultureIgnoreCase));
+                if (repository != null)
+                {
+                    repositoryHistory.Remove(repository);
+                }
+                else
+                {
+                    repository = new Repository(path);
+                }
 
-                   await SaveHistoryAsync(repositoryHistory);
+                repositoryHistory.Insert(0, repository);
 
-                   return repositoryHistory;
-               });
+                await SaveHistoryAsync(repositoryHistory);
+
+                return repositoryHistory;
             }
         }
 
@@ -80,19 +83,19 @@ namespace GitCommands.UserRepositoryHistory
         /// Loads the history of local git repositories from a persistent storage.
         /// </summary>
         /// <returns>The history of local git repositories.</returns>
-        public Task<IList<Repository>> LoadHistoryAsync()
+        public async Task<IList<Repository>> LoadHistoryAsync()
         {
-            int size = AppSettings.RecentRepositoriesHistorySize;
-            return Task.Run<IList<Repository>>(() =>
-            {
-                var history = _repositoryStorage.Load(KeyRecentHistory);
-                if (history == null)
-                {
-                    return Array.Empty<Repository>();
-                }
+            await TaskScheduler.Default;
 
-                return AdjustHistorySize(history, size).ToList();
-            });
+            int size = AppSettings.RecentRepositoriesHistorySize;
+
+            var history = _repositoryStorage.Load(KeyRecentHistory);
+            if (history == null)
+            {
+                return Array.Empty<Repository>();
+            }
+
+            return AdjustHistorySize(history, size).ToList();
         }
 
         /// <summary>
@@ -100,19 +103,18 @@ namespace GitCommands.UserRepositoryHistory
         /// </summary>
         /// <param name="repository">A repository to remove.</param>
         /// <returns>The current version of the history of local git repositories after the update.</returns>
-        public Task<IList<Repository>> RemoveFromHistoryAsync(Repository repository)
+        public async Task<IList<Repository>> RemoveFromHistoryAsync(Repository repository)
         {
-            return Task.Run(async () =>
-            {
-                var repositoryHistory = await LoadHistoryAsync();
-                if (!repositoryHistory.Remove(repository))
-                {
-                    return repositoryHistory;
-                }
+            await TaskScheduler.Default;
 
-                await SaveHistoryAsync(repositoryHistory);
+            var repositoryHistory = await LoadHistoryAsync();
+            if (!repositoryHistory.Remove(repository))
+            {
                 return repositoryHistory;
-            });
+            }
+
+            await SaveHistoryAsync(repositoryHistory);
+            return repositoryHistory;
         }
 
         /// <summary>
@@ -121,13 +123,12 @@ namespace GitCommands.UserRepositoryHistory
         /// <param name="repositoryHistory">A collection of local git repositories.</param>
         /// <returns>An awaitable task.</returns>
         /// <remarks>The size of the history will be adjusted as per <see cref="AppSettings.RecentRepositoriesHistorySize"/> setting.</remarks>
-        public Task SaveHistoryAsync(IEnumerable<Repository> repositoryHistory)
+        public async Task SaveHistoryAsync(IEnumerable<Repository> repositoryHistory)
         {
+            await TaskScheduler.Default;
+
             int size = AppSettings.RecentRepositoriesHistorySize;
-            return Task.Run(() =>
-            {
-                _repositoryStorage.Save(KeyRecentHistory, AdjustHistorySize(repositoryHistory, size));
-            });
+            _repositoryStorage.Save(KeyRecentHistory, AdjustHistorySize(repositoryHistory, size));
         }
 
         private static IEnumerable<Repository> AdjustHistorySize(IEnumerable<Repository> repositories, int recentRepositoriesHistorySize)

@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.UserRepositoryHistory;
-using Microsoft.VisualStudio.Threading;
 
 namespace GitUI.CommandsDialogs.BrowseDialog
 {
@@ -22,10 +20,9 @@ namespace GitUI.CommandsDialogs.BrowseDialog
 
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 _repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 LoadSettings();
                 RefreshRepos();
                 SetComboWidth();
@@ -51,11 +48,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             AppSettings.RecentReposComboMinWidth = (int)comboMinWidthEdit.Value;
             AppSettings.RecentRepositoriesHistorySize = (int)_NO_TRANSLATE_RecentRepositoriesHistorySize.Value;
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                await RepositoryHistoryManager.Locals.SaveHistoryAsync(_repositoryHistory);
-            }).FileAndForget();
+            ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.SaveHistoryAsync(_repositoryHistory));
         }
 
         private string GetShorteningStrategy()
@@ -274,14 +267,13 @@ namespace GitUI.CommandsDialogs.BrowseDialog
                 return;
             }
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
                 _repositoryHistory = await RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(repo.Repo);
 
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.SwitchToMainThreadAsync();
                 RefreshRepos();
-            }).FileAndForget();
+            });
         }
 
         private void listView_DrawItem(object sender, DrawListViewItemEventArgs e)
