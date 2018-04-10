@@ -277,7 +277,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await TaskScheduler.Default.SwitchTo(alwaysYield: true);
-                await RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(repo.Repo);
+                _repositoryHistory = await RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(repo.Repo);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RefreshRepos();

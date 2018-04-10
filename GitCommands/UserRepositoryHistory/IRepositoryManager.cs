@@ -28,8 +28,8 @@ namespace GitCommands.UserRepositoryHistory
         /// Removes <paramref name="repository"/> from the history of user git repositories.
         /// </summary>
         /// <param name="repository">A repository to remove.</param>
-        /// <returns>An awaitable task.</returns>
-        Task RemoveFromHistoryAsync(Repository repository);
+        /// <returns>The current version of the history of user git repositories after the update.</returns>
+        Task<RepositoryHistory> RemoveFromHistoryAsync(Repository repository);
 
         /// <summary>
         /// Loads the history of user git repositories.
