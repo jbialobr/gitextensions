@@ -710,14 +710,11 @@ namespace GitUI.CommandsDialogs
 
         private void RefreshWorkingDirCombo()
         {
-            if (!Module.WorkingDir.Equals(_repositoryHistory.FirstOrDefault()?.Path, StringComparison.InvariantCultureIgnoreCase))
-            {
-                var path = Module.WorkingDir;
+            var path = Module.WorkingDir;
 
-                // save the current repository as the most recent
-                // the call is blocking because we are reloading the list of repositories
-                _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path));
-            }
+            // save the current repository as the most recent
+            // the call is blocking because we are reloading the list of repositories
+            _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path));
 
             List<RecentRepoInfo> mostRecentRepos = new List<RecentRepoInfo>();
             using (var graphics = CreateGraphics())
@@ -1659,7 +1656,7 @@ namespace GitUI.CommandsDialogs
                 return;
             }
 
-            _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(repository));
+            _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(path));
         }
 
         private void HistoryItemMenuClick(object sender, EventArgs e)

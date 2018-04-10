@@ -32,11 +32,11 @@ namespace GitCommandsTests.UserRepositoryHistory
         [Test]
         public async Task RemoveFromHistoryAsync_should_remove_if_exists()
         {
-            var repoToDelete = new Repository("path to delete");
+            const string repoToDelete = "path to delete";
             var history = new List<Repository>
             {
                 new Repository("path1"),
-                repoToDelete,
+                new Repository(repoToDelete),
                 new Repository("path3"),
                 new Repository("path4"),
                 new Repository("path5"),
@@ -49,13 +49,13 @@ namespace GitCommandsTests.UserRepositoryHistory
             newHistory.Should().NotContain(repoToDelete);
 
             _repositoryStorage.Received(1).Load(Key);
-            _repositoryStorage.Received(1).Save(Key, Arg.Is<IEnumerable<Repository>>(h => !h.Contains(repoToDelete)));
+            _repositoryStorage.Received(1).Save(Key, Arg.Is<IEnumerable<Repository>>(h => h.All(r => r.Path != repoToDelete)));
         }
 
         [Test]
         public async Task RemoveFromHistoryAsync_should_not_crash_if_not_exists()
         {
-            var repoToDelete = new Repository("path");
+            const string repoToDelete = "path to delete";
             var history = new List<Repository>
             {
                 new Repository("path1"),
