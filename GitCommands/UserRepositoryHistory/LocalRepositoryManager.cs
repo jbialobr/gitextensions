@@ -64,6 +64,11 @@ namespace GitCommands.UserRepositoryHistory
                 var repository = repositoryHistory.FirstOrDefault(r => r.Path.Equals(path, StringComparison.CurrentCultureIgnoreCase));
                 if (repository != null)
                 {
+                    if (repositoryHistory[0] == repository)
+                    {
+                        return repositoryHistory;
+                    }
+
                     repositoryHistory.Remove(repository);
                 }
                 else

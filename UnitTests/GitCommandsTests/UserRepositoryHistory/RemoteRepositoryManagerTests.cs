@@ -24,6 +24,88 @@ namespace GitCommandsTests.UserRepositoryHistory
         }
 
         [Test]
+        public async Task AddAsMostRecentAsync_should_add_new_path_as_top_entry()
+        {
+            const string repoToAdd = "https://path.to/add";
+            var history = new List<Repository>
+            {
+                new Repository("http://path1/"),
+                new Repository("http://path3/"),
+                new Repository("http://path4/"),
+                new Repository("http://path5/"),
+            };
+            _repositoryStorage.Load(Key).Returns(x => history);
+
+            var newHistory = await _manager.AddAsMostRecentAsync(repoToAdd);
+
+            newHistory.Count.Should().Be(5);
+            newHistory[0].Path.Should().Be(repoToAdd);
+        }
+
+        [Test]
+        public async Task AddAsMostRecentAsync_should_move_existing_path_as_top_entry()
+        {
+            const string repoToAdd = "https://path.to/add";
+            var history = new List<Repository>
+            {
+                new Repository("git://path1/"),
+                new Repository("git://path3/"),
+                new Repository("git://path4/"),
+                new Repository(repoToAdd),
+                new Repository("git://path5/"),
+            };
+            _repositoryStorage.Load(Key).Returns(x => history);
+
+            var newHistory = await _manager.AddAsMostRecentAsync(repoToAdd);
+
+            newHistory.Count.Should().Be(5);
+            newHistory[0].Path.Should().Be(repoToAdd);
+        }
+
+        [Test]
+        public async Task AddAsMostRecentAsync_should_move_only_first_existing_path_as_top_entry()
+        {
+            const string repoToAdd = "https://path.to/add";
+            var history = new List<Repository>
+            {
+                new Repository("ssh://path1/"),
+                new Repository("ssh://path3/"),
+                new Repository(repoToAdd),
+                new Repository("ssh://path4/"),
+                new Repository(repoToAdd),
+                new Repository("http://path5/"),
+            };
+            _repositoryStorage.Load(Key).Returns(x => history);
+
+            var newHistory = await _manager.AddAsMostRecentAsync(repoToAdd);
+
+            newHistory.Count.Should().Be(6);
+            newHistory[0].Path.Should().Be(repoToAdd);
+            newHistory[4].Path.Should().Be(repoToAdd);
+        }
+
+        [Test]
+        public async Task AddAsMostRecentAsync_should_not_move_if_path_already_as_top_entry()
+        {
+            const string repoToAdd = "https://path.to/add";
+            var history = new List<Repository>
+            {
+                new Repository(repoToAdd),
+                new Repository("http://path1/"),
+                new Repository("http://path3/"),
+                new Repository("http://path4/"),
+                new Repository("http://path5/"),
+            };
+            _repositoryStorage.Load(Key).Returns(x => history);
+
+            var newHistory = await _manager.AddAsMostRecentAsync(repoToAdd);
+
+            newHistory.Count.Should().Be(5);
+            newHistory[0].Path.Should().Be(repoToAdd);
+            _repositoryStorage.DidNotReceive().Save(Key, Arg.Any<IEnumerable<Repository>>());
+        }
+
+        [Test]
         public async Task RemoveFromHistoryAsync_should_remove_if_exists()
         {
             const string repoToDelete = "path to delete";

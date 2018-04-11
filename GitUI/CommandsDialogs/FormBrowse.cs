@@ -1633,12 +1633,6 @@ namespace GitUI.CommandsDialogs
 
         private void ChangeWorkingDir(string path)
         {
-            var repository = _repositoryHistory.FirstOrDefault(r => r.Path == path);
-            if (repository == null)
-            {
-                return;
-            }
-
             var module = new GitModule(path);
             if (module.IsValidGitWorkingDir())
             {

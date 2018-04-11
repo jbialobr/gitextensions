@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
 using GitCommands.Remote;
 using GitCommands.UserRepositoryHistory;
 using GitUIPluginInterfaces;
-using Microsoft.VisualStudio.Threading;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs
@@ -384,7 +382,6 @@ Inactive remote is completely invisible to git.");
                             RemoteUpdate(repositoryHistory, _selectedRemote?.PushUrl, remotePushUrl);
                         }
 
-                        await TaskScheduler.Default;
                         await RepositoryHistoryManager.Remotes.SaveHistoryAsync(repositoryHistory);
                     });
                 }
