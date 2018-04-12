@@ -12,7 +12,7 @@ using ConEmu.WinForms;
 using GitCommands;
 using GitCommands.Git;
 using GitCommands.Gpg;
-using GitCommands.Repository;
+using GitCommands.UserRepositoryHistory;
 using GitCommands.Utils;
 using GitUI.CommandsDialogs.BrowseDialog;
 using GitUI.CommandsDialogs.BrowseDialog.DashboardControl;
@@ -134,7 +134,7 @@ namespace GitUI.CommandsDialogs
 
         private readonly CancellationTokenSequence _submodulesStatusSequence = new CancellationTokenSequence();
         private BuildReportTabPageExtension _buildReportTabPageExtension;
-        private string _diffTabPageTitleBase = "";
+        private IList<Repository> _repositoryHistory;
 
         private readonly FormBrowseMenus _formBrowseMenus;
         private ConEmuControl _terminal;
@@ -191,10 +191,9 @@ namespace GitUI.CommandsDialogs
                 repoObjectsTree.UICommandsSource = this;
             }
 
-            Repositories.LoadRepositoryHistoryAsync();
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+                await TaskScheduler.Default;
                 try
                 {
                     PluginLoader.Load();
@@ -205,6 +204,9 @@ namespace GitUI.CommandsDialogs
                     RegisterPlugins();
                 }
             }).FileAndForget();
+
+            _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.LoadHistoryAsync());
+
             RevisionGrid.GitModuleChanged += SetGitModule;
             RevisionGrid.OnToggleBranchTreePanelRequested = () => toggleBranchTreePanel_Click(null, null);
             _filterRevisionsHelper = new FilterRevisionsHelper(toolStripRevisionFilterTextBox, toolStripRevisionFilterDropDownButton, RevisionGrid, toolStripRevisionFilterLabel, ShowFirstParent, form: this);
@@ -364,12 +366,6 @@ namespace GitUI.CommandsDialogs
             {
                 RevisionGrid.SetInitialRevision(_longShaProvider.Get(selectCommit));
             }
-        }
-
-        private new void Translate()
-        {
-            base.Translate();
-            _diffTabPageTitleBase = DiffTabPage.Text;
         }
 
         private void UICommands_PostRepositoryChanged(object sender, GitUIBaseEventArgs e)
@@ -714,19 +710,13 @@ namespace GitUI.CommandsDialogs
 
         private void RefreshWorkingDirCombo()
         {
-            Repository r = null;
-            if (Repositories.RepositoryHistory.Repositories.Count > 0)
-            {
-                r = Repositories.RepositoryHistory.Repositories[0];
-            }
+            var path = Module.WorkingDir;
+
+            // save the current repository as the most recent
+            // the call is blocking because we are reloading the list of repositories
+            _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path));
 
             List<RecentRepoInfo> mostRecentRepos = new List<RecentRepoInfo>();
-
-            if (r == null || !r.Path.Equals(Module.WorkingDir, StringComparison.InvariantCultureIgnoreCase))
-            {
-                Repositories.AddMostRecentRepository(Module.WorkingDir);
-            }
-
             using (var graphics = CreateGraphics())
             {
                 var splitter = new RecentRepoSplitter
@@ -734,7 +724,7 @@ namespace GitUI.CommandsDialogs
                     MeasureFont = _NO_TRANSLATE_Workingdir.Font,
                     Graphics = graphics
                 };
-                splitter.SplitRecentRepos(Repositories.RepositoryHistory.Repositories, mostRecentRepos, mostRecentRepos);
+                splitter.SplitRecentRepos(_repositoryHistory, mostRecentRepos, mostRecentRepos);
 
                 RecentRepoInfo ri = mostRecentRepos.Find((e) => e.Repo.Path.Equals(Module.WorkingDir, StringComparison.InvariantCultureIgnoreCase));
 
@@ -1613,7 +1603,7 @@ namespace GitUI.CommandsDialogs
 
         private void FileToolStripMenuItemDropDownOpening(object sender, EventArgs e)
         {
-            if (Repositories.RepositoryHistory.Repositories.Count == 0)
+            if (_repositoryHistory.Count == 0)
             {
                 recentToolStripMenuItem.Enabled = false;
                 return;
@@ -1622,7 +1612,7 @@ namespace GitUI.CommandsDialogs
             recentToolStripMenuItem.Enabled = true;
             recentToolStripMenuItem.DropDownItems.Clear();
 
-            foreach (var historyItem in Repositories.RepositoryHistory.Repositories)
+            foreach (var historyItem in _repositoryHistory)
             {
                 if (string.IsNullOrEmpty(historyItem.Path))
                 {
@@ -1643,25 +1633,24 @@ namespace GitUI.CommandsDialogs
 
         private void ChangeWorkingDir(string path)
         {
-            GitModule module = new GitModule(path);
-
-            if (!module.IsValidGitWorkingDir())
+            var module = new GitModule(path);
+            if (module.IsValidGitWorkingDir())
             {
-                DialogResult dialogResult = MessageBox.Show(this, _directoryIsNotAValidRepository.Text,
-                    _directoryIsNotAValidRepositoryCaption.Text, MessageBoxButtons.YesNoCancel,
-                    MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    Repositories.RepositoryHistory.RemoveRecentRepository(path);
-                    return;
-                }
-                else if (dialogResult == DialogResult.Cancel)
-                {
-                    return;
-                }
+                SetGitModule(this, new GitModuleEventArgs(module));
+                return;
             }
 
-            SetGitModule(this, new GitModuleEventArgs(module));
+            DialogResult dialogResult = MessageBox.Show(this, _directoryIsNotAValidRepository.Text,
+                                                        _directoryIsNotAValidRepositoryCaption.Text,
+                                                        MessageBoxButtons.YesNoCancel,
+                                                        MessageBoxIcon.Exclamation,
+                                                        MessageBoxDefaultButton.Button1);
+            if (dialogResult != DialogResult.Yes)
+            {
+                return;
+            }
+
+            _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.RemoveFromHistoryAsync(path));
         }
 
         private void HistoryItemMenuClick(object sender, EventArgs e)
@@ -1674,11 +1663,14 @@ namespace GitUI.CommandsDialogs
 
         private void ClearRecentRepositoriesListClick(object sender, EventArgs e)
         {
-            Repositories.RepositoryHistory.Repositories.Clear();
-            Repositories.SaveSettings();
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                _repositoryHistory = Array.Empty<Repository>();
+                await RepositoryHistoryManager.Locals.SaveHistoryAsync(_repositoryHistory);
 
-            // Force clear recent repositories list from dashboard.
-            _dashboard?.ShowRecentRepositories();
+                await this.SwitchToMainThreadAsync();
+                _dashboard?.ShowRecentRepositories();
+            });
         }
 
         private void PluginSettingsToolStripMenuItemClick(object sender, EventArgs e)
@@ -1739,7 +1731,7 @@ namespace GitUI.CommandsDialogs
 
             toolStripItem.Click += (hs, he) => ChangeWorkingDir(repo.Path);
 
-            if (repo.Title != null || repo.Path != caption)
+            if (!repo.Path.Equals(caption))
             {
                 toolStripItem.ToolTipText = repo.Path;
             }
@@ -1759,7 +1751,7 @@ namespace GitUI.CommandsDialogs
                     MeasureFont = _NO_TRANSLATE_Workingdir.Font,
                     Graphics = graphics
                 };
-                splitter.SplitRecentRepos(Repositories.RepositoryHistory.Repositories, mostRecentRepos, lessRecentRepos);
+                splitter.SplitRecentRepos(_repositoryHistory, mostRecentRepos, lessRecentRepos);
             }
 
             foreach (RecentRepoInfo repo in mostRecentRepos)
@@ -1816,13 +1808,15 @@ namespace GitUI.CommandsDialogs
 
             if (Module.IsValidGitWorkingDir())
             {
-                Repositories.AddMostRecentRepository(Module.WorkingDir);
-                AppSettings.RecentWorkingDir = module.WorkingDir;
-                ChangeTerminalActiveFolder(Module.WorkingDir);
+                var path = Module.WorkingDir;
+                _repositoryHistory = ThreadHelper.JoinableTaskFactory.Run(() => RepositoryHistoryManager.Locals.AddAsMostRecentAsync(path));
+
+                AppSettings.RecentWorkingDir = path;
+                ChangeTerminalActiveFolder(path);
 
 #if DEBUG
                 // Current encodings
-                Debug.WriteLine("Encodings for " + module.WorkingDir);
+                Debug.WriteLine("Encodings for " + path);
                 Debug.WriteLine("Files content encoding: " + module.FilesEncoding.EncodingName);
                 Debug.WriteLine("Commit encoding: " + module.CommitEncoding.EncodingName);
                 if (module.LogOutputEncoding.CodePage != module.CommitEncoding.CodePage)
