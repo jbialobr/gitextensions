@@ -30,6 +30,8 @@ namespace GitUI.Editor
             TextEditor.KeyDown += BlameFileKeyUp;
             TextEditor.ActiveTextAreaControl.TextArea.KeyDown += BlameFileKeyUp;
             TextEditor.ActiveTextAreaControl.TextArea.DoubleClick += ActiveTextAreaControlDoubleClick;
+            TextEditor.ActiveTextAreaControl.TextArea.KeyUp += ActiveTextArea_KeyUp;
+            TextEditor.ActiveTextAreaControl.TextArea.MouseWheel += ActiveTextArea_MouseWheel;
 
             _lineNumbersControl = new DiffViewerLineNumberCtrl(TextEditor.ActiveTextAreaControl.TextArea);
 
@@ -45,6 +47,86 @@ namespace GitUI.Editor
         public new event MouseEventHandler MouseMove;
         public new event EventHandler MouseEnter;
         public new event EventHandler MouseLeave;
+        public event EventHandler ScrolledAfterEnd;
+        public event EventHandler ScrolledBeforeBegining;
+        private DateTime _scrollDownLastTime = DateTime.Now;
+        private DateTime _scrollUpLastTime = DateTime.Now;
+        private TimeSpan _scrollNextDelay = new TimeSpan(0, 0, 0, 0, 400);
+
+        private void ActiveTextArea_MouseWheel(object sender, MouseEventArgs e)
+        {
+            int vpos = TextEditor.ActiveTextAreaControl.VScrollBar.Value;
+
+            if (e.Delta < 0)
+            {
+                int maxPos = TextEditor.ActiveTextAreaControl.VScrollBar.Maximum - TextEditor.ActiveTextAreaControl.VScrollBar.Height;
+                if (vpos >= maxPos)
+                {
+                    if (DateTime.Now - _scrollDownLastTime > _scrollNextDelay)
+                    {
+                        ScrolledAfterEnd?.Invoke(this, new EventArgs());
+                        HandledMouseEventArgs hea = e as HandledMouseEventArgs;
+                        if (hea != null)
+                        {
+                            hea.Handled = true;
+                        }
+                    }
+                }
+                else
+                {
+                    _scrollDownLastTime = DateTime.Now;
+                }
+            }
+            else
+            {
+                int minPos = TextEditor.ActiveTextAreaControl.VScrollBar.Minimum;
+                if (vpos <= minPos)
+                {
+                    if (DateTime.Now - _scrollUpLastTime > _scrollNextDelay)
+                    {
+                        ScrolledBeforeBegining?.Invoke(this, new EventArgs());
+                    }
+                }
+                else
+                {
+                    _scrollUpLastTime = DateTime.Now;
+                }
+            }
+        }
+
+        private void ActiveTextArea_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.PageDown || e.KeyData == Keys.Down || (e.KeyCode == Keys.End && e.Control))
+            {
+                if (LineAtCaret == TextEditor.Document.TotalNumberOfLines - 1)
+                {
+                    if (DateTime.Now - _scrollDownLastTime > _scrollNextDelay)
+                    {
+                        if (DateTime.Now - _scrollDownLastTime < _scrollNextDelay.Add(_scrollNextDelay))
+                        {
+                            ScrolledAfterEnd?.Invoke(this, new EventArgs());
+                        }
+
+                        _scrollDownLastTime = DateTime.Now;
+                    }
+                }
+            }
+            else if (e.KeyData == Keys.PageUp || e.KeyData == Keys.Up || (e.KeyCode == Keys.Home && e.Control))
+            {
+                if (LineAtCaret == 0)
+                {
+                    if (DateTime.Now - _scrollUpLastTime > _scrollNextDelay)
+                    {
+                        if (DateTime.Now - _scrollUpLastTime < _scrollNextDelay.Add(_scrollNextDelay))
+                        {
+                            ScrolledBeforeBegining?.Invoke(this, new EventArgs());
+                        }
+
+                        _scrollUpLastTime = DateTime.Now;
+                    }
+                }
+            }
+        }
 
         private void TextArea_MouseEnter(object sender, EventArgs e)
         {
@@ -238,6 +320,12 @@ namespace GitUI.Editor
                 max = Math.Max(max, scrollBar.Minimum);
                 scrollBar.Value = max > value ? value : max;
             }
+        }
+
+        public void ScrollToEnd()
+        {
+            ScrollPos = TextEditor.ActiveTextAreaControl.VScrollBar.Maximum;
+            GoToLine(TextEditor.Document.TotalNumberOfLines);
         }
 
         public bool ShowEOLMarkers
