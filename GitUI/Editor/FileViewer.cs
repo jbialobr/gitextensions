@@ -114,11 +114,11 @@ namespace GitUI.Editor
             contextMenu.Opening += ContextMenu_Opening;
             _fullPathResolver = new FullPathResolver(() => Module.WorkingDir);
         }
-        
+
         private void _internalFileViewer_KeyUp(object sender, KeyEventArgs e)
         {
             OnKeyUp(e);
-        }        
+        }
 
         private void _internalFileViewer_ScrolledBeforeBegining(object sender, EventArgs e)
         {
