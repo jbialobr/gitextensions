@@ -50,7 +50,7 @@ namespace GitUI.CommandsDialogs
 
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                var repositoryHistory = await RepositoryHistoryManager.Locals.LoadHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Locals.LoadRecentHistoryAsync();
 
                 await this.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_To.DataSource = repositoryHistory;
@@ -63,7 +63,7 @@ namespace GitUI.CommandsDialogs
             base.OnRuntimeLoad(e);
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadHistoryAsync();
+                var repositoryHistory = await RepositoryHistoryManager.Remotes.LoadRecentHistoryAsync();
 
                 await this.SwitchToMainThreadAsync();
                 _NO_TRANSLATE_From.DataSource = repositoryHistory;
@@ -144,7 +144,17 @@ namespace GitUI.CommandsDialogs
             // this would clone the new repo at the same level as the current one by default
             if (_NO_TRANSLATE_To.Text.IsNullOrWhiteSpace() && Module.WorkingDir.IsNotNullOrWhitespace())
             {
-                _NO_TRANSLATE_To.Text = Path.GetDirectoryName(Module.WorkingDir.TrimEnd(Path.DirectorySeparatorChar));
+                if (Module.IsValidGitWorkingDir())
+                {
+                    if (Path.GetPathRoot(Module.WorkingDir) != Module.WorkingDir)
+                    {
+                        _NO_TRANSLATE_To.Text = Path.GetDirectoryName(Module.WorkingDir.TrimEnd(Path.DirectorySeparatorChar));
+                    }
+                }
+                else
+                {
+                    _NO_TRANSLATE_To.Text = Module.WorkingDir;
+                }
             }
 
             FromTextUpdate(null, null);
