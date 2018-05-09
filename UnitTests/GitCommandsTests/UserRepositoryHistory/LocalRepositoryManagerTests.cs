@@ -21,10 +21,15 @@ namespace GitCommandsTests.UserRepositoryHistory
         private IRepositoryStorage _repositoryStorage;
         private IRepositoryHistoryMigrator _repositoryHistoryMigrator;
         private LocalRepositoryManager _manager;
+        private int _userSetting;
 
         [SetUp]
         public void Setup()
         {
+            // backup the user setting, will restore it at the end of the test run
+            _userSetting = AppSettings.RecentRepositoriesHistorySize;
+            AppSettings.RecentRepositoriesHistorySize = 30;
+
             _repositoryStorage = Substitute.For<IRepositoryStorage>();
             _repositoryHistoryMigrator = Substitute.For<IRepositoryHistoryMigrator>();
             _manager = new LocalRepositoryManager(_repositoryStorage, _repositoryHistoryMigrator);
@@ -33,7 +38,7 @@ namespace GitCommandsTests.UserRepositoryHistory
         [TearDown]
         public void TearDown()
         {
-            AppSettings.RecentRepositoriesHistorySize = 30;
+            AppSettings.RecentRepositoriesHistorySize = _userSetting;
         }
 
         [Test]
@@ -209,7 +214,7 @@ namespace GitCommandsTests.UserRepositoryHistory
                 new Repository("path5"),
             };
             _repositoryStorage.Load(KeyFavouriteHistory).Returns(x => history);
-            _repositoryHistoryMigrator.MigrateAsync(Arg.Any<List<Repository>>()).Returns(x => history);
+            _repositoryHistoryMigrator.MigrateAsync(Arg.Any<List<Repository>>()).Returns(x => (history, false));
 
             var newHistory = await _manager.RemoveFavouriteAsync(repoToDelete);
 
@@ -236,7 +241,7 @@ namespace GitCommandsTests.UserRepositoryHistory
                 new Repository("path5"),
             };
             _repositoryStorage.Load(KeyFavouriteHistory).Returns(x => history);
-            _repositoryHistoryMigrator.MigrateAsync(Arg.Any<List<Repository>>()).Returns(x => history);
+            _repositoryHistoryMigrator.MigrateAsync(Arg.Any<List<Repository>>()).Returns(x => (history, false));
 
             var newHistory = await _manager.RemoveFavouriteAsync(repoToDelete);
 

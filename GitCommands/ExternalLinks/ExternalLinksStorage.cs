@@ -56,7 +56,7 @@ namespace GitCommands.ExternalLinks
                     var serializer = new XmlSerializer(typeof(List<ExternalLinkDefinition>));
                     var ns = new XmlSerializerNamespaces();
                     ns.Add(string.Empty, string.Empty);
-                    serializer.Serialize(sw, definitions, ns);
+                    serializer.Serialize(sw, definitions.OrderBy(x => x.Name).ToList(), ns);
                     xml = sw.ToString();
                 }
 
