@@ -335,6 +335,7 @@ namespace JenkinsIntegration
                     var branches = element["lastBuiltRevision"]["branch"];
                     if (_ignoreBuilds != null && branches != null)
                     {
+                        // Ignore build events for specified branches
                         foreach (var branch in branches)
                         {
                             var name = branch["name"];
