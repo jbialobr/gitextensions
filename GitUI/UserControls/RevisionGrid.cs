@@ -2000,17 +2000,27 @@ namespace GitUI
                     return 0;
                 }
 
-                if (gitRef.IsHead)
+                if (gitRef.Selected)
                 {
                     return 1;
                 }
 
-                if (gitRef.IsRemote)
+                if (gitRef.SelectedHeadMergeSource)
                 {
                     return 2;
                 }
 
-                return 3;
+                if (gitRef.IsHead)
+                {
+                    return 3;
+                }
+
+                if (gitRef.IsRemote)
+                {
+                    return 4;
+                }
+
+                return 5;
             }
         }
 
