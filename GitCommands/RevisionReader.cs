@@ -29,6 +29,7 @@ namespace GitCommands
     public sealed class RevisionReader : IDisposable
     {
         private readonly CancellationTokenSequence _cancellationTokenSequence = new CancellationTokenSequence();
+        private static readonly Dictionary<ObjectId, GitRevision> _revisionsCache = new Dictionary<ObjectId, GitRevision>(10000);
 
         public int RevisionCount { get; private set; }
 
@@ -235,6 +236,11 @@ namespace GitCommands
                 return false;
             }
 
+            if (_revisionsCache.TryGetValue(objectId, out revision))
+            {
+                return true;
+            }
+
             var objectIdStr = objectId.ToString();
 
             var array = chunk.Array;
@@ -387,6 +393,8 @@ namespace GitCommands
                 Body = body,
                 HasMultiLineMessage = !ReferenceEquals(subject, body)
             };
+
+            _revisionsCache.Add(objectId, revision);
 
             return true;
         }
