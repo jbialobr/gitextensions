@@ -174,7 +174,6 @@ namespace GitUI.CommandsDialogs
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.commitcountPerUserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gitcommandLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip1 = new GitUI.MenuStripEx();
@@ -328,7 +327,7 @@ namespace GitUI.CommandsDialogs
             this.toolStripSplitStash.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripSplitStash.Name = "toolStripSplitStash";
             this.toolStripSplitStash.Size = new System.Drawing.Size(32, 22);
-            this.toolStripSplitStash.ToolTipText = "Stash changes";
+            this.toolStripSplitStash.ToolTipText = "Manage stashes";
             this.toolStripSplitStash.ButtonClick += new System.EventHandler(this.ToolStripSplitStashButtonClick);
             this.toolStripSplitStash.DropDownOpened += new System.EventHandler(this.toolStripSplitStash_DropDownOpened);
             // 
@@ -1188,7 +1187,7 @@ namespace GitUI.CommandsDialogs
             this.stashToolStripMenuItem.Image = global::GitUI.Properties.Resources.stash;
             this.stashToolStripMenuItem.Name = "stashToolStripMenuItem";
             this.stashToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
-            this.stashToolStripMenuItem.Text = "Stash changes...";
+            this.stashToolStripMenuItem.Text = "Manage stashes...";
             this.stashToolStripMenuItem.Click += new System.EventHandler(this.StashToolStripMenuItemClick);
             // 
             // resetToolStripMenuItem
@@ -1556,21 +1555,12 @@ namespace GitUI.CommandsDialogs
             this.toolStripSeparator6,
             this.PuTTYToolStripMenuItem,
             this.toolStripSeparator41,
-            this.commitcountPerUserToolStripMenuItem,
             this.gitcommandLogToolStripMenuItem,
             this.toolStripSeparator7,
             this.settingsToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(47, 20);
             this.toolsToolStripMenuItem.Text = "&Tools";
-            // 
-            // commitcountPerUserToolStripMenuItem
-            // 
-            this.commitcountPerUserToolStripMenuItem.Image = global::GitUI.Properties.Resources.statistic;
-            this.commitcountPerUserToolStripMenuItem.Name = "commitcountPerUserToolStripMenuItem";
-            this.commitcountPerUserToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
-            this.commitcountPerUserToolStripMenuItem.Text = "Commits per user";
-            this.commitcountPerUserToolStripMenuItem.Click += new System.EventHandler(this.CommitcountPerUserToolStripMenuItemClick);
             // 
             // gitcommandLogToolStripMenuItem
             // 
@@ -1816,7 +1806,6 @@ namespace GitUI.CommandsDialogs
         private ToolStripMenuItem checkForUpdatesToolStripMenuItem;
         private SplitContainer MainSplitContainer;
         private GitUI.BranchTreePanel.RepoObjectsTree repoObjectsTree;
-        private ToolStripMenuItem commitcountPerUserToolStripMenuItem;
         private ToolStripMenuItem gitcommandLogToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator7;
         private ToolStripMenuItem menuitemSparse;

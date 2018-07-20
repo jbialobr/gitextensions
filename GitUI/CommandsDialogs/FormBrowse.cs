@@ -486,12 +486,16 @@ namespace GitUI.CommandsDialogs
 
         private void RegisterPlugins()
         {
+            var existingPluginMenus = pluginsToolStripMenuItem.DropDownItems.OfType<ToolStripMenuItem>().ToLookup(c => c.Tag);
             foreach (var plugin in PluginRegistry.Plugins)
             {
-                // Add the plugin to the Plugins menu
-                var item = new ToolStripMenuItem { Text = plugin.Description, Tag = plugin };
-                item.Click += ItemClick;
-                pluginsToolStripMenuItem.DropDownItems.Insert(pluginsToolStripMenuItem.DropDownItems.Count - 2, item);
+                // Add the plugin to the Plugins menu, if not already added
+                if (!existingPluginMenus.Contains(plugin))
+                {
+                    var item = new ToolStripMenuItem { Text = plugin.Description, Tag = plugin };
+                    item.Click += ItemClick;
+                    pluginsToolStripMenuItem.DropDownItems.Insert(pluginsToolStripMenuItem.DropDownItems.Count - 2, item);
+                }
 
                 // Allow the plugin to perform any self-registration actions
                 plugin.Register(UICommands);
@@ -506,7 +510,7 @@ namespace GitUI.CommandsDialogs
                 _repositoryHostsToolStripMenuItem.Text = PluginRegistry.GitHosters[0].Description;
             }
 
-            UpdatePluginMenu(Module.IsValidGitWorkingDir());
+            UpdatePluginMenu(Module?.IsValidGitWorkingDir() ?? false);
         }
 
         private void UnregisterPlugins()
@@ -599,7 +603,6 @@ namespace GitUI.CommandsDialogs
                 editgitattributesToolStripMenuItem.Enabled = validBrowseDir;
                 editmailmapToolStripMenuItem.Enabled = validBrowseDir;
                 toolStripSplitStash.Enabled = validBrowseDir && !bareRepository;
-                commitcountPerUserToolStripMenuItem.Enabled = validBrowseDir;
                 _createPullRequestsToolStripMenuItem.Enabled = validBrowseDir;
                 _viewPullRequestsToolStripMenuItem.Enabled = validBrowseDir;
 
@@ -1279,14 +1282,6 @@ namespace GitUI.CommandsDialogs
             RefreshRevisions();
         }
 
-        private void CommitcountPerUserToolStripMenuItemClick(object sender, EventArgs e)
-        {
-            using (var frm = new FormCommitCount(UICommands))
-            {
-                frm.ShowDialog(this);
-            }
-        }
-
         private void KGitToolStripMenuItemClick(object sender, EventArgs e)
         {
             Module.RunGitK();
@@ -1753,6 +1748,7 @@ namespace GitUI.CommandsDialogs
             var module = e.GitModule;
             HideVariableMainMenuItems();
             UnregisterPlugins();
+            RevisionGrid.InvalidateCount();
 
             UICommands = new GitUICommands(module);
             if (Module.IsValidGitWorkingDir())
