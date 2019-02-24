@@ -178,6 +178,7 @@ namespace GitUI.BranchTreePanel
 
                     var token = _reloadCancellationTokenSequence.Next();
                     await loadNodesTask(token);
+                    token.ThrowIfCancellationRequested();
 
                     var repoObjectTree = TreeViewNode.TreeView.Parent;
 
